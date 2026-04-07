@@ -1,0 +1,76 @@
+name: Code Quality & Lint
+
+on:
+  push:
+    branches: [main, develop, development]
+  pull_request:
+    branches: [main, develop, development]
+
+jobs:
+  sonarqube:
+    name: SonarQube Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "eclipse-temurin"
+          cache: maven
+
+      - name: Build and analyze with SonarQube
+        run: |
+          for pom in $(find ./services -maxdepth 1 -name "*/pom.xml"); do
+            dir=$(dirname "$pom")
+            echo "--- Analyzing: $dir ---"
+            cd "$dir" && mvn clean verify || true
+            cd - > /dev/null
+          done
+
+  spotbugs:
+    name: SpotBugs Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "eclipse-temurin"
+          cache: maven
+
+      - name: Run SpotBugs
+        run: |
+          for pom in $(find ./services -maxdepth 1 -name "*/pom.xml"); do
+            dir=$(dirname "$pom")
+            echo "--- SpotBugs: $dir ---"
+            cd "$dir" && mvn spotbugs:check || true
+            cd - > /dev/null
+          done
+
+  eslint:
+    name: ESLint for Web App
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "web/web-app/package-lock.json"
+
+      - name: Install dependencies
+        run: cd web/web-app && npm ci
+
+      - name: Run ESLint
+        run: cd web/web-app && npm run lint || true

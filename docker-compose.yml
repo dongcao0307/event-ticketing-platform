@@ -1,56 +1,287 @@
-version: "3.8"
+version: '3.8'
 
 services:
-  # --- HẠ TẦNG (INFRASTRUCTURE) ---
+  # ═══════════════════════════════════════════════════════════
+  # INFRASTRUCTURE LAYER
+  # ═══════════════════════════════════════════════════════════
   mysql:
     image: mysql:8.0
+    container_name: ticketbox-mysql
     environment:
       MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ticketbox
     ports: ["3306:3306"]
-    networks: [ticket-net]
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - ticketbox-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  redis: # Phục vụ Redis CRUD (mục 5) và Rate Limiter (mục 14)
-    image: redis:alpine
+  redis:
+    image: redis:7-alpine
+    container_name: ticketbox-redis
     ports: ["6379:6379"]
-    networks: [ticket-net]
+    volumes:
+      - redis_data:/data
+    networks:
+      - ticketbox-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  rabbitmq: # Phục vụ Message Queue cho Order/Notification
-    image: rabbitmq:3-management
-    ports: ["5672:5672", "15672:15672"]
-    networks: [ticket-net]
+  mongodb:
+    image: mongo:7.0
+    container_name: ticketbox-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+      MONGO_INITDB_DATABASE: ticketbox
+    ports: ["27017:27017"]
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - ticketbox-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  jenkins: # Lấy 1.0 điểm mục 10
-    image: jenkins/jenkins:lts
-    ports: ["8085:8080"]
-    networks: [ticket-net]
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: ticketbox-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - ticketbox-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # --- CÁC DỊCH VỤ JAVA (JDK 21) ---
-  api-gateway:
-    build: ./api-gateway
-    ports: ["8080:8080"]
-    depends_on: [identity-service]
-    networks: [ticket-net]
+  # ═══════════════════════════════════════════════════════════
+  # API GATEWAY
+  # ═══════════════════════════════════════════════════════════
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: ticketbox-gateway
+    depends_on:
+      - identity-service
+      - event-service
+      - booking-service
+    ports: ["8080:80"]
+    networks:
+      - ticketbox-net
+    environment:
+      - SERVICE_IDENTITY=identity-service:8081
+      - SERVICE_EVENT=event-service:8082
+      - SERVICE_BOOKING=booking-service:8083
 
-  identity-service: # Xử lý JWT (mục 4)
-    build: ./identity-service
+  # ═══════════════════════════════════════════════════════════
+  # MICROSERVICES
+  # ═══════════════════════════════════════════════════════════
+  identity-service:
+    build:
+      context: ./services/identity
+      dockerfile: Dockerfile
+    container_name: ticketbox-identity
+    depends_on:
+      mysql:
+        condition: service_healthy
     ports: ["8081:8081"]
-    networks: [ticket-net]
+    networks:
+      - ticketbox-net
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
 
-  event-service: # Xử lý Redis (mục 3, 5)
-    build: ./event-service
+  event-service:
+    build:
+      context: ./services/event
+      dockerfile: Dockerfile
+    container_name: ticketbox-event
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     ports: ["8082:8082"]
-    networks: [ticket-net]
+    networks:
+      - ticketbox-net
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+
+  booking-service:
+    build:
+      context: ./services/booking
+      dockerfile: Dockerfile
+    container_name: ticketbox-booking
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    ports: ["8083:8083"]
+    networks:
+      - ticketbox-net
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+
+  payment-service:
+    build:
+      context: ./services/payment
+      dockerfile: Dockerfile
+    container_name: ticketbox-payment
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports: ["8085:8085"]
+    networks:
+      - ticketbox-net
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
 
   ticket-service:
-    build: ./ticket-service
-    ports: ["8083:8083"]
-    networks: [ticket-net]
-
-  order-service: # Kết nối RabbitMQ
-    build: ./order-service
+    build:
+      context: ./services/ticket
+      dockerfile: Dockerfile
+    container_name: ticketbox-ticket
+    depends_on:
+      mysql:
+        condition: service_healthy
     ports: ["8084:8084"]
-    networks: [ticket-net]
+    networks:
+      - ticketbox-net
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+
+  seat-service:
+    build:
+      context: ./services/seat
+      dockerfile: Dockerfile
+    container_name: ticketbox-seat
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports: ["8086:8086"]
+    networks:
+      - ticketbox-net
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+
+  notification-service:
+    build:
+      context: ./services/notification
+      dockerfile: Dockerfile
+    container_name: ticketbox-notification
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    ports: ["8087:8087"]
+    networks:
+      - ticketbox-net
+    environment:
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+
+  voucher-service:
+    build:
+      context: ./services/voucher
+      dockerfile: Dockerfile
+    container_name: ticketbox-voucher
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports: ["8088:8088"]
+    networks:
+      - ticketbox-net
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+
+  statistical-service:
+    build:
+      context: ./services/statistical
+      dockerfile: Dockerfile
+    container_name: ticketbox-statistical
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports: ["8089:8089"]
+    networks:
+      - ticketbox-net
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+
+  # ═══════════════════════════════════════════════════════════
+  # WEB APPLICATION
+  # ═══════════════════════════════════════════════════════════
+  web-app:
+    build:
+      context: ./web/web-app
+      dockerfile: Dockerfile
+    container_name: ticketbox-web
+    depends_on:
+      - gateway
+    ports: ["3000:3000"]
+    networks:
+      - ticketbox-net
+    environment:
+      - VITE_API_URL=http://gateway:80
+
+volumes:
+  mysql_data:
+  redis_data:
+  mongodb_data:
+  mongodb_config:
+  rabbitmq_data:
 
 networks:
-  ticket-net:
+  ticketbox-net:
     driver: bridge

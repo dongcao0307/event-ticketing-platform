@@ -9,7 +9,7 @@ Dự án bài tập lớn môn **Kiến trúc Phần mềm**, xây dựng nền 
 ### Backend Core (JDK 21)
 
 - **Spring Boot 3:** Framework chính.
-- **Spring Cloud Gateway:** API Gateway, Rate Limiting.
+- **Nginx:** API Gateway reverse proxy.
 - **Spring Security + JWT:** Authentication & Authorization.
 - **Spring Data JPA:** ORM làm việc với MySQL.
 - **Resilience4j:** Circuit Breaker & Retry Mechanism.
@@ -29,15 +29,15 @@ Dự án bài tập lớn môn **Kiến trúc Phần mềm**, xây dựng nền 
 
 Hệ thống bao gồm 9 Microservices độc lập:
 
-| Service              | Port   | Nhiệm vụ chính                             |
-| :------------------- | :----- | :----------------------------------------- |
-| **api-gateway**      | `8080` | Cổng vào duy nhất, điều hướng, Rate Limit. |
-| **identity-service** | `8081` | Đăng ký, Đăng nhập, cấp phát JWT.          |
-| **event-service**    | `8082` | Quản lý sự kiện, tích hợp Redis Cache.     |
-| **ticket-service**   | `8083` | Quản lý kho vé.                            |
-| **booking-service**  | `8084` | Xử lý đặt vé, Retry, tích hợp RabbitMQ.    |
-| **payment-service**  | `8085` | Giả lập thanh toán.                        |
-| ...                  | ...    | (Các service khác)                         |
+| Service              | Port   | Nhiệm vụ chính                               |
+| :------------------- | :----- | :------------------------------------------- |
+| **api-gateway**      | `8080` | Cổng vào duy nhất, reverse proxy bằng Nginx. |
+| **identity-service** | `8081` | Đăng ký, Đăng nhập, cấp phát JWT.            |
+| **event-service**    | `8082` | Quản lý sự kiện, tích hợp Redis Cache.       |
+| **ticket-service**   | `8083` | Quản lý kho vé.                              |
+| **booking-service**  | `8084` | Xử lý đặt vé, Retry, tích hợp RabbitMQ.      |
+| **payment-service**  | `8085` | Giả lập thanh toán.                          |
+| ...                  | ...    | (Các service khác)                           |
 
 ---
 
@@ -52,12 +52,20 @@ Yêu cầu: Đã cài Docker Desktop.
 git clone <LINK_GITLAB_CUA_BAN>
 cd EVENT-TICKETING-PLATFORM
 
-# 2. Build và Run (Tự động tải DB, Redis, RabbitMQ và build Java app)
+# 2. Build và Run (api-gateway chạy bằng nginx)
 docker-compose up --build
-Bước 2: Kiểm tra trạng thái
-API Documentation (Swagger): http://localhost:8080/swagger-ui.html
+```
+
+Gateway nhận request tại cổng `8080`:
+
+- `/auth/` -> `identity-service:8081`
+- `/events/` -> `event-service:8082`
+- `/bookings/` -> `booking-service:8083`
+
+```bash
+curl http://localhost:8080/
+```
 
 RabbitMQ Dashboard: http://localhost:15672 (User/Pass: guest/guest)
 
 GitLab Pipeline: Truy cập mục Build > Pipelines để xem minh chứng CI/CD.
-```
