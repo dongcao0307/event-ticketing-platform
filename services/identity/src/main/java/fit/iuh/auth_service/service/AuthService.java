@@ -82,12 +82,12 @@ public class AuthService {
         Account account = accountRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ApiException("Tài khoản không tồn tại", HttpStatus.NOT_FOUND));
 
-        refreshTokenRepository.revokeAllByAccountUserName(account.getUserName());
+        refreshTokenRepository.revokeAllByAccountUserName(account.getUsername());
 
         String accessToken = jwtService.generateAccessToken(account);
         RefreshToken refreshToken = createRefreshToken(account);
 
-        User user = userRepository.findByAccount_UserName(account.getUserName()).orElse(null);
+        User user = userRepository.findByAccount_UserName(account.getUsername()).orElse(null);
 
         return buildAuthResponse(account, user, accessToken, refreshToken.getToken());
     }
@@ -112,7 +112,7 @@ public class AuthService {
         String newAccessToken = jwtService.generateAccessToken(account);
         RefreshToken newRefreshToken = createRefreshToken(account);
 
-        User user = userRepository.findByAccount_UserName(account.getUserName()).orElse(null);
+        User user = userRepository.findByAccount_UserName(account.getUsername()).orElse(null);
 
         return buildAuthResponse(account, user, newAccessToken, newRefreshToken.getToken());
     }
@@ -179,7 +179,7 @@ public class AuthService {
 
     private UserProfileResponse toProfileResponse(Account account, User user) {
         return UserProfileResponse.builder()
-                .userName(account.getUserName())
+                .userName(account.getUsername())
                 .email(account.getEmail())
                 .role(account.getRole().name())
                 .status(account.getStatus().name())

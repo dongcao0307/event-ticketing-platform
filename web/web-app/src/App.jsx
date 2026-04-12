@@ -18,6 +18,7 @@ import UserManagement from './pages/UserManagement'
 import AdminEventDetail from './pages/AdminEventDetail'
 import AdminAnalytics from './pages/AdminAnalytics'
 import AdminOrders from './pages/AdminOrders'
+import AdminRoute from './components/AdminRoute'
 
 import EventDetailPublicPage from './pages/EventDetailPublicPage'
 import SeatSelectionPage from './pages/SeatSelectionPage'
@@ -51,12 +52,12 @@ function App() {
         <Route path="/ticket/:id" element={<TicketDetailPage />} />
 
         {/* Admin */}
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/admin/events" element={<EventManagement />} />
-        <Route path="/admin/events/:id" element={<AdminEventDetail />} />
-        <Route path="/admin/users" element={<UserManagement />} />
-        <Route path="/admin/analytics" element={<AdminAnalytics />} />
-        <Route path="/admin/orders" element={<AdminOrders />} />
+        <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+        <Route path="/admin/events" element={<AdminRoute><EventManagement /></AdminRoute>} />
+        <Route path="/admin/events/:id" element={<AdminRoute><AdminEventDetail /></AdminRoute>} />
+        <Route path="/admin/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
+        <Route path="/admin/analytics" element={<AdminRoute><AdminAnalytics /></AdminRoute>} />
+        <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
       </Routes>
     </BrowserRouter>
   )

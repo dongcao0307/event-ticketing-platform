@@ -15,6 +15,7 @@
 	<description>Identity and Authentication Service with JWT</description>
 	<properties>
 		<java.version>21</java.version>
+		<projectlombok-lombok.version>1.18.30</projectlombok-lombok.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -58,7 +59,8 @@
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-			<optional>true</optional>
+			<version>${projectlombok-lombok.version}</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springdoc</groupId>
@@ -86,6 +88,7 @@
 						<path>
 							<groupId>org.projectlombok</groupId>
 							<artifactId>lombok</artifactId>
+							<version>${projectlombok-lombok.version}</version>
 						</path>
 					</annotationProcessorPaths>
 				</configuration>

@@ -1,7 +1,7 @@
 // src/services/apiClient.js
 // Centralized API client with JWT token handling and auto-refresh
 
-const BASE_URL = '/api';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 const getAccessToken = () => localStorage.getItem('jwt_token');
 const getRefreshToken = () => localStorage.getItem('refresh_token');
@@ -18,14 +18,17 @@ const clearTokens = () => {
 let isRefreshing = false;
 let refreshSubscribers = [];
 
-const onRefreshed = (token) => {
-  refreshSubscribers.forEach(cb => cb(token));
+const onRefreshed = (token, error) => {
+  refreshSubscribers.forEach(({ resolve, reject }) => {
+    if (error) reject(error);
+    else resolve(token);
+  });
   refreshSubscribers = [];
 };
 
-const addRefreshSubscriber = (cb) => {
-  refreshSubscribers.push(cb);
-};
+const addRefreshSubscriber = () => new Promise((resolve, reject) => {
+  refreshSubscribers.push({ resolve, reject });
+});
 
 const doRefresh = async () => {
   const refreshToken = getRefreshToken();
@@ -73,14 +76,15 @@ export const request = async (endpoint, options = {}) => {
       try {
         const newToken = await doRefresh();
         isRefreshing = false;
-        onRefreshed(newToken);
+        onRefreshed(newToken, null);
       } catch (err) {
         isRefreshing = false;
+        onRefreshed(null, err);
         clearTokens();
         throw new Error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại');
       }
     } else {
-      await new Promise(resolve => addRefreshSubscriber(resolve));
+      await addRefreshSubscriber();
     }
 
     const newToken = getAccessToken();
