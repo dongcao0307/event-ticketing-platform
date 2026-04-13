@@ -2,7 +2,7 @@
 
 const featuredEvents = [
   {
-    id: 'featured-1',
+    id: 1,
     title: 'SUPER SHOW 10 – Super Junior',
     date: '24 tháng 02, 2026',
     location: 'Sân vận động Mỹ Đình',
@@ -11,7 +11,7 @@ const featuredEvents = [
       'https://images.unsplash.com/photo-1519638399535-1b036603ac77?auto=format&fit=crop&w=1200&q=80',
   },
   {
-    id: 'featured-2',
+    id: 2,
     title: 'HER Concert – Hòa nhạc lãng mạn',
     date: '07 tháng 02, 2026',
     location: 'Hội trường GV3',
@@ -20,7 +20,7 @@ const featuredEvents = [
       'https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=1200&q=80',
   },
   {
-    id: 'featured-3',
+    id: 3,
     title: 'Hội chợ Workshop Handmade',
     date: '25 tháng 01, 2026',
     location: 'TP. Hồ Chí Minh',
@@ -32,7 +32,7 @@ const featuredEvents = [
 
 const trendingEvents = [
   {
-    id: 'trend-1',
+    id: 4,
     title: 'DÉ GARDEN Moss Frame Workshop',
     date: '19 tháng 02, 2026',
     location: 'Hà Nội',
@@ -42,7 +42,7 @@ const trendingEvents = [
     badge: '1',
   },
   {
-    id: 'trend-2',
+    id: 5,
     title: 'DÉ GARDEN Terrarium Workshop',
     date: '13 tháng 03, 2026',
     location: 'Hà Nội',
@@ -52,7 +52,7 @@ const trendingEvents = [
     badge: '2',
   },
   {
-    id: 'trend-3',
+    id: 6,
     title: 'ART WORKSHOP "FRENCH LEMON MINI TARTE"',
     date: '13 tháng 03, 2026',
     location: 'Hà Nội',
@@ -65,7 +65,7 @@ const trendingEvents = [
 
 const recommendedEvents = [
   {
-    id: 'rec-1',
+    id: 7,
     title: 'SÂN KHẤU XÓM KỊCH: CĂN HỘ SỐ 13',
     date: '15 tháng 03, 2026',
     location: 'TP. Hồ Chí Minh',
@@ -74,7 +74,7 @@ const recommendedEvents = [
       'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=80',
   },
   {
-    id: 'rec-2',
+    id: 8,
     title: 'IN BÓNG LONG THÀNH - SILHOUETTE OF THANG LONG',
     date: '20 tháng 03, 2026',
     location: 'Hà Nội',
@@ -83,7 +83,7 @@ const recommendedEvents = [
       'https://images.unsplash.com/photo-1515169067865-5387b23d7e86?auto=format&fit=crop&w=1200&q=80',
   },
   {
-    id: 'rec-3',
+    id: 9,
     title: 'CHƯƠNG TRÌNH STARTUP STREET',
     date: '28 tháng 03, 2026',
     location: 'TP. Hồ Chí Minh',
@@ -95,7 +95,7 @@ const recommendedEvents = [
 
 const resaleEvents = [
   {
-    id: 'r1',
+    id: 10,
     title: 'GAI HOME CONCERT',
     date: '26 tháng 04, 2026',
     location: 'Ocean Park',
@@ -103,7 +103,7 @@ const resaleEvents = [
     image: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4',
   },
   {
-    id: 'r2',
+    id: 11,
     title: 'ĐÀO HOA HẬU',
     date: '15 tháng 03, 2026',
     location: 'Nhà hát Bến Thành',
@@ -111,7 +111,7 @@ const resaleEvents = [
     image: 'https://images.unsplash.com/photo-1518972559570-7cc1309f3229',
   },
   {
-    id: 'r3',
+    id: 12,
     title: 'Mr Siro Concert',
     date: '28 tháng 03, 2026',
     location: 'Hà Nội',
@@ -119,7 +119,7 @@ const resaleEvents = [
     image: 'https://images.unsplash.com/photo-1506157786151-b8491531f063',
   },
   {
-    id: 'r4',
+    id: 13,
     title: 'GAI HOME CONCERT',
     date: '26 tháng 04, 2026',
     location: 'Ocean Park',
@@ -127,7 +127,7 @@ const resaleEvents = [
     image: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4',
   },
   {
-    id: 'r5',
+    id: 14,
     title: 'ĐÀO HOA HẬU',
     date: '15 tháng 03, 2026',
     location: 'Nhà hát Bến Thành',
@@ -135,7 +135,7 @@ const resaleEvents = [
     image: 'https://images.unsplash.com/photo-1518972559570-7cc1309f3229',
   },
   {
-    id: 'r6',
+    id: 15,
     title: 'Mr Siro Concert',
     date: '28 tháng 03, 2026',
     location: 'Hà Nội',
@@ -146,7 +146,7 @@ const resaleEvents = [
 
 const weekendEvents = [
   {
-    id: 'w1',
+    id: 16,
     title: 'B.DUCK CITYFUNS @VINCOM',
     date: '20 tháng 01, 2026',
     price: 'Từ 82.500đ',
@@ -156,7 +156,7 @@ const weekendEvents = [
 
 const monthEvents = [
   {
-    id: 'm1',
+    id: 17,
     title: 'Workshop Candle',
     date: '24 tháng 01, 2026',
     price: 'Từ 279.000đ',
@@ -175,4 +175,8 @@ export const getRecommendedEvents = async () => simulateFetch(recommendedEvents)
 export const getResaleEvents = async () => simulateFetch(resaleEvents);
 export const getWeekendEvents = async () => simulateFetch(weekendEvents);
 export const getMonthEvents = async () => simulateFetch(monthEvents);
+export const serviceFindEventById = async (eventId) => simulateFetch(
+  featuredEvents.concat(trendingEvents).concat(recommendedEvents).concat(resaleEvents)
+  .concat(weekendEvents).concat(monthEvents).find(e => e.id === eventId)
+)
 
