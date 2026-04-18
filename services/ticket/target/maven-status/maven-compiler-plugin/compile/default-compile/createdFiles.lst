@@ -1,6 +1,7 @@
 fit\iuh\ticket_service\controllers\TicketTypeController.class
 fit\iuh\ticket_service\dtos\responses\TicketResponse.class
 fit\iuh\ticket_service\config\CorsConfig.class
+fit\iuh\ticket_service\messaging\OrderPaidEvent$OrderPaidItem.class
 fit\iuh\ticket_service\services\TicketTypeService.class
 fit\iuh\ticket_service\dtos\requests\TicketTypeUpdateRequest.class
 fit\iuh\ticket_service\dtos\requests\TicketTypeBulkWriteRequest.class
@@ -18,10 +19,14 @@ fit\iuh\ticket_service\services\impl\TicketServiceImpl.class
 fit\iuh\ticket_service\entities\TicketStatus.class
 fit\iuh\ticket_service\entities\TicketType$TicketTypeBuilder.class
 fit\iuh\ticket_service\repositories\TicketRepository.class
+fit\iuh\ticket_service\config\OrderRabbitProperties.class
 fit\iuh\ticket_service\dtos\requests\TicketTypeCreateRequest.class
 fit\iuh\ticket_service\TicketServiceApplication.class
 fit\iuh\ticket_service\exceptions\PostException.class
+fit\iuh\ticket_service\messaging\OrderPaidListener.class
+fit\iuh\ticket_service\messaging\OrderPaidEvent.class
 fit\iuh\ticket_service\entities\TicketType.class
+fit\iuh\ticket_service\config\RabbitMqConfig.class
 fit\iuh\ticket_service\dtos\ApiResponse$ApiResponseBuilder.class
 fit\iuh\ticket_service\dtos\responses\TicketTypeResponse.class
 fit\iuh\ticket_service\exceptions\GlobalExceptionHandler.class

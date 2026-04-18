@@ -1,6 +1,12 @@
 import { configureStore, createAsyncThunk, createSlice } from "@reduxjs/toolkit"
 import { useSelector, useDispatch } from 'react-redux';
 import { serviceAddTicketTypes, serviceUpdateTicketTypes, serviceUpsertTicketTypes } from "../services/ticketService";
+import {
+    buildMomoCheckoutPayload,
+    buildVnPayCheckoutPayload,
+    serviceCreateMomoCheckout,
+    serviceCreateVnPayCheckout,
+} from "../services/paymentService";
 
 export const asyncThunkUpsertTicketTypesDB = createAsyncThunk(
     "eventSlice/asyncThunkUpsertTicketTypesDB",
@@ -22,7 +28,11 @@ const eventSlice = createSlice({
         selectedEvent: { id: 1 },
         venue: { id: 1 },
         hasChange: false,
-        hasChangeTicketTypes: false
+        hasChangeTicketTypes: false,
+        bookingOrder: null,
+        bookingOrderItems: [],
+        bookingCheckoutContext: null,
+        bookingPayment: null,
     },
     reducers: {
         reducerAddPerformance: (state) => {
@@ -74,6 +84,23 @@ const eventSlice = createSlice({
                 }
                 state.hasChangeTicketTypes = true
             }
+        },
+        reducerSetBookingOrderData: (state, action) => {
+            state.bookingOrder = action.payload?.order ?? null
+            state.bookingOrderItems = action.payload?.orderItems ?? []
+            state.bookingCheckoutContext = action.payload?.context ?? null
+        },
+        reducerClearBookingOrderData: (state) => {
+            state.bookingOrder = null
+            state.bookingOrderItems = []
+            state.bookingCheckoutContext = null
+            state.bookingPayment = null
+        },
+        reducerSetBookingPaymentData: (state, action) => {
+            state.bookingPayment = action.payload ?? null
+        },
+        reducerClearBookingPaymentData: (state) => {
+            state.bookingPayment = null
         }
     },
     extraReducers: (builder) => {
@@ -88,7 +115,16 @@ const eventSlice = createSlice({
     }
 })
 
-export const { reducerAddPerformance, reducerUpdatePerformanceTime, reducerUpdateTicketType, reducerAddTicketType } = eventSlice.actions
+export const {
+    reducerAddPerformance,
+    reducerUpdatePerformanceTime,
+    reducerUpdateTicketType,
+    reducerAddTicketType,
+    reducerSetBookingOrderData,
+    reducerClearBookingOrderData,
+    reducerSetBookingPaymentData,
+    reducerClearBookingPaymentData,
+} = eventSlice.actions
 export const eventReducer = eventSlice.reducer;
 export const eventStore = configureStore({
     reducer: {
@@ -97,16 +133,51 @@ export const eventStore = configureStore({
 });
 
 export const useEvent = () => {
-    const { eventPerformances, ticketTypes } = useSelector((state) => state.eventSlice);
+    const {
+        eventPerformances,
+        ticketTypes,
+        bookingOrder,
+        bookingOrderItems,
+        bookingCheckoutContext,
+        bookingPayment,
+    } = useSelector((state) => state.eventSlice);
     const dispatch = useDispatch();
 
     const addPerformance = (performance) => dispatch(reducerAddPerformance(performance))
     const updatePerformanceTime = (payload) => dispatch(reducerUpdatePerformanceTime(payload))
     const updateTicketType = (ticketType) => dispatch(reducerUpdateTicketType(ticketType))
     const addTicketType = (ticketType) => dispatch(reducerAddTicketType(ticketType))
+    const setBookingOrderData = (payload) => dispatch(reducerSetBookingOrderData(payload))
+    const clearBookingOrderData = () => dispatch(reducerClearBookingOrderData())
+    const setBookingPaymentData = (payload) => dispatch(reducerSetBookingPaymentData(payload))
+    const clearBookingPaymentData = () => dispatch(reducerClearBookingPaymentData())
     const addTicketTypesDB = (ticketTypes) => serviceAddTicketTypes(ticketTypes)
     const updateTicketTypesDB = (ticketTypes) => serviceUpdateTicketTypes(ticketTypes)
     const upsertTicktTypesDB = (ticketTypes) => dispatch(asyncThunkUpsertTicketTypesDB(ticketTypes)).unwrap()
+
+    const createVnPayCheckout = async ({ order, event, showtime, returnUrl }) => {
+        const payload = buildVnPayCheckoutPayload({ order, event, showtime, returnUrl })
+        const response = await serviceCreateVnPayCheckout(payload)
+        setBookingPaymentData({
+            provider: 'VNPAY',
+            request: payload,
+            response,
+            createdAt: new Date().toISOString(),
+        })
+        return response
+    }
+
+    const createMomoCheckout = async ({ order, event, showtime, returnUrl }) => {
+        const payload = buildMomoCheckoutPayload({ order, event, showtime, returnUrl })
+        const response = await serviceCreateMomoCheckout(payload)
+        setBookingPaymentData({
+            provider: 'MOMO',
+            request: payload,
+            response,
+            createdAt: new Date().toISOString(),
+        })
+        return response
+    }
 
     return {
         eventPerformances,
@@ -115,6 +186,16 @@ export const useEvent = () => {
         updatePerformanceTime,
         updateTicketType,
         addTicketType,
+        bookingOrder,
+        bookingOrderItems,
+        bookingCheckoutContext,
+        bookingPayment,
+        setBookingOrderData,
+        clearBookingOrderData,
+        setBookingPaymentData,
+        clearBookingPaymentData,
+        createVnPayCheckout,
+        createMomoCheckout,
         addTicketTypesDB,
         updateTicketTypesDB,
         upsertTicktTypesDB

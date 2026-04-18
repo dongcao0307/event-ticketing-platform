@@ -35,6 +35,7 @@ build/
 ### Local Secrets ###
 src/main/resources/config/vietqr-secrets.properties
 src/main/resources/config/vnpay-secrets.properties
+src/main/resources/config/momo-secrets.properties
 
 ### Local ngrok test ###
 src/main/resources/ngrok/Dockerfile

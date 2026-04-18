@@ -2,7 +2,7 @@
 
 const featuredEvents = [
   {
-    id: 1,
+    id: "featured-1",
     title: 'SUPER SHOW 10 – Super Junior',
     date: '24 tháng 02, 2026',
     location: 'Sân vận động Mỹ Đình',
@@ -11,7 +11,7 @@ const featuredEvents = [
       'https://images.unsplash.com/photo-1519638399535-1b036603ac77?auto=format&fit=crop&w=1200&q=80',
   },
   {
-    id: 2,
+    id: "featured-2",
     title: 'HER Concert – Hòa nhạc lãng mạn',
     date: '07 tháng 02, 2026',
     location: 'Hội trường GV3',
@@ -20,7 +20,7 @@ const featuredEvents = [
       'https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=1200&q=80',
   },
   {
-    id: 3,
+    id: "featured-3",
     title: 'Hội chợ Workshop Handmade',
     date: '25 tháng 01, 2026',
     location: 'TP. Hồ Chí Minh',
@@ -32,7 +32,7 @@ const featuredEvents = [
 
 const trendingEvents = [
   {
-    id: 4,
+    id: "trend-1",
     title: 'DÉ GARDEN Moss Frame Workshop',
     date: '19 tháng 02, 2026',
     location: 'Hà Nội',
@@ -42,7 +42,7 @@ const trendingEvents = [
     badge: '1',
   },
   {
-    id: 5,
+    id: "trend-2",
     title: 'DÉ GARDEN Terrarium Workshop',
     date: '13 tháng 03, 2026',
     location: 'Hà Nội',
@@ -52,7 +52,7 @@ const trendingEvents = [
     badge: '2',
   },
   {
-    id: 6,
+    id: "trend-3",
     title: 'ART WORKSHOP "FRENCH LEMON MINI TARTE"',
     date: '13 tháng 03, 2026',
     location: 'Hà Nội',
@@ -65,7 +65,7 @@ const trendingEvents = [
 
 const recommendedEvents = [
   {
-    id: 7,
+    id: "rec-1",
     title: 'SÂN KHẤU XÓM KỊCH: CĂN HỘ SỐ 13',
     date: '15 tháng 03, 2026',
     location: 'TP. Hồ Chí Minh',
@@ -74,7 +74,7 @@ const recommendedEvents = [
       'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=80',
   },
   {
-    id: 8,
+    id: "rec-2",
     title: 'IN BÓNG LONG THÀNH - SILHOUETTE OF THANG LONG',
     date: '20 tháng 03, 2026',
     location: 'Hà Nội',
@@ -83,7 +83,7 @@ const recommendedEvents = [
       'https://images.unsplash.com/photo-1515169067865-5387b23d7e86?auto=format&fit=crop&w=1200&q=80',
   },
   {
-    id: 9,
+    id: "rec-3",
     title: 'CHƯƠNG TRÌNH STARTUP STREET',
     date: '28 tháng 03, 2026',
     location: 'TP. Hồ Chí Minh',
@@ -95,7 +95,7 @@ const recommendedEvents = [
 
 const resaleEvents = [
   {
-    id: 10,
+    id: "r1",
     title: 'GAI HOME CONCERT',
     date: '26 tháng 04, 2026',
     location: 'Ocean Park',
@@ -103,7 +103,7 @@ const resaleEvents = [
     image: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4',
   },
   {
-    id: 11,
+    id: "r2",
     title: 'ĐÀO HOA HẬU',
     date: '15 tháng 03, 2026',
     location: 'Nhà hát Bến Thành',
@@ -111,7 +111,7 @@ const resaleEvents = [
     image: 'https://images.unsplash.com/photo-1518972559570-7cc1309f3229',
   },
   {
-    id: 12,
+    id: "r3",
     title: 'Mr Siro Concert',
     date: '28 tháng 03, 2026',
     location: 'Hà Nội',
@@ -119,7 +119,7 @@ const resaleEvents = [
     image: 'https://images.unsplash.com/photo-1506157786151-b8491531f063',
   },
   {
-    id: 13,
+    id: "r4",
     title: 'GAI HOME CONCERT',
     date: '26 tháng 04, 2026',
     location: 'Ocean Park',
@@ -127,7 +127,7 @@ const resaleEvents = [
     image: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4',
   },
   {
-    id: 14,
+    id: "r5",
     title: 'ĐÀO HOA HẬU',
     date: '15 tháng 03, 2026',
     location: 'Nhà hát Bến Thành',
@@ -135,7 +135,7 @@ const resaleEvents = [
     image: 'https://images.unsplash.com/photo-1518972559570-7cc1309f3229',
   },
   {
-    id: 15,
+    id: "r6",
     title: 'Mr Siro Concert',
     date: '28 tháng 03, 2026',
     location: 'Hà Nội',
@@ -146,7 +146,7 @@ const resaleEvents = [
 
 const weekendEvents = [
   {
-    id: 16,
+    id: "w1",
     title: 'B.DUCK CITYFUNS @VINCOM',
     date: '20 tháng 01, 2026',
     price: 'Từ 82.500đ',
@@ -156,13 +156,186 @@ const weekendEvents = [
 
 const monthEvents = [
   {
-    id: 17,
+    id: "m1",
     title: 'Workshop Candle',
     date: '24 tháng 01, 2026',
     price: 'Từ 279.000đ',
     image: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30',
   },
 ];
+
+// // Mock Data Events với cấu trúc đầy đủ
+// const mockEvents = [
+//   {
+//     id: 100,
+//     organizerId: 1,
+//     title: 'Concert of Dreams - Hòa nhạc mơ ước',
+//     thumbnailUrl: 'https://images.unsplash.com/photo-1519638399535-1b036603ac77?auto=format&fit=crop&w=1200&q=80',
+//     posterUrl: 'https://images.unsplash.com/photo-1519638399535-1b036603ac77?auto=format&fit=crop&w=1920&q=80',
+//     description: 'Một đêm hòa nhạc đặc biệt với những nghệ sĩ nổi tiếng, mang đến những bản nhạc kinh điển và hiện đại.',
+//     category: 'Sân khấu & Nghệ thuật',
+//     status: 'PUBLISHER',
+//     createdAt: '2026-01-15T10:00:00',
+//     eventPerformances: [
+//       {
+//         id: 1001,
+//         eventId: 100,
+//         venueId: 1,
+//         startTime: '2026-02-15T19:00:00',
+//         endTime: '2026-02-15T21:30:00',
+//         totalCapacity: 1000,
+//         availableCapacity: 500,
+//         status: 'OPEN'
+//       },
+//       {
+//         id: 1002,
+//         eventId: 100,
+//         venueId: 2,
+//         startTime: '2026-02-20T19:00:00',
+//         endTime: '2026-02-20T21:30:00',
+//         totalCapacity: 800,
+//         availableCapacity: 300,
+//         status: 'OPEN'
+//       }
+//     ]
+//   },
+//   {
+//     id: 101,
+//     organizerId: 2,
+//     title: 'Tham quan Di tích lịch sử - Hà Nội cổ kính',
+//     thumbnailUrl: 'https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=1200&q=80',
+//     posterUrl: 'https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=1920&q=80',
+//     description: 'Khám phá những di tích, di sản văn hóa nổi tiếng của Hà Nội qua một hành trình đầy ý nghĩa.',
+//     category: 'Tham quan & Trải nghiệm',
+//     status: 'PUBLISHER',
+//     createdAt: '2026-01-20T14:30:00',
+//     eventPerformances: [
+//       {
+//         id: 1003,
+//         eventId: 101,
+//         venueId: 3,
+//         startTime: '2026-03-01T08:00:00',
+//         endTime: '2026-03-01T12:00:00',
+//         totalCapacity: 500,
+//         availableCapacity: 200,
+//         status: 'OPEN'
+//       },
+//       {
+//         id: 1004,
+//         eventId: 101,
+//         venueId: 4,
+//         startTime: '2026-03-08T08:00:00',
+//         endTime: '2026-03-08T12:00:00',
+//         totalCapacity: 450,
+//         availableCapacity: 150,
+//         status: 'OPEN'
+//       }
+//     ]
+//   },
+//   {
+//     id: 102,
+//     organizerId: 3,
+//     title: 'Vở Kịch sân khấu - Tìm kiếm ánh sáng',
+//     thumbnailUrl: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=80',
+//     posterUrl: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1920&q=80',
+//     description: 'Một vở kịch hiện đại kết hợp các yếu tố của thiết kế sân khấu đương đại, khám phá những câu hỏi sâu sắc về cuộc sống.',
+//     category: 'Sân khấu & Nghệ thuật',
+//     status: 'PUBLISHER',
+//     createdAt: '2026-02-01T11:00:00',
+//     eventPerformances: [
+//       {
+//         id: 1005,
+//         eventId: 102,
+//         venueId: 5,
+//         startTime: '2026-03-15T19:30:00',
+//         endTime: '2026-03-15T21:00:00',
+//         totalCapacity: 600,
+//         availableCapacity: 250,
+//         status: 'OPEN'
+//       },
+//       {
+//         id: 1006,
+//         eventId: 102,
+//         venueId: 6,
+//         startTime: '2026-03-22T19:30:00',
+//         endTime: '2026-03-22T21:00:00',
+//         totalCapacity: 550,
+//         availableCapacity: 200,
+//         status: 'OPEN'
+//       }
+//     ]
+//   }
+// ];
+
+// // Mock Data Venues
+// const mockVenues = [
+//   {
+//     id: 1,
+//     name: 'Sân vận động Mỹ Đình',
+//     address: 'Phạm Hùng, Mỹ Đình, Hà Nội',
+//     city: 'Hà Nội',
+//     seatMapConfig: JSON.stringify({
+//       rows: 20,
+//       seatsPerRow: 50,
+//       layout: 'standard'
+//     })
+//   },
+//   {
+//     id: 2,
+//     name: 'Hội trường GV3',
+//     address: 'Lô E2a-7, Đường D1, Khu công nghệ cao, Thành phố Thủ Đức, TP. Hồ Chí Minh',
+//     city: 'TP. Hồ Chí Minh',
+//     seatMapConfig: JSON.stringify({
+//       rows: 15,
+//       seatsPerRow: 40,
+//       layout: 'standard'
+//     })
+//   },
+//   {
+//     id: 3,
+//     name: 'Nhà hát Tây Hồ',
+//     address: 'Tây Hồ, Hà Nội',
+//     city: 'Hà Nội',
+//     seatMapConfig: JSON.stringify({
+//       rows: 18,
+//       seatsPerRow: 35,
+//       layout: 'amphitheater'
+//     })
+//   },
+//   {
+//     id: 4,
+//     name: 'Công viên Thống Nhất',
+//     address: 'Tây Hồ, Hà Nội',
+//     city: 'Hà Nội',
+//     seatMapConfig: JSON.stringify({
+//       rows: 25,
+//       seatsPerRow: 45,
+//       layout: 'outdoor'
+//     })
+//   },
+//   {
+//     id: 5,
+//     name: 'Nhà hát Bến Thành',
+//     address: 'Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh',
+//     city: 'TP. Hồ Chí Minh',
+//     seatMapConfig: JSON.stringify({
+//       rows: 20,
+//       seatsPerRow: 38,
+//       layout: 'standard'
+//     })
+//   },
+//   {
+//     id: 6,
+//     name: 'Cung Văn hóa Hữu nghị Việt - Xô',
+//     address: 'Hà Nội',
+//     city: 'Hà Nội',
+//     seatMapConfig: JSON.stringify({
+//       rows: 22,
+//       seatsPerRow: 42,
+//       layout: 'standard'
+//     })
+//   }
+// ];
 
 const simulateFetch = (data, delay = 500) =>
   new Promise((resolve) => {
@@ -175,8 +348,12 @@ export const getRecommendedEvents = async () => simulateFetch(recommendedEvents)
 export const getResaleEvents = async () => simulateFetch(resaleEvents);
 export const getWeekendEvents = async () => simulateFetch(weekendEvents);
 export const getMonthEvents = async () => simulateFetch(monthEvents);
-export const serviceFindEventById = async (eventId) => simulateFetch(
-  featuredEvents.concat(trendingEvents).concat(recommendedEvents).concat(resaleEvents)
-  .concat(weekendEvents).concat(monthEvents).find(e => e.id === eventId)
-)
+export const getMockEvents = async () => simulateFetch(mockEvents);
+export const getMockVenues = async () => simulateFetch(mockVenues);
+// export const serviceFindEventById = async (eventId) => simulateFetch(
+//   mockEvents[Math.floor(Math.random() * 2.999999)]
+// )
+// export const serviceFindVenueById = async (venueId) => simulateFetch(
+//   mockVenues.find(v => v.id === venueId)
+// )
 
