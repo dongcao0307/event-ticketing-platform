@@ -12,8 +12,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-04-13T23:33:40+0700",
-    comments = "version: 1.6.3, compiler: javac, environment: Java 23 (Oracle Corporation)"
+    date = "2026-04-18T22:44:34+0700",
+    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.0.v20260407-0427, environment: Java 21.0.10 (Eclipse Adoptium)"
 )
 @Component
 public class TicketMapperImpl implements TicketMapper {
@@ -30,11 +30,11 @@ public class TicketMapperImpl implements TicketMapper {
         Ticket.TicketBuilder ticket = Ticket.builder();
 
         ticket.ticketType( ticketTypeService.findByIdRaw( request.getTicketTypeId() ) );
-        ticket.performanceId( request.getPerformanceId() );
-        ticket.userId( request.getUserId() );
         ticket.orderId( request.getOrderId() );
-        ticket.qrCode( request.getQrCode() );
+        ticket.performanceId( request.getPerformanceId() );
         ticket.priceAtPurchase( request.getPriceAtPurchase() );
+        ticket.qrCode( request.getQrCode() );
+        ticket.userId( request.getUserId() );
 
         ticket.ticketStatus( TicketStatus.ACTIVE );
 
@@ -47,9 +47,9 @@ public class TicketMapperImpl implements TicketMapper {
             return;
         }
 
+        ticket.setCheckInAt( request.getCheckInAt() );
         ticket.setQrCode( request.getQrCode() );
         ticket.setTicketStatus( request.getTicketStatus() );
-        ticket.setCheckInAt( request.getCheckInAt() );
     }
 
     @Override
@@ -60,15 +60,15 @@ public class TicketMapperImpl implements TicketMapper {
 
         TicketResponse ticketResponse = new TicketResponse();
 
-        ticketResponse.setId( ticket.getId() );
-        ticketResponse.setTicketType( ticket.getTicketType() );
-        ticketResponse.setPerformanceId( ticket.getPerformanceId() );
-        ticketResponse.setUserId( ticket.getUserId() );
-        ticketResponse.setOrderId( ticket.getOrderId() );
-        ticketResponse.setQrCode( ticket.getQrCode() );
-        ticketResponse.setPriceAtPurchase( ticket.getPriceAtPurchase() );
-        ticketResponse.setTicketStatus( ticket.getTicketStatus() );
         ticketResponse.setCheckInAt( ticket.getCheckInAt() );
+        ticketResponse.setId( ticket.getId() );
+        ticketResponse.setOrderId( ticket.getOrderId() );
+        ticketResponse.setPerformanceId( ticket.getPerformanceId() );
+        ticketResponse.setPriceAtPurchase( ticket.getPriceAtPurchase() );
+        ticketResponse.setQrCode( ticket.getQrCode() );
+        ticketResponse.setTicketStatus( ticket.getTicketStatus() );
+        ticketResponse.setTicketType( ticket.getTicketType() );
+        ticketResponse.setUserId( ticket.getUserId() );
 
         return ticketResponse;
     }

@@ -9,8 +9,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-04-13T23:33:40+0700",
-    comments = "version: 1.6.3, compiler: javac, environment: Java 23 (Oracle Corporation)"
+    date = "2026-04-18T22:44:34+0700",
+    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.0.v20260407-0427, environment: Java 21.0.10 (Eclipse Adoptium)"
 )
 @Component
 public class TicketTypeMapperImpl implements TicketTypeMapper {
@@ -23,11 +23,11 @@ public class TicketTypeMapperImpl implements TicketTypeMapper {
 
         TicketType.TicketTypeBuilder ticketType = TicketType.builder();
 
-        ticketType.performanceId( request.getPerformanceId() );
+        ticketType.maxTicketsPerUser( request.getMaxTicketsPerUser() );
         ticketType.name( request.getName() );
+        ticketType.performanceId( request.getPerformanceId() );
         ticketType.price( request.getPrice() );
         ticketType.totalQuantity( request.getTotalQuantity() );
-        ticketType.maxTicketsPerUser( request.getMaxTicketsPerUser() );
         ticketType.version( request.getVersion() );
 
         ticketType.reservedQuantity( 0 );
@@ -42,12 +42,12 @@ public class TicketTypeMapperImpl implements TicketTypeMapper {
             return;
         }
 
+        ticketType.setMaxTicketsPerUser( request.getMaxTicketsPerUser() );
         ticketType.setName( request.getName() );
         ticketType.setPrice( request.getPrice() );
-        ticketType.setTotalQuantity( request.getTotalQuantity() );
-        ticketType.setSoldQuantity( request.getSoldQuantity() );
         ticketType.setReservedQuantity( request.getReservedQuantity() );
-        ticketType.setMaxTicketsPerUser( request.getMaxTicketsPerUser() );
+        ticketType.setSoldQuantity( request.getSoldQuantity() );
+        ticketType.setTotalQuantity( request.getTotalQuantity() );
         ticketType.setVersion( request.getVersion() );
     }
 
@@ -60,13 +60,13 @@ public class TicketTypeMapperImpl implements TicketTypeMapper {
         TicketTypeResponse ticketTypeResponse = new TicketTypeResponse();
 
         ticketTypeResponse.setId( ticketType.getId() );
-        ticketTypeResponse.setPerformanceId( ticketType.getPerformanceId() );
-        ticketTypeResponse.setName( ticketType.getName() );
-        ticketTypeResponse.setPrice( ticketType.getPrice() );
-        ticketTypeResponse.setTotalQuantity( ticketType.getTotalQuantity() );
-        ticketTypeResponse.setSoldQuantity( ticketType.getSoldQuantity() );
-        ticketTypeResponse.setReservedQuantity( ticketType.getReservedQuantity() );
         ticketTypeResponse.setMaxTicketsPerUser( ticketType.getMaxTicketsPerUser() );
+        ticketTypeResponse.setName( ticketType.getName() );
+        ticketTypeResponse.setPerformanceId( ticketType.getPerformanceId() );
+        ticketTypeResponse.setPrice( ticketType.getPrice() );
+        ticketTypeResponse.setReservedQuantity( ticketType.getReservedQuantity() );
+        ticketTypeResponse.setSoldQuantity( ticketType.getSoldQuantity() );
+        ticketTypeResponse.setTotalQuantity( ticketType.getTotalQuantity() );
         ticketTypeResponse.setVersion( ticketType.getVersion() );
 
         return ticketTypeResponse;
