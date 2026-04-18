@@ -168,13 +168,18 @@ services:
     networks:
       - ticketbox-net
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: ticketbox
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
       RABBITMQ_USERNAME: guest
       RABBITMQ_PASSWORD: guest
+      PAYMENT_VNPAY_RETURN_URL: http://localhost:3000/payment/vnpay/return
+      PAYMENT_MOMO_RETURN_URL: http://localhost:3000/event/1/payment
+      PAYMENT_MOMO_IPN_URL: ${PAYMENT_MOMO_IPN_URL:-http://localhost:8085/api/payment/momo/ipn}
 
   order-service:
     build:
@@ -193,6 +198,8 @@ services:
       - ticketbox-net
     environment:
       MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: ticketbox
       MYSQL_USER: root
       MYSQL_PASSWORD: root
       REDIS_HOST: redis
@@ -216,9 +223,11 @@ services:
     networks:
       - ticketbox-net
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: ticketbox
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
       RABBITMQ_USERNAME: guest
