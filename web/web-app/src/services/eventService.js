@@ -1,174 +1,117 @@
 // src/services/eventService.js
+import { get } from './apiClient';
 
-const featuredEvents = [
-  {
-    id: 'featured-1',
-    title: 'SUPER SHOW 10 – Super Junior',
-    date: '24 tháng 02, 2026',
-    location: 'Sân vận động Mỹ Đình',
-    price: 'Từ 750.000đ',
-    image:
-      'https://images.unsplash.com/photo-1519638399535-1b036603ac77?auto=format&fit=crop&w=1200&q=80',
-  },
-  {
-    id: 'featured-2',
-    title: 'HER Concert – Hòa nhạc lãng mạn',
-    date: '07 tháng 02, 2026',
-    location: 'Hội trường GV3',
-    price: 'Từ 350.000đ',
-    image:
-      'https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=1200&q=80',
-  },
-  {
-    id: 'featured-3',
-    title: 'Hội chợ Workshop Handmade',
-    date: '25 tháng 01, 2026',
-    location: 'TP. Hồ Chí Minh',
-    price: 'Từ 250.000đ',
-    image:
-      'https://images.unsplash.com/photo-1542144582-dc4f5f8b5a50?auto=format&fit=crop&w=1200&q=80',
-  },
+const normalizeEvent = (e) => ({
+  id: String(e.id),
+  title: e.title,
+  date: e.formattedDate || '',
+  location: e.location || e.city || '',
+  city: e.city || '',
+  price: e.priceDisplay || 'Miễn phí',
+  image: e.imageUrl || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=800&q=80',
+  category: e.category || 'OTHER',
+  status: e.status || 'UPCOMING',
+  description: e.description || '',
+  minPrice: e.minPrice,
+  maxPrice: e.maxPrice,
+  startTime: e.startTime,
+  endTime: e.endTime,
+  availableTickets: e.availableTickets,
+  totalTickets: e.totalTickets,
+  organizerName: e.organizerName,
+  isFeatured: e.isFeatured,
+  viewCount: e.viewCount,
+});
+
+const fallbackFeatured = [
+  { id: 'f1', title: 'ARGU - Live in Vietnam 2026', date: '24 tháng 04, 2026', location: 'SVĐ Mỹ Đình, Hà Nội', price: 'Từ 999.000đ', image: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80' },
+  { id: 'f2', title: 'The Traditional Water Puppet Show', date: '20 tháng 04, 2026', location: 'Nhà hát Múa rối Thăng Long', price: 'Từ 350.000đ', image: 'https://images.unsplash.com/photo-1519730901064-18ed6fdf2cd4?auto=format&fit=crop&w=1200&q=80' },
+  { id: 'f3', title: 'Lễ hội Ánh sáng Hà Nội 2026', date: '15 tháng 05, 2026', location: 'Công viên Thống Nhất, Hà Nội', price: 'Từ 180.000đ', image: 'https://images.unsplash.com/photo-1453974336165-b28f7a47d14d?auto=format&fit=crop&w=1200&q=80' },
 ];
 
-const trendingEvents = [
-  {
-    id: 'trend-1',
-    title: 'DÉ GARDEN Moss Frame Workshop',
-    date: '19 tháng 02, 2026',
-    location: 'Hà Nội',
-    price: 'Từ 450.000đ',
-    image:
-      'https://images.unsplash.com/photo-1520975914767-4c01e147f37b?auto=format&fit=crop&w=1200&q=80',
-    badge: '1',
-  },
-  {
-    id: 'trend-2',
-    title: 'DÉ GARDEN Terrarium Workshop',
-    date: '13 tháng 03, 2026',
-    location: 'Hà Nội',
-    price: 'Từ 445.000đ',
-    image:
-      'https://images.unsplash.com/photo-1573164574395-0566f5e9280a?auto=format&fit=crop&w=1200&q=80',
-    badge: '2',
-  },
-  {
-    id: 'trend-3',
-    title: 'ART WORKSHOP "FRENCH LEMON MINI TARTE"',
-    date: '13 tháng 03, 2026',
-    location: 'Hà Nội',
-    price: 'Từ 390.000đ',
-    image:
-      'https://images.unsplash.com/photo-1558021212-51b6ec46ff44?auto=format&fit=crop&w=1200&q=80',
-    badge: '3',
-  },
+const fallbackTrending = [
+  { id: 't1', title: 'ĐÊM THÁNH - Đêm nhạc Trung Quân', date: '23 tháng 04, 2026', location: 'Trung tâm HNQG, Hà Nội', price: 'Từ 700.000đ', image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=80', badge: '1' },
+  { id: 't2', title: 'Mr. Siro Concert 2026', date: '28 tháng 05, 2026', location: 'Cung Thể thao Quần Ngựa', price: 'Từ 450.000đ', image: 'https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=1200&q=80', badge: '2' },
+  { id: 't3', title: 'Crossroads - The Untold Stories', date: '21 tháng 04, 2026', location: 'Nhà hát Hòa Bình, HCM', price: 'Từ 575.000đ', image: 'https://images.unsplash.com/photo-1495121605193-b116b5b09bf5?auto=format&fit=crop&w=1200&q=80', badge: '3' },
 ];
 
-const recommendedEvents = [
-  {
-    id: 'rec-1',
-    title: 'SÂN KHẤU XÓM KỊCH: CĂN HỘ SỐ 13',
-    date: '15 tháng 03, 2026',
-    location: 'TP. Hồ Chí Minh',
-    price: 'Từ 250.000đ',
-    image:
-      'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=80',
-  },
-  {
-    id: 'rec-2',
-    title: 'IN BÓNG LONG THÀNH - SILHOUETTE OF THANG LONG',
-    date: '20 tháng 03, 2026',
-    location: 'Hà Nội',
-    price: 'Từ 500.000đ',
-    image:
-      'https://images.unsplash.com/photo-1515169067865-5387b23d7e86?auto=format&fit=crop&w=1200&q=80',
-  },
-  {
-    id: 'rec-3',
-    title: 'CHƯƠNG TRÌNH STARTUP STREET',
-    date: '28 tháng 03, 2026',
-    location: 'TP. Hồ Chí Minh',
-    price: 'Từ 199.000đ',
-    image:
-      'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=80',
-  },
+const fallbackRecommended = [
+  { id: 'r1', title: 'Kịch Xóm - Mùa 3', date: '05 tháng 05, 2026', location: 'Sân khấu IDECAF, HCM', price: 'Từ 200.000đ', image: 'https://images.unsplash.com/photo-1527060397950-31b8f0b6fe03?auto=format&fit=crop&w=1200&q=80' },
+  { id: 'r2', title: 'Workshop Terrarium & Candle', date: '08 tháng 05, 2026', location: 'The Garden Workshop, Hà Nội', price: 'Từ 420.000đ', image: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=1200&q=80' },
+  { id: 'r3', title: 'Concert Jazz Night Đà Nẵng', date: '12 tháng 05, 2026', location: 'Aria Hotel & Spa, Đà Nẵng', price: 'Từ 350.000đ', image: 'https://images.unsplash.com/photo-1513283487479-d8d9c1c0b7c1?auto=format&fit=crop&w=1200&q=80' },
 ];
 
-const resaleEvents = [
-  {
-    id: 'r1',
-    title: 'GAI HOME CONCERT',
-    date: '26 tháng 04, 2026',
-    location: 'Ocean Park',
-    price: 'Từ 250.000đ',
-    image: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4',
-  },
-  {
-    id: 'r2',
-    title: 'ĐÀO HOA HẬU',
-    date: '15 tháng 03, 2026',
-    location: 'Nhà hát Bến Thành',
-    price: 'Từ 350.000đ',
-    image: 'https://images.unsplash.com/photo-1518972559570-7cc1309f3229',
-  },
-  {
-    id: 'r3',
-    title: 'Mr Siro Concert',
-    date: '28 tháng 03, 2026',
-    location: 'Hà Nội',
-    price: 'Từ 450.000đ',
-    image: 'https://images.unsplash.com/photo-1506157786151-b8491531f063',
-  },
-  {
-    id: 'r4',
-    title: 'GAI HOME CONCERT',
-    date: '26 tháng 04, 2026',
-    location: 'Ocean Park',
-    price: 'Từ 250.000đ',
-    image: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4',
-  },
-  {
-    id: 'r5',
-    title: 'ĐÀO HOA HẬU',
-    date: '15 tháng 03, 2026',
-    location: 'Nhà hát Bến Thành',
-    price: 'Từ 350.000đ',
-    image: 'https://images.unsplash.com/photo-1518972559570-7cc1309f3229',
-  },
-  {
-    id: 'r6',
-    title: 'Mr Siro Concert',
-    date: '28 tháng 03, 2026',
-    location: 'Hà Nội',
-    price: 'Từ 450.000đ',
-    image: 'https://images.unsplash.com/photo-1506157786151-b8491531f063',
-  },
-];
+const tryApi = async (apiFn, fallback) => {
+  try {
+    return await apiFn();
+  } catch (err) {
+    console.warn('[EventService] API unavailable, using fallback data:', err.message);
+    return fallback;
+  }
+};
 
-const weekendEvents = [
-  {
-    id: 'w1',
-    title: 'B.DUCK CITYFUNS @VINCOM',
-    date: '20 tháng 01, 2026',
-    price: 'Từ 82.500đ',
-    image: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4',
-  },
-];
+export const getFeaturedEvents = async () =>
+  tryApi(async () => {
+    const res = await get('/events/featured');
+    return (res.data || []).map(normalizeEvent);
+  }, fallbackFeatured);
 
-const monthEvents = [
-  {
-    id: 'm1',
-    title: 'Workshop Candle',
-    date: '24 tháng 01, 2026',
-    price: 'Từ 279.000đ',
-    image: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30',
-  },
-];
+export const getTrendingEvents = async () =>
+  tryApi(async () => {
+    const res = await get('/events/trending');
+    return (res.data || []).map((e, i) => ({ ...normalizeEvent(e), badge: String(i + 1) }));
+  }, fallbackTrending);
 
-const simulateFetch = (data, delay = 500) =>
-  new Promise((resolve) => {
-    setTimeout(() => resolve([...data]), delay);
+export const getRecommendedEvents = async () =>
+  tryApi(async () => {
+    const res = await get('/events/latest');
+    return (res.data || []).slice(0, 6).map(normalizeEvent);
+  }, fallbackRecommended);
+
+export const getResaleEvents = async () =>
+  tryApi(async () => {
+    const res = await get('/events/search', { size: 6 });
+    return (res.data?.content || []).map(normalizeEvent);
+  }, fallbackRecommended);
+
+export const getWeekendEvents = async () =>
+  tryApi(async () => {
+    const res = await get('/events/category/FESTIVAL');
+    return (res.data || []).slice(0, 3).map(normalizeEvent);
+  }, [fallbackFeatured[2]]);
+
+export const getMonthEvents = async () =>
+  tryApi(async () => {
+    const res = await get('/events/category/WORKSHOP');
+    return (res.data || []).slice(0, 3).map(normalizeEvent);
+  }, [fallbackRecommended[1]]);
+
+export const searchEvents = async (keyword, filters = {}, page = 0, size = 20) =>
+  tryApi(async () => {
+    const params = { page, size };
+    if (keyword) params.keyword = keyword;
+    if (filters.category) params.category = filters.category;
+    if (filters.city) params.city = filters.city;
+    if (filters.status) params.status = filters.status;
+    const res = await get('/events/search', params);
+    return {
+      events: (res.data?.content || []).map(normalizeEvent),
+      totalElements: res.data?.totalElements || 0,
+      totalPages: res.data?.totalPages || 0,
+      page: res.data?.page || 0,
+    };
+  }, {
+    events: [...fallbackFeatured, ...fallbackTrending, ...fallbackRecommended],
+    totalElements: 9,
+    totalPages: 1,
+    page: 0,
   });
 
+export const getEventById = async (id) =>
+  tryApi(async () => {
+    const res = await get(`/events/${id}`);
+    return normalizeEvent(res.data);
+  }, null);
 const API_BASE_URL = 'http://localhost:8082/api/admin';
 
 // ========== Public Events ==========
