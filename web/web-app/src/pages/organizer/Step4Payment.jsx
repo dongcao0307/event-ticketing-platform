@@ -1,22 +1,32 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { ChevronDown } from 'lucide-react';
 
-const Step4Payment = () => {
-  // State quản lý form (Khởi tạo sẵn data giống trong hình)
-  const [formData, setFormData] = useState({
-    accountName: 'Trần Văn Hậu',
-    accountNumber: '338858196',
-    bankName: 'MBBank',
-    branch: 'Dĩ An',
-    businessType: 'Cá nhân',
-    fullName: 'Trần Văn Hậu',
-    address: '218 đường Lý Thường Kiệt',
-    taxCode: '035467'
-  });
+// Nhận eventData và setEventData từ component cha (OrganizerPage)
+const Step4Payment = ({ eventData, setEventData }) => {
 
-  // Hàm update state
+  // Lấy dữ liệu payment từ eventData (hỗ trợ cả 2 tên biến lỡ backend trả về khác)
+  const paymentInfo = eventData?.paymentInfo || eventData?.organizerPaymentInfo || {};
+
+  // TỰ ĐỘNG MAP DỮ LIỆU TỪ BACKEND -> FRONTEND
+  // Nếu Backend trả về accountOwner thì lấy, không thì lấy accountName, rỗng thì để ''
+  const accountName = paymentInfo.accountName || paymentInfo.accountOwner || '';
+  const accountNumber = paymentInfo.accountNumber || '';
+  const bankName = paymentInfo.bankName || '';
+  const branch = paymentInfo.branch || paymentInfo.bankBranch || '';
+  const businessType = paymentInfo.businessType || 'Cá nhân';
+  const fullName = paymentInfo.fullName || paymentInfo.accountOwner || ''; // Fallback họ tên
+  const address = paymentInfo.address || '';
+  const taxCode = paymentInfo.taxCode || '';
+
+  // Hàm update state lưu thẳng vào eventData.paymentInfo
   const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setEventData(prev => ({
+      ...prev,
+      paymentInfo: {
+        ...(prev.paymentInfo || paymentInfo),
+        [field]: value
+      }
+    }));
   };
 
   return (
@@ -43,11 +53,12 @@ const Step4Payment = () => {
               <div className="flex-1 relative">
                 <input 
                   type="text" 
-                  value={formData.accountName}
+                  value={accountName}
                   onChange={(e) => handleChange('accountName', e.target.value)}
+                  placeholder="Trần Văn Hậu" 
                   className="w-full bg-white text-black text-sm p-2.5 rounded outline-none pr-16 focus:ring-2 focus:ring-[#00b14f] transition-all" 
                 />
-                <span className="absolute right-3 top-2.5 text-gray-400 text-sm">{formData.accountName.length} / 100</span>
+                <span className="absolute right-3 top-2.5 text-gray-400 text-sm">{(accountName || '').length} / 100</span>
               </div>
             </div>
 
@@ -57,8 +68,9 @@ const Step4Payment = () => {
               <div className="flex-1">
                 <input 
                   type="text" 
-                  value={formData.accountNumber}
+                  value={accountNumber}
                   onChange={(e) => handleChange('accountNumber', e.target.value)}
+                  placeholder="338858196" 
                   className="w-full bg-white text-black text-sm p-2.5 rounded outline-none focus:ring-2 focus:ring-[#00b14f] transition-all" 
                 />
               </div>
@@ -70,11 +82,12 @@ const Step4Payment = () => {
               <div className="flex-1 relative">
                 <input 
                   type="text" 
-                  value={formData.bankName}
+                  value={bankName}
                   onChange={(e) => handleChange('bankName', e.target.value)}
+                  placeholder="MBBank" 
                   className="w-full bg-white text-black text-sm p-2.5 rounded outline-none pr-16 focus:ring-2 focus:ring-[#00b14f] transition-all" 
                 />
-                <span className="absolute right-3 top-2.5 text-gray-400 text-sm">{formData.bankName.length} / 100</span>
+                <span className="absolute right-3 top-2.5 text-gray-400 text-sm">{(bankName || '').length} / 100</span>
               </div>
             </div>
 
@@ -84,11 +97,12 @@ const Step4Payment = () => {
               <div className="flex-1 relative">
                 <input 
                   type="text" 
-                  value={formData.branch}
+                  value={branch}
                   onChange={(e) => handleChange('branch', e.target.value)}
+                  placeholder="Dĩ An" 
                   className="w-full bg-white text-black text-sm p-2.5 rounded outline-none pr-16 focus:ring-2 focus:ring-[#00b14f] transition-all" 
                 />
-                <span className="absolute right-3 top-2.5 text-gray-400 text-sm">{formData.branch.length} / 100</span>
+                <span className="absolute right-3 top-2.5 text-gray-400 text-sm">{(branch || '').length} / 100</span>
               </div>
             </div>
           </div>
@@ -106,7 +120,7 @@ const Step4Payment = () => {
               <label className="md:w-[180px] text-sm font-bold md:text-right shrink-0">Loại hình kinh doanh:</label>
               <div className="flex-1 relative">
                 <select 
-                  value={formData.businessType}
+                  value={businessType}
                   onChange={(e) => handleChange('businessType', e.target.value)}
                   className="w-full appearance-none bg-white text-black text-sm p-2.5 rounded outline-none cursor-pointer focus:ring-2 focus:ring-[#00b14f]"
                 >
@@ -123,11 +137,12 @@ const Step4Payment = () => {
               <div className="flex-1 relative">
                 <input 
                   type="text" 
-                  value={formData.fullName}
+                  value={fullName}
                   onChange={(e) => handleChange('fullName', e.target.value)}
+                  placeholder="Trần Văn Hậu" 
                   className="w-full bg-white text-black text-sm p-2.5 rounded outline-none pr-16 focus:ring-2 focus:ring-[#00b14f] transition-all" 
                 />
-                <span className="absolute right-3 top-2.5 text-gray-400 text-sm">{formData.fullName.length} / 100</span>
+                <span className="absolute right-3 top-2.5 text-gray-400 text-sm">{(fullName || '').length} / 100</span>
               </div>
             </div>
 
@@ -137,23 +152,25 @@ const Step4Payment = () => {
               <div className="flex-1 relative">
                 <input 
                   type="text" 
-                  value={formData.address}
+                  value={address}
                   onChange={(e) => handleChange('address', e.target.value)}
+                  placeholder="218 đường Lý Thường Kiệt" 
                   className="w-full bg-white text-black text-sm p-2.5 rounded outline-none pr-16 focus:ring-2 focus:ring-[#00b14f] transition-all" 
                 />
-                <span className="absolute right-3 top-2.5 text-gray-400 text-sm">{formData.address.length} / 100</span>
+                <span className="absolute right-3 top-2.5 text-gray-400 text-sm">{(address || '').length} / 100</span>
               </div>
             </div>
 
-            {/* Row: Mã số thuế (Đang active viền xanh) */}
+            {/* Row: Mã số thuế */}
             <div className="flex flex-col md:flex-row md:items-center gap-4">
               <label className="md:w-[180px] text-sm font-bold md:text-right shrink-0">Mã số thuế:</label>
               <div className="flex-1">
                 <input 
                   type="text" 
-                  value={formData.taxCode}
+                  value={taxCode}
                   onChange={(e) => handleChange('taxCode', e.target.value)}
-                  className="w-full bg-white text-black text-sm p-2.5 rounded outline-none border-2 border-[#00b14f] focus:ring-2 focus:ring-[#00b14f]" 
+                  placeholder="035467" 
+                  className="w-full bg-white text-black text-sm p-2.5 rounded outline-none border-2 border-transparent focus:border-[#00b14f] focus:ring-2 focus:ring-[#00b14f]" 
                 />
               </div>
             </div>

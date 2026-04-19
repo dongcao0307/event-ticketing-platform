@@ -11,7 +11,7 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: ticketbox
     ports:
-      - "3306:3306"
+      - "3306:3306"          # Giữ cổng chuẩn 3306
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
@@ -22,6 +22,61 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    container_name: ticketbox-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ticketbox-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongodb:
+    image: mongo:7.0
+    container_name: ticketbox-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+      MONGO_INITDB_DATABASE: ticketbox
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - ticketbox-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: ticketbox-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"        # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - ticketbox-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 15s
+      retries: 10
+      start_period: 60s
 
   # ═══════════════════════════════════════════════════════════
   # API GATEWAY
@@ -41,7 +96,7 @@ services:
     restart: on-failure
 
   # ═══════════════════════════════════════════════════════════
-  # IDENTITY SERVICE (Authentication + JWT)
+  # SERVICES
   # ═══════════════════════════════════════════════════════════
   identity-service:
     build:
@@ -64,9 +119,6 @@ services:
       JWT_REFRESH_TOKEN_EXPIRATION: 604800000
     restart: on-failure
 
-  # ═══════════════════════════════════════════════════════════
-  # EVENT SERVICE (Search + Details)
-  # ═══════════════════════════════════════════════════════════
   event-service:
     build:
       context: ./services/event
@@ -96,11 +148,12 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    ports: ["8083:8083"]
+    ports:
+      - "8083:8083"
     networks:
       - ticketbox-net
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
       SPRING_RABBITMQ_HOST: rabbitmq
@@ -116,11 +169,12 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-    ports: ["8085:8085"]
+    ports:
+      - "8085:8085"
     networks:
       - ticketbox-net
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
 
@@ -132,11 +186,12 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-    ports: ["8084:8084"]
+    ports:
+      - "8084:8084"
     networks:
       - ticketbox-net
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
 
@@ -150,11 +205,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    ports: ["8086:8086"]
+    ports:
+      - "8086:8086"
     networks:
       - ticketbox-net
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
       SPRING_REDIS_HOST: redis
@@ -168,7 +224,8 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
-    ports: ["8087:8087"]
+    ports:
+      - "8087:8087"
     networks:
       - ticketbox-net
     environment:
@@ -187,11 +244,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    ports: ["8088:8088"]
+    ports:
+      - "8088:8088"
     networks:
       - ticketbox-net
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
       SPRING_REDIS_HOST: redis
@@ -205,11 +263,12 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-    ports: ["8089:8089"]
+    ports:
+      - "8089:8089"
     networks:
       - ticketbox-net
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
 
@@ -231,6 +290,10 @@ services:
 
 volumes:
   mysql_data:
+  redis_data:
+  mongodb_data:
+  mongodb_config:
+  rabbitmq_data:
 
 networks:
   ticketbox-net:
