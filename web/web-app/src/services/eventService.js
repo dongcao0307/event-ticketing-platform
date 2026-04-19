@@ -112,3 +112,149 @@ export const getEventById = async (id) =>
     const res = await get(`/events/${id}`);
     return normalizeEvent(res.data);
   }, null);
+const API_BASE_URL = 'http://localhost:8082/api/admin';
+
+// ========== Public Events ==========
+export const getFeaturedEvents = async () => simulateFetch(featuredEvents);
+export const getTrendingEvents = async () => simulateFetch(trendingEvents);
+export const getRecommendedEvents = async () => simulateFetch(recommendedEvents);
+export const getResaleEvents = async () => simulateFetch(resaleEvents);
+export const getWeekendEvents = async () => simulateFetch(weekendEvents);
+export const getMonthEvents = async () => simulateFetch(monthEvents);
+
+// ========== Admin Event API Functions ==========
+
+/**
+ * Get all events with optional filters
+ * @param {string} status - Filter by status: DRAFT, PUBLISHER, CANCELLED (optional)
+ * @param {string} search - Search keyword (optional)
+ */
+export const getAllAdminEvents = async (status = null, search = null) => {
+  try {
+    let url = `${API_BASE_URL}/events`;
+    const params = new URLSearchParams();
+    
+    if (status) params.append('status', status);
+    if (search) params.append('search', search);
+    
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+    
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const data = await response.json();
+    return data.data || [];
+  } catch (error) {
+    console.error('Error fetching admin events:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get single event detail
+ * @param {number} eventId - Event ID
+ */
+export const getAdminEventDetail = async (eventId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/events/${eventId}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const data = await response.json();
+    return data.data || null;
+  } catch (error) {
+    console.error('Error fetching event detail:', error);
+    throw error;
+  }
+};
+
+/**
+ * Approve event (DRAFT -> PUBLISHER)
+ * @param {number} eventId - Event ID to approve
+ */
+export const approveEvent = async (eventId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/events/${eventId}/approve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const data = await response.json();
+    return data.data || null;
+  } catch (error) {
+    console.error('Error approving event:', error);
+    throw error;
+  }
+};
+
+/**
+ * Reject event (DRAFT -> CANCELLED)
+ * @param {number} eventId - Event ID to reject
+ * @param {string} reason - Rejection reason
+ */
+export const rejectEvent = async (eventId, reason = '') => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/events/${eventId}/reject`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ eventId, reason }),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const data = await response.json();
+    return data.data || null;
+  } catch (error) {
+    console.error('Error rejecting event:', error);
+    throw error;
+  }
+};
+
+/**
+ * Lock event (any status -> CANCELLED)
+ * @param {number} eventId - Event ID to lock
+ * @param {string} reason - Lock reason
+ */
+export const lockEvent = async (eventId, reason = '') => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/events/${eventId}/lock`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ eventId, reason }),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const data = await response.json();
+    return data.data || null;
+  } catch (error) {
+    console.error('Error locking event:', error);
+    throw error;
+  }
+};
+
+/**
+ * Search events
+ * @param {string} query - Search query (required)
+ * @param {string} status - Filter by status (optional)
+ */
+export const searchAdminEvents = async (query, status = null) => {
+  try {
+    let url = `${API_BASE_URL}/events/search?query=${encodeURIComponent(query)}`;
+    
+    if (status) {
+      url += `&status=${status}`;
+    }
+    
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const data = await response.json();
+    return data.data || [];
+  } catch (error) {
+    console.error('Error searching events:', error);
+    throw error;
+  }
+};
+

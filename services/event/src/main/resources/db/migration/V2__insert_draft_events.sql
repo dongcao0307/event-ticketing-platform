@@ -1,0 +1,52 @@
+-- V2__insert_draft_events.sql
+-- Insert additional DRAFT events with no NULL values for testing
+
+INSERT INTO events (organizer_id, title, description, category_id, status, venue_id) VALUES
+(1, 'Summer Music Festival 2024', 'Festival nhac lon voi nhieu nghe sy quoc te', 1, 'DRAFT', 1),
+(2, 'AI & Machine Learning Summit', 'Hoi nghi chuyen sau ve AI va ML', 2, 'DRAFT', 2),
+(3, 'Yoga & Meditation Workshop', 'Lop hoc Yoga va dam me tinh than', 3, 'DRAFT', 4),
+(4, 'Traditional Pottery Exhibition', 'Trien lam gom su truyen thong Viet Nam', 4, 'DRAFT', 5),
+(5, 'Tech Startup Competition', 'Cuoc thi khoi nghiep cong nghe', 5, 'DRAFT', 3),
+(1, 'Photography Masterclass - Street Photography', 'Lop hoc chup anh duong pho chuyên', 4, 'DRAFT', 1),
+(2, 'Data Science & Analytics Bootcamp', 'Khoa hoc nang cao phan tich du lieu', 2, 'DRAFT', 2),
+(3, 'Mindfulness & Stress Management', 'Hoc quan tam va quan ly stress', 3, 'DRAFT', 4),
+(4, 'Contemporary Art & Sculpture', 'Trien lam nghe thuat hien dai', 4, 'DRAFT', 5),
+(5, 'Innovation & Entrepreneurship Forum', 'Dien dan trao doi kien thuc khoi nghiep', 5, 'DRAFT', 3),
+(1, 'Live Jazz Night - Smooth Vibes', 'Dem nhac Jazz thanh lich', 1, 'DRAFT', 1),
+(2, 'Cloud Computing Masterclass', 'Khoa hoc dieu hanh may chu dam may', 2, 'DRAFT', 2),
+(3, 'Fitness & Health Expo 2024', 'Hoi cho suc khoe va the duc', 3, 'DRAFT', 4),
+(4, 'Digital Art & NFT Workshop', 'Workshop nghe thuat so va NFT', 4, 'DRAFT', 5),
+(5, 'Business Networking Breakfast', 'Bua sang ket noi kinh doanh', 5, 'DRAFT', 3),
+(1, 'Classical Music Recital - Piano Virtuoso', 'Buoi hoa nhac nhac hoc co dien', 1, 'DRAFT', 1),
+(2, 'Web Development & JavaScript Advanced', 'Khoa hoc phat trien web nang cao', 2, 'DRAFT', 2),
+(3, 'Nutrition & Healthy Cooking Workshop', 'Workshop nau an khoe manh', 3, 'DRAFT', 4),
+(4, 'Street Art & Graffiti Exhibition', 'Trien lam nghe thuat duong pho', 4, 'DRAFT', 5),
+(5, 'Leadership & Management Training', 'Tao luyeng nhan su quan ly', 5, 'DRAFT', 3),
+(1, 'Electronic Music Festival 2024', 'Festival nhac dien tu lom mau', 1, 'DRAFT', 1),
+(2, 'Mobile App Development Bootcamp', 'Khoa hoc phat trien ung dung di dong', 2, 'DRAFT', 2),
+(3, 'Wellness Retreat - Mind & Body', 'Su kien thoa mac thinh tram', 3, 'DRAFT', 4),
+(4, 'Fashion Design Showcase 2024', 'Triển lãm thời trang thiết kế', 4, 'DRAFT', 5),
+(5, 'Sales & Marketing Excellence Conference', 'Hoi nghi kinh doanh ban hang va marketing', 5, 'DRAFT', 3);
+
+-- Insert event performances for new DRAFT events
+INSERT INTO event_performances (event_id, venue_id, start_time, end_time, total_capacity, available_capacity, status) VALUES
+(16, 1, 1720022400000, '2024-07-04 22:00:00', 2000, 2000, 'OPEN'),
+(17, 2, 1722297600000, '2024-08-30 18:00:00', 2500, 2500, 'OPEN'),
+(18, 4, 1715725200000, '2024-05-15 17:00:00', 1000, 1000, 'OPEN'),
+(19, 5, 1718184000000, '2024-06-12 20:00:00', 500, 500, 'OPEN'),
+(20, 3, 1716336000000, '2024-05-22 14:00:00', 1500, 1500, 'OPEN'),
+(21, 1, 1719345600000, '2024-06-26 19:00:00', 800, 800, 'OPEN'),
+(22, 2, 1717891200000, '2024-06-09 09:00:00', 3000, 3000, 'OPEN'),
+(23, 4, 1721275200000, '2024-07-18 08:00:00', 600, 600, 'OPEN'),
+(24, 5, 1723723200000, '2024-08-16 20:00:00', 400, 400, 'OPEN'),
+(25, 3, 1720627200000, '2024-07-11 13:00:00', 1200, 1200, 'OPEN'),
+(26, 1, 1721961600000, '2024-07-26 21:00:00', 1000, 1000, 'OPEN'),
+(27, 2, 1724088000000, '2024-08-20 10:00:00', 1800, 1800, 'OPEN'),
+(28, 4, 1722902400000, '2024-09-06 09:00:00', 2000, 2000, 'OPEN'),
+(29, 5, 1724908800000, '2024-08-30 18:00:00', 600, 600, 'OPEN'),
+(30, 3, 1718870400000, '2024-06-20 15:00:00', 1600, 1600, 'OPEN'),
+(31, 1, 1723497600000, '2024-08-13 19:30:00', 1200, 1200, 'OPEN'),
+(32, 2, 1725100800000, '2024-09-01 16:00:00', 2200, 2200, 'OPEN'),
+(33, 4, 1720454400000, '2024-07-09 18:00:00', 800, 800, 'OPEN'),
+(34, 5, 1719072000000, '2024-06-23 20:00:00', 500, 500, 'OPEN'),
+(35, 3, 1721472000000, '2024-07-21 14:00:00', 1400, 1400, 'OPEN');
