@@ -83,8 +83,135 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
-      JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-    restart: on-failure
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+
+  booking-service:
+    build:
+      context: ./services/booking
+      dockerfile: Dockerfile
+    container_name: ticketbox-booking
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    ports: ["8083:8083"]
+    networks:
+      - ticketbox-net
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+
+  payment-service:
+    build:
+      context: ./services/payment
+      dockerfile: Dockerfile
+    container_name: ticketbox-payment
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports: ["8085:8085"]
+    networks:
+      - ticketbox-net
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+
+  ticket-service:
+    build:
+      context: ./services/ticket
+      dockerfile: Dockerfile
+    container_name: ticketbox-ticket
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports: ["8084:8084"]
+    networks:
+      - ticketbox-net
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+
+  seat-service:
+    build:
+      context: ./services/seat
+      dockerfile: Dockerfile
+    container_name: ticketbox-seat
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports: ["8086:8086"]
+    networks:
+      - ticketbox-net
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+
+  notification-service:
+    build:
+      context: ./services/notification
+      dockerfile: Dockerfile
+    container_name: ticketbox-notification
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    ports: ["8087:8087"]
+    networks:
+      - ticketbox-net
+    environment:
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+
+  voucher-service:
+    build:
+      context: ./services/voucher
+      dockerfile: Dockerfile
+    container_name: ticketbox-voucher
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports: ["8088:8088"]
+    networks:
+      - ticketbox-net
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+
+  statistical-service:
+    build:
+      context: ./services/statistical
+      dockerfile: Dockerfile
+    container_name: ticketbox-statistical
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports: ["8089:8089"]
+    networks:
+      - ticketbox-net
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
 
   # ═══════════════════════════════════════════════════════════
   # WEB APPLICATION (React + Vite)

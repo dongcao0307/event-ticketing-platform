@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 export const detailedEvents = [
   {
     id: 'featured-1',
@@ -192,6 +194,28 @@ export const getDetailedEventById = async (id) => {
       resolve(event);
     }, 300);
   });
+};
+
+const ORDER_SERVICE_BASE_URL = 'http://localhost:8090/api/orders';
+
+export const mapTicketZoneIdToLong = () => 1;
+export const mapTicketTypeIdToLong = () => 1;
+
+const unwrapApiResponseBody = (response) => response?.data?.body;
+
+export const serviceCreateOrder = async (payload) => {
+  const response = await axios.post(ORDER_SERVICE_BASE_URL, payload);
+  return unwrapApiResponseBody(response);
+};
+
+export const serviceAddOrderItems = async (orderId, payload) => {
+  const response = await axios.post(`${ORDER_SERVICE_BASE_URL}/${orderId}/items`, payload);
+  return unwrapApiResponseBody(response);
+};
+
+export const serviceGetOrderById = async (orderId) => {
+  const response = await axios.get(`${ORDER_SERVICE_BASE_URL}/${orderId}`);
+  return unwrapApiResponseBody(response);
 };
 
 export const submitBooking = async (bookingData) => {

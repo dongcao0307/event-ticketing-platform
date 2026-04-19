@@ -23,6 +23,7 @@ import EventDetailPublicPage from './pages/EventDetailPublicPage'
 import SeatSelectionPage from './pages/SeatSelectionPage'
 import TicketSelectPage from './pages/TicketSelectPage'
 import BookingInfoPage from './pages/BookingInfoPage'
+import BookingPaymentPage from './pages/BookingPaymentPage'
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function App() {
           <Route path="/event/:id/seats" element={<SeatSelectionPage />} />
           <Route path="/event/:id/tickets" element={<TicketSelectPage />} />
           <Route path="/event/:id/booking" element={<BookingInfoPage />} />
+          <Route path="/event/:id/payment" element={<BookingPaymentPage />} />
 
           {/* Organizer */}
           <Route path="/organizer" element={<OrganizerPage />} />
