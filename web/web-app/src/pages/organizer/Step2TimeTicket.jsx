@@ -1,37 +1,59 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp, PlusCircle, X, Calendar as CalendarIcon, Trash2, Edit2 } from 'lucide-react';
-import DatePickerPopup from '../../components/DatePickerPopup'; 
+import React, { useMemo, useState } from 'react';
+import { ChevronDown, ChevronUp, PlusCircle, X, Calendar as CalendarIcon, ImageIcon, MoreVertical, PencilLine } from 'lucide-react';
+// Import DatePickerPopup bạn đã tạo
+import DatePickerPopup from '../../components/DatePickerPopup';
+import { useEvent } from '../../hooks/useEvent';
 
-const Step2TimeTicket = ({ eventData, setEventData }) => {
-  // State quản lý việc mở Date Picker
-  const [activeDatePicker, setActiveDatePicker] = useState(null); 
+const Step2TimeTicket = () => {
+  const {
+    eventPerformances,
+    ticketTypes,
+    addPerformance,
+    updatePerformanceTime,
+    addTicketType,
+    updateTicketType,
+    upsertTicktTypesDB,
+  } = useEvent();
 
   // State quản lý Modal tạo vé
-  const [activeShowtimeForTicket, setActiveShowtimeForTicket] = useState(null);
-  const [editingTicketIndex, setEditingTicketIndex] = useState(null); // [MỚI] Lưu vị trí vé đang sửa
-
-  // Mẫu dữ liệu vé mặc định để reset form
-  const defaultTicket = { name: '', price: '', isFree: false, saleStart: '', saleEnd: '' };
-  const [ticketData, setTicketData] = useState(defaultTicket);
-
-  // Khởi tạo suất diễn mặc định
-  useEffect(() => {
-    if (!eventData.performances || eventData.performances.length === 0) {
-      setEventData(prev => ({
-        ...prev,
-        performances: [
-          { id: 1, startTime: '', endTime: '', isEditing: true, tickets: [] }
-        ]
-      }));
-    }
-  }, []);
+  const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
+  const [editingTicketId, setEditingTicketId] = useState(null);
+  
+  // State quản lý việc mở Date Picker cho các ô input khác nhau
+  const [activeDatePicker, setActiveDatePicker] = useState(null); 
+  const [currentShowtimeId, setCurrentShowtimeId] = useState(1);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isSavingToDB, setIsSavingToDB] = useState(false);
+  const [performanceEditState, setPerformanceEditState] = useState({});
 
   const showtimes = eventData.performances || [];
+
+  const showtimes = useMemo(() => {
+    return eventPerformances.map((performance) => ({
+      id: performance.id,
+      startTime: performance.startTime || '',
+      endTime: performance.entTime || '',
+      isEditing: performanceEditState[performance.id] ?? true,
+      tickets: ticketTypes.filter((ticket) => Number(ticket.performanceId) === Number(performance.id)),
+    }));
+  }, [eventPerformances, ticketTypes, performanceEditState]);
 
   // ----------------------------------------------------------------
   // CÁC HÀM XỬ LÝ SỰ KIỆN (SUẤT DIỄN)
   // ----------------------------------------------------------------
 
+  const resetTicketForm = () => {
+    setTicketData({
+      name: '',
+      price: '',
+      isFree: false,
+      saleStart: '22-01-2026 17:59',
+      saleEnd: '30-01-2026 07:00'
+    });
+    setEditingTicketId(null);
+  };
+
+  // Toggle Date Picker
   const toggleDatePicker = (pickerId) => {
     setActiveDatePicker(activeDatePicker === pickerId ? null : pickerId);
   };
@@ -41,92 +63,105 @@ const Step2TimeTicket = ({ eventData, setEventData }) => {
       st.id === id ? { ...st, [field]: newDateStr } : st
     );
     setEventData({ ...eventData, performances: updatedPerformances });
+    updatePerformanceTime({ id, field, value: newDateStr });
   };
 
   const handleAddShowtime = () => {
-    const updatedPerformances = showtimes.map(st => ({...st, isEditing: false}));
-    setEventData({
-      ...eventData,
-      performances: [
-        ...updatedPerformances, 
-        { id: Date.now(), startTime: '', endTime: '', isEditing: true, tickets: [] }
-      ]
+    const newShowtimeId = eventPerformances.length;
+    addPerformance();
+    const nextEditState = {};
+    showtimes.forEach((showtime) => {
+      nextEditState[showtime.id] = false;
     });
+    nextEditState[newShowtimeId] = true;
+    setPerformanceEditState(nextEditState);
+    setCurrentShowtimeId(newShowtimeId);
+  };
+
+  const getShowtimeById = (showtimeId) => showtimes.find((showtime) => showtime.id === showtimeId);
+
+  const openTicketModal = (showtimeId) => {
+    const targetShowtime = getShowtimeById(showtimeId);
+    if (!targetShowtime?.startTime || !targetShowtime?.endTime) {
+      setErrorMessage('Vui lòng chọn thời gian bắt đầu và kết thúc');
+      return;
+    }
+
+    setErrorMessage('');
+    setCurrentShowtimeId(showtimeId);
+    resetTicketForm();
+    setIsTicketModalOpen(true);
+  };
+
+  const openEditTicketModal = (showtimeId, ticket) => {
+    setErrorMessage('');
+    setCurrentShowtimeId(showtimeId);
+    setEditingTicketId(ticket.fakeId ?? null);
+    setTicketData({
+      name: ticket.name ?? '',
+      price: ticket.price ? String(ticket.price) : '',
+      isFree: Number(ticket.price) === 0,
+      saleStart: '22-01-2026 17:59',
+      saleEnd: '30-01-2026 07:00'
+    });
+    setIsTicketModalOpen(true);
+  };
+
+  const handleSaveTicketType = () => {
+    const targetShowtime = getShowtimeById(currentShowtimeId);
+    if (!targetShowtime?.startTime || !targetShowtime?.endTime) {
+      setErrorMessage('Vui lòng chọn thời gian bắt đầu và kết thúc');
+      return;
+    }
+
+    if (!ticketData.name.trim()) {
+      setErrorMessage('Vui lòng nhập tên vé');
+      return;
+    }
+
+    const payload = {
+      performanceId: currentShowtimeId,
+      name: ticketData.name.trim(),
+      price: ticketData.isFree ? 0 : Number(ticketData.price || 0),
+      totalQuantity: 10,
+      maxTicketsPerUser: 10,
+      version: 0,
+    };
+
+    if (editingTicketId !== null) {
+      updateTicketType({ fakeId: editingTicketId, ...payload });
+    } else {
+      addTicketType(payload);
+    }
+
+    setIsTicketModalOpen(false);
+    setEditingTicketId(null);
+    resetTicketForm();
+  };
+
+  const handleSaveTicketTypesToDB = async () => {
+    if (!ticketTypes.length) {
+      setErrorMessage('Chưa có ticket type nào để lưu');
+      return;
+    }
+
+    try {
+      setIsSavingToDB(true);
+      await upsertTicktTypesDB(ticketTypes);
+      setErrorMessage('');
+      window.alert('Đã upsert ticket type xuống database');
+    } catch (error) {
+      setErrorMessage(error?.message || 'Không thể upsert ticket type xuống database');
+    } finally {
+      setIsSavingToDB(false);
+    }
   };
 
   const toggleShowtimeEdit = (id) => {
-    const updatedPerformances = showtimes.map(st => 
-      st.id === id ? { ...st, isEditing: !st.isEditing } : st
-    );
-    setEventData({ ...eventData, performances: updatedPerformances });
-  };
-
-  // [MỚI] Xóa suất diễn
-  const handleDeleteShowtime = (id, e) => {
-    e.stopPropagation(); // Ngăn không cho sự kiện click lan ra ngoài làm mở form edit
-    if (window.confirm("Bạn có chắc chắn muốn xóa suất diễn này không?")) {
-      const updatedPerformances = showtimes.filter(st => st.id !== id);
-      setEventData({ ...eventData, performances: updatedPerformances });
-    }
-  };
-
-  // ----------------------------------------------------------------
-  // CÁC HÀM XỬ LÝ SỰ KIỆN (LOẠI VÉ)
-  // ----------------------------------------------------------------
-
-  // [MỚI] Mở Modal để Sửa vé cũ
-  const handleEditTicket = (showtimeId, ticketIndex, ticket) => {
-    setActiveShowtimeForTicket(showtimeId);
-    setEditingTicketIndex(ticketIndex);
-    setTicketData(ticket); // Đổ dữ liệu vé cũ vào form
-  };
-
-  // [MỚI] Xóa vé
-  const handleDeleteTicket = (showtimeId, ticketIndex) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa loại vé này?")) {
-      const updatedPerformances = showtimes.map(st => {
-        if (st.id === showtimeId) {
-          const newTickets = [...(st.tickets || [])];
-          newTickets.splice(ticketIndex, 1); // Xóa vé tại vị trí index
-          return { ...st, tickets: newTickets };
-        }
-        return st;
-      });
-      setEventData({ ...eventData, performances: updatedPerformances });
-    }
-  };
-
-  // Cập nhật hàm Lưu vé (Xử lý cả Thêm mới và Cập nhật)
-  const handleSaveTicket = () => {
-    if (!ticketData.name) {
-      alert("Vui lòng nhập tên vé!"); return;
-    }
-    
-    const updatedPerformances = showtimes.map(st => {
-      if (st.id === activeShowtimeForTicket) {
-        const safeTickets = [...(st.tickets || [])];
-        
-        if (editingTicketIndex !== null) {
-          // TH1: Cập nhật vé cũ
-          safeTickets[editingTicketIndex] = ticketData;
-        } else {
-          // TH2: Thêm vé mới
-          safeTickets.push(ticketData);
-        }
-        return { ...st, tickets: safeTickets };
-      }
-      return st;
-    });
-
-    setEventData({ ...eventData, performances: updatedPerformances });
-    closeTicketModal();
-  };
-
-  // Hàm đóng Modal và reset Form
-  const closeTicketModal = () => {
-    setTicketData(defaultTicket);
-    setActiveShowtimeForTicket(null);
-    setEditingTicketIndex(null);
+    setPerformanceEditState((prev) => ({
+      ...prev,
+      [id]: !(prev[id] ?? true),
+    }));
   };
 
   // ----------------------------------------------------------------
@@ -134,6 +169,12 @@ const Step2TimeTicket = ({ eventData, setEventData }) => {
   // ----------------------------------------------------------------
   return (
     <div className="max-w-[1100px] mx-auto space-y-6 text-gray-200 pb-20">
+      {errorMessage && (
+        <div className="fixed left-1/2 top-4 z-[60] -translate-x-1/2 rounded-md bg-red-500 px-5 py-3 text-white shadow-lg flex items-center gap-2">
+          <X size={18} />
+          <span>{errorMessage}</span>
+        </div>
+      )}
       
       <div className="flex items-center justify-between mb-8">
         <h2 className="text-xl font-bold">Thời Gian & Suất Diễn</h2>
@@ -211,50 +252,45 @@ const Step2TimeTicket = ({ eventData, setEventData }) => {
                       </div>
                     </div>
 
-                    {/* CÁC VÉ ĐÃ TẠO HIỂN THỊ Ở ĐÂY */}
-                    {safeTickets.length > 0 && (
-                      <div className="mb-6 space-y-2">
-                        <label className="block text-sm font-bold text-gray-400">Các vé đã tạo:</label>
-                        {safeTickets.map((t, idx) => (
-                          // [SỬA]: Thêm group-hover để hiện nút Sửa/Xóa
-                          <div key={idx} className="flex justify-between items-center bg-[#2a2b31] p-3 rounded border border-gray-700 group transition-all hover:border-gray-500">
-                            <div>
-                              <span className="font-bold text-white mr-3">{t.name}</span>
-                              <span className="text-[#00b14f] font-medium">{t.isFree ? 'Miễn phí' : `${t.price} VNĐ`}</span>
-                            </div>
-                            
-                            {/* Khối nút Sửa / Xóa (Bình thường mờ, hover vào mới rõ) */}
-                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button 
-                                onClick={() => handleEditTicket(showtime.id, idx, t)} 
-                                className="p-1.5 bg-blue-500/10 text-blue-400 hover:bg-blue-500/30 rounded transition"
-                                title="Sửa vé"
-                              >
-                                <Edit2 size={16} />
-                              </button>
-                              <button 
-                                onClick={() => handleDeleteTicket(showtime.id, idx)} 
-                                className="p-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/30 rounded transition"
-                                title="Xóa vé"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
+                  {/* Khu vực tạo vé */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-bold mb-2 text-gray-400">
+                      <span className="text-red-500 mr-1">*</span>Loại vé
+                    </label>
+                    <div className="space-y-3 mb-4">
+                      {showtime.tickets.map((ticket) => (
+                        <div key={ticket.fakeId ?? ticket.id} className="flex items-center justify-between rounded-lg bg-[#4b4f5a] px-4 py-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <span className="text-gray-200 text-lg leading-none">≡</span>
+                            <span className="text-gray-200 text-sm font-semibold truncate">{ticket.name}</span>
                           </div>
-                        ))}
-                      </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              onClick={() => openEditTicketModal(showtime.id, ticket)}
+                              className="w-9 h-9 rounded-md bg-white text-gray-700 flex items-center justify-center hover:bg-gray-100 transition"
+                            >
+                              <PencilLine size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Chỉ hiện nút copy nếu không phải suất diễn đầu tiên */}
+                    {index > 0 && (
+                      <button className="px-4 py-1.5 border border-[#00b14f] text-[#00b14f] text-sm rounded hover:bg-[#00b14f]/10 transition mb-4">
+                        Copy loại vé từ
+                      </button>
                     )}
 
-                    {/* Nút Tạo loại vé mới */}
-                    <div className="border-t border-gray-800 pt-6 flex justify-center items-center">
-                      <button 
-                        onClick={() => { setActiveShowtimeForTicket(showtime.id); setTicketData(defaultTicket); setEditingTicketIndex(null); }} 
-                        className="flex items-center text-[#00b14f] font-medium hover:text-[#009e47] transition-colors"
-                      >
-                        <PlusCircle size={20} className="mr-2" />
-                        Tạo loại vé mới
-                      </button>
-                    </div>
+                  {/* Nút Tạo loại vé mới */}
+                  <div className="border-t border-gray-800 pt-6 flex justify-center">
+                    <button 
+                      onClick={() => openTicketModal(showtime.id)} 
+                      className="flex items-center text-[#00b14f] font-medium hover:text-[#009e47] transition-colors"
+                    >
+                      <PlusCircle size={20} className="mr-2" />
+                      Tạo loại vé mới
+                    </button>
                   </div>
                 </div>
               )}
@@ -272,6 +308,16 @@ const Step2TimeTicket = ({ eventData, setEventData }) => {
         </button>
       </div>
 
+      <div className="flex justify-center mt-2">
+        <button
+          onClick={handleSaveTicketTypesToDB}
+          disabled={isSavingToDB}
+          className="px-6 py-2 bg-white text-black text-sm font-medium rounded hover:bg-gray-200 transition disabled:opacity-60"
+        >
+          {isSavingToDB ? 'Đang lưu...' : 'Upsert ticket type xuống DB'}
+        </button>
+      </div>
+
 
       {/* ========================================= */}
       {/* MODAL "TẠO/SỬA LOẠI VÉ"                   */}
@@ -281,10 +327,8 @@ const Step2TimeTicket = ({ eventData, setEventData }) => {
           <div className="bg-[#222328] w-[800px] rounded-xl shadow-2xl flex flex-col max-h-[90vh]">
             
             <div className="flex items-center justify-between p-6 border-b border-gray-700 relative">
-              <h3 className="text-lg font-bold w-full text-center">
-                {editingTicketIndex !== null ? 'Chỉnh sửa loại vé' : 'Tạo loại vé mới'}
-              </h3>
-              <button onClick={closeTicketModal} className="absolute right-6 text-gray-400 hover:text-white transition-colors">
+              <h3 className="text-lg font-bold w-full text-center">{editingTicketId !== null ? 'Cập nhật loại vé' : 'Tạo loại vé mới'}</h3>
+              <button onClick={() => { setIsTicketModalOpen(false); setEditingTicketId(null); resetTicketForm(); }} className="absolute right-6 text-gray-400 hover:text-white transition-colors">
                 <X size={24} />
               </button>
             </div>
@@ -360,17 +404,18 @@ const Step2TimeTicket = ({ eventData, setEventData }) => {
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-700 flex justify-end gap-3">
-              <button onClick={closeTicketModal} className="px-6 py-2 bg-gray-600 text-white font-bold rounded-lg hover:bg-gray-500 transition">Hủy</button>
-              <button onClick={handleSaveTicket} className="px-6 py-2 bg-[#00b14f] text-white font-bold rounded-lg hover:bg-[#009e47] transition">
-                {editingTicketIndex !== null ? 'Lưu cập nhật' : 'Lưu Vé'}
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-gray-700">
+              <button 
+                onClick={handleSaveTicketType} 
+                className="w-full py-3 bg-[#00b14f] text-white font-bold rounded-lg hover:bg-[#009e47] transition"
+              >
+                Lưu
               </button>
             </div>
-
           </div>
         </div>
       )}
-
     </div>
   );
 };

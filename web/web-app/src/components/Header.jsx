@@ -10,27 +10,19 @@ const Header = () => {
   const navigate = useNavigate();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
-
-  // MỚI & ĐÃ SỬA: Lấy dữ liệu từ localStorage ngay lúc khởi tạo State 
-  // (Dùng arrow function để chỉ chạy 1 lần duy nhất khi component mount)
-  const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('jwt_token'));
-  const [userEmail, setUserEmail] = useState(() => localStorage.getItem('user_email') || '');
-
-  // State quản lý việc mở/đóng menu Tài khoản
+  const [user, setUser] = useState(() => authService.getCurrentUser());
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
-  // State quản lý tìm kiếm
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  // Dùng useRef để xử lý click ra ngoài thì đóng menu
+  const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('jwt_token'));
+  const isAdmin = user?.role === 'ADMIN';
+
   const dropdownRef = useRef(null);
   const searchRef = useRef(null);
 
-  // ĐÃ SỬA: Chỉ giữ lại logic bắt sự kiện click ra ngoài trong useEffect
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // Nếu click vào một điểm trên màn hình KHÔNG nằm trong dropdownRef thì đóng menu
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
       }
@@ -40,20 +32,18 @@ const Header = () => {
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-
-    // Cleanup function để gỡ sự kiện khi component unmount
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, []); // Cảnh báo cascading renders sẽ biến mất vì không còn setState đồng bộ ở đây nữa
+  }, []);
 
   // Hàm xử lý Đăng xuất
-  const handleLogout = () => {
-    authService.logout(); // Xóa dữ liệu trong localStorage
-    setIsLoggedIn(false); // Cập nhật state để Header đổi giao diện ngay lập tức
-    setUserEmail('');
-    setIsDropdownOpen(false); // Đóng menu thả xuống
+  const handleLogout = async () => {
+    await authService.logout();
+    setIsLoggedIn(false);
+    setUser(null);
+    setIsDropdownOpen(false);
   };
 
   const openLogin = () => {
@@ -161,10 +151,12 @@ const Header = () => {
             )}
 
             {/* Cục Admin */}
-            <Link to="/admin" className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity">
-              <User size={18} />
-              <span>Admin</span>
-            </Link>
+            {isAdmin && (
+              <Link to="/admin" className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity">
+                <User size={18} />
+                <span>Admin</span>
+              </Link>
+            )}
 
             {/* Nút chọn Quốc gia */}
             <div className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity">

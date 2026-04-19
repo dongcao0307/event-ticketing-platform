@@ -1,8 +1,14 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState, useMemo } from 'react';
-import { ChevronLeft, Clock, MapPin, User, Mail, Phone, CheckCircle } from 'lucide-react';
-import { getDetailedEventById, submitBooking } from '../services/bookingService';
-import BookingSuccessModal from '../components/BookingSuccessModal';
+import { ChevronLeft, Clock, MapPin, User, Mail, Phone } from 'lucide-react';
+import {
+  getDetailedEventById,
+  mapTicketTypeIdToLong,
+  mapTicketZoneIdToLong,
+  serviceAddOrderItems,
+  serviceCreateOrder,
+} from '../services/bookingService';
+import { useEvent } from '../hooks/useEvent';
 
 const BookingInfoPage = () => {
   const { id } = useParams();
@@ -15,8 +21,8 @@ const BookingInfoPage = () => {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [orderId, setOrderId] = useState('');
+  const [submitError, setSubmitError] = useState('');
+  const { setBookingOrderData } = useEvent();
 
   const [form, setForm] = useState({
     fullName: '',
@@ -77,24 +83,110 @@ const BookingInfoPage = () => {
     return errs;
   };
 
+  const resolveMockUserId = () => {
+    try {
+      const userDataRaw = localStorage.getItem('user_data');
+      if (!userDataRaw) return 1;
+
+      const userData = JSON.parse(userDataRaw);
+      if (Number.isFinite(Number(userData?.id))) {
+        return Number(userData.id);
+      }
+
+      if (userData?.email) {
+        let hash = 0;
+        for (let i = 0; i < userData.email.length; i += 1) {
+          hash = (hash * 31 + userData.email.charCodeAt(i)) % 100000;
+        }
+        return hash + 1;
+      }
+    } catch {
+      return 1;
+    }
+    return 1;
+  };
+
+  const buildTheaterOrderItems = () => {
+    const groupedByZoneId = {};
+
+    selectedSeats.forEach((seatKey) => {
+      const row = seatKey.split('-')[0];
+      const zone = getZoneForRow(row);
+      if (!zone) return;
+
+      if (!groupedByZoneId[zone.id]) {
+        groupedByZoneId[zone.id] = {
+          zone,
+          quantity: 0,
+        };
+      }
+      groupedByZoneId[zone.id].quantity += 1;
+    });
+
+    return Object.values(groupedByZoneId).map(({ zone, quantity }) => ({
+      ticketTypeId: mapTicketZoneIdToLong(zone.id),
+      quantity,
+      unitPrice: zone.price,
+    }));
+  };
+
+  const buildVisitOrderItems = () => selectedTickets.map((ticket) => ({
+    ticketTypeId: mapTicketTypeIdToLong(ticket.id),
+    quantity: ticket.quantity,
+    unitPrice: ticket.price,
+  }));
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
+
+    setSubmitError('');
     setSubmitting(true);
-    const result = await submitBooking({
-      eventId: id,
-      eventTitle: event.title,
-      showtime: activeShowtime,
-      seats: selectedSeats,
-      tickets: selectedTickets,
-      buyer: form,
-      total: totalPrice,
-    });
-    setSubmitting(false);
-    if (result.success) {
-      setOrderId(result.orderId);
-      setShowSuccess(true);
+
+    try {
+      const orderItemsPayload = event?.type === 'theater'
+        ? buildTheaterOrderItems()
+        : buildVisitOrderItems();
+
+      if (!orderItemsPayload.length) {
+        setSubmitError('Không có vé hợp lệ để tạo đơn hàng.');
+        setSubmitting(false);
+        return;
+      }
+
+      const createdOrder = await serviceCreateOrder({
+        userId: resolveMockUserId(),
+        idempotenceKey: `BOOK-${id}-${Date.now()}`,
+        discountAmount: 0,
+      });
+
+      const orderId = createdOrder?.id;
+      if (!orderId) {
+        throw new Error('Không nhận được mã đơn hàng từ backend.');
+      }
+
+      const updatedOrder = await serviceAddOrderItems(orderId, orderItemsPayload);
+      const finalOrder = updatedOrder ?? createdOrder;
+
+      setBookingOrderData({
+        order: finalOrder,
+        orderItems: orderItemsPayload,
+        context: {
+          event,
+          showtime: activeShowtime,
+          seats: selectedSeats,
+          tickets: selectedTickets,
+          buyer: form,
+          total: totalPrice,
+        },
+      });
+
+      navigate(`/event/${id}/payment?orderId=${orderId}`);
+    } catch (error) {
+      setSubmitError(error?.response?.data?.message || error?.message || 'Tạo đơn hàng thất bại. Vui lòng thử lại.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -111,7 +203,6 @@ const BookingInfoPage = () => {
   }
 
   return (
-    <>
       <div className="min-h-screen bg-[#f5f5f5] flex flex-col">
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
@@ -229,6 +320,12 @@ const BookingInfoPage = () => {
                   <span className="text-[#26bc71] cursor-pointer hover:underline">Chính sách bảo mật</span> của Ticketbox.
                 </p>
 
+                {submitError && (
+                  <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                    {submitError}
+                  </div>
+                )}
+
                 <button
                   type="submit"
                   disabled={submitting}
@@ -292,20 +389,6 @@ const BookingInfoPage = () => {
         </div>
       </div>
 
-      {showSuccess && (
-        <BookingSuccessModal
-          orderId={orderId}
-          event={event}
-          showtime={activeShowtime}
-          seats={selectedSeats}
-          tickets={selectedTickets}
-          total={totalPrice}
-          buyer={form}
-          onClose={() => navigate('/')}
-          onViewTicket={() => navigate('/my-account/tickets')}
-        />
-      )}
-    </>
   );
 };
 

@@ -1,4 +1,5 @@
 // src/services/ticketService.js
+import axios from "axios"
 
 const ticketsData = [
   {
@@ -183,3 +184,14 @@ export const getTicketById = async (id) => {
   return simulateFetch(ticket || ticketMocks[0]);
 };
 export const getTicketDetail = async () => simulateFetch(ticketMocks[0]);
+
+
+export const serviceAddTicketTypes = async (ticketTypes) => {
+  return axios.post("http://localhost:8084/api/organizer/ticket_type/bulk", ticketTypes)
+}
+export const serviceUpdateTicketTypes = async (ticketTypes) => {
+  return axios.put("http://localhost:8084/api/organizer/ticket_type/bulk", ticketTypes)
+}
+export const serviceUpsertTicketTypes = async (ticketTypes) => {
+  return axios.post("http://localhost:8084/api/organizer/ticket_type/upsert/bulk", ticketTypes)
+}
