@@ -40,6 +40,9 @@ function App() {
         <Route path="/organizer" element={<OrganizerPage />} />
         <Route path="/organizer/my-events" element={<MyEvents />} />
         <Route path="/organizer/event/:id" element={<EventPage />} />
+        <Route path="/organizer/event/create" element={<OrganizerPage />} />
+        <Route path="/organizer/event/edit/:id" element={<OrganizerPage />} />
+
 
         {/* User account */}
         <Route path="/search" element={<SearchPage />} />

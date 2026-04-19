@@ -1,16 +1,45 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Lock, Users, User, Mail } from 'lucide-react';
 
-const Step3Settings = () => {
-  // States quản lý dữ liệu nhập vào
-  const [customUrl, setCustomUrl] = useState('duaxemorong');
-  const [privacy, setPrivacy] = useState('public'); // 'public' hoặc 'private'
-  const [confirmMsg, setConfirmMsg] = useState('Cảm ơn bạn đã tham gia sự kiện');
-  const [enableQuestionnaire, setEnableQuestionnaire] = useState(false);
+// Nhận eventData và setEventData từ component cha (OrganizerPage)
+const Step3Settings = ({ eventData, setEventData }) => {
+  
+  // 1. TỰ ĐỘNG DỊCH CHUỖI JSON TỪ BACKEND
+  let settings = eventData?.settings || {};
+  
+  // Nếu settings trống nhưng lại có settingsConfig từ API (khi nhấn Sửa sự kiện cũ)
+  if (Object.keys(settings).length === 0 && eventData?.settingsConfig) {
+    try {
+      // Ép kiểu chuỗi JSON về lại thành Object
+      settings = typeof eventData.settingsConfig === 'string' 
+        ? JSON.parse(eventData.settingsConfig) 
+        : eventData.settingsConfig;
+    } catch (e) {
+      console.error("Lỗi đọc dữ liệu settings từ Backend:", e);
+    }
+  }
 
-  // Đường dẫn gốc (thay đổi theo domain thực tế của bạn)
+  // 2. LẤY GIÁ TRỊ TỪ SETTINGS ĐỂ HIỂN THỊ
+  const customUrl = settings.customUrl !== undefined ? settings.customUrl : '';
+  const privacy = settings.privacy || 'public'; 
+  const confirmMsg = settings.confirmMsg !== undefined ? settings.confirmMsg : '';
+  const enableQuestionnaire = settings.enableQuestionnaire || false;
+
+  // Cập nhật state ngược lại lên OrganizerPage (Gom vào object settings)
+  const handleSettingChange = (field, value) => {
+    setEventData(prev => ({
+      ...prev,
+      settings: {
+        ...(prev.settings || settings), // Nhớ lấy dữ liệu settings cũ đã parse
+        [field]: value
+      }
+    }));
+  };
+
+  // Đường dẫn gốc
   const baseUrl = 'https://ticketbox.vn/';
-  const eventId = '25598'; // ID giả lập
+  // Tự động lấy ID sự kiện thật (nếu đang Edit) hoặc ID ảo (nếu tạo mới)
+  const eventId = eventData?.id || '25598'; 
 
   return (
     <div className="max-w-[1100px] mx-auto space-y-6 text-gray-200 pb-20">
@@ -29,7 +58,8 @@ const Step3Settings = () => {
             <input 
               type="text" 
               value={customUrl}
-              onChange={(e) => setCustomUrl(e.target.value)}
+              onChange={(e) => handleSettingChange('customUrl', e.target.value)}
+              placeholder="duaxemorong" 
               className="w-full bg-white text-black text-sm p-2.5 rounded outline-none pr-16 focus:ring-2 focus:ring-[#00b14f]" 
             />
             <span className="absolute right-3 top-2.5 text-gray-400 text-sm">
@@ -39,7 +69,7 @@ const Step3Settings = () => {
         </div>
 
         <p className="text-sm text-gray-400">
-          Đường dẫn sự kiện của bạn là: <a href={`${baseUrl}${customUrl}-${eventId}`} className="text-[#0084ff] hover:underline" target="_blank" rel="noreferrer">{`${baseUrl}${customUrl}-${eventId}`}</a>
+          Đường dẫn sự kiện của bạn là: <a href={`${baseUrl}${customUrl || 'duaxemorong'}-${eventId}`} className="text-[#0084ff] hover:underline" target="_blank" rel="noreferrer">{`${baseUrl}${customUrl || 'duaxemorong'}-${eventId}`}</a>
         </p>
       </div>
 
@@ -52,7 +82,7 @@ const Step3Settings = () => {
 
         <div className="space-y-4 ml-2">
           {/* Lựa chọn 1: Công khai */}
-          <label className="flex items-start cursor-pointer group" onClick={() => setPrivacy('public')}>
+          <label className="flex items-start cursor-pointer group" onClick={() => handleSettingChange('privacy', 'public')}>
             <div className={`mt-1 w-4 h-4 rounded-full border flex items-center justify-center mr-3 shrink-0 transition-colors ${privacy === 'public' ? 'border-[#00b14f]' : 'border-gray-500 group-hover:border-gray-300'}`}>
               {privacy === 'public' && <div className="w-2 h-2 rounded-full bg-[#00b14f]"></div>}
             </div>
@@ -64,7 +94,7 @@ const Step3Settings = () => {
           </label>
 
           {/* Lựa chọn 2: Riêng tư */}
-          <label className="flex items-start cursor-pointer group" onClick={() => setPrivacy('private')}>
+          <label className="flex items-start cursor-pointer group" onClick={() => handleSettingChange('privacy', 'private')}>
             <div className={`mt-1 w-4 h-4 rounded-full border flex items-center justify-center mr-3 shrink-0 transition-colors ${privacy === 'private' ? 'border-[#00b14f]' : 'border-gray-500 group-hover:border-gray-300'}`}>
               {privacy === 'private' && <div className="w-2 h-2 rounded-full bg-[#00b14f]"></div>}
             </div>
@@ -90,7 +120,8 @@ const Step3Settings = () => {
         <div className="relative ml-6">
           <textarea 
             value={confirmMsg}
-            onChange={(e) => setConfirmMsg(e.target.value)}
+            onChange={(e) => handleSettingChange('confirmMsg', e.target.value)}
+            placeholder="Cảm ơn bạn đã tham gia sự kiện" 
             className="w-full bg-white text-black text-sm p-3 rounded outline-none h-[120px] resize-none pr-4 focus:ring-2 focus:ring-[#00b14f]"
           ></textarea>
           <span className="absolute right-3 bottom-3 text-gray-400 text-sm bg-white pl-2">
@@ -109,9 +140,8 @@ const Step3Settings = () => {
           <li>Chọn nhiều câu trả lời</li>
         </ol>
 
-        <label className="flex items-center cursor-pointer group" onClick={() => setEnableQuestionnaire(!enableQuestionnaire)}>
+        <label className="flex items-center cursor-pointer group" onClick={() => handleSettingChange('enableQuestionnaire', !enableQuestionnaire)}>
           <div className={`w-4 h-4 rounded-full border flex items-center justify-center mr-3 shrink-0 transition-colors ${enableQuestionnaire ? 'border-[#00b14f] bg-[#00b14f]' : 'border-gray-400 bg-white group-hover:border-gray-300'}`}>
-             {/* Styling nút radio/checkbox như hình */}
              {!enableQuestionnaire && <div className="w-full h-full rounded-full bg-white border-2 border-[#1c1d22]"></div>}
              {enableQuestionnaire && <div className="w-2 h-2 rounded-full bg-white"></div>}
           </div>

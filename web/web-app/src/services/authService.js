@@ -123,7 +123,7 @@ export const authService = {
         }
 
         resolve({ success: true, data: updatedUser });
-      } catch (error) {
+      } catch {
         reject(new Error('Cập nhật thông tin thất bại.'));
       }
     });
