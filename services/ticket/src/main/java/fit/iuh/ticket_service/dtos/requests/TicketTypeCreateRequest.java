@@ -6,6 +6,7 @@ import lombok.*;
 import org.hibernate.validator.constraints.Length;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -23,5 +24,13 @@ public class TicketTypeCreateRequest {
     private Integer totalQuantity;
     @Positive(message = "max tickets per user must be greater than 0")
     private Integer maxTicketsPerUser;
+    @Positive(message = "min tickets per user must be greater than 0")
+    private Integer minTicketsPerUser;
+    private LocalDateTime sellFrom;
+    private LocalDateTime sellTo;
+    @Length(max = 2000, message = "description max length is 2000")
+    private String description;
+    @Length(max = 500, message = "image url max length is 500")
+    private String imageUrl;
     private Long version;
 }

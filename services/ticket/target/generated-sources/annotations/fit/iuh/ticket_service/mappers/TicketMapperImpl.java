@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-04-24T23:55:17+0700",
+    date = "2026-04-26T12:47:11+0700",
     comments = "version: 1.6.3, compiler: javac, environment: Java 23 (Oracle Corporation)"
 )
 @Component
@@ -35,8 +35,9 @@ public class TicketMapperImpl implements TicketMapper {
         ticket.orderId( request.getOrderId() );
         ticket.qrCode( request.getQrCode() );
         ticket.priceAtPurchase( request.getPriceAtPurchase() );
+        ticket.seatNumber( request.getSeatNumber() );
 
-        ticket.ticketStatus( TicketStatus.ACTIVE );
+        ticket.ticketStatus( TicketStatus.PENDING );
 
         return ticket.build();
     }
@@ -68,6 +69,7 @@ public class TicketMapperImpl implements TicketMapper {
         ticketResponse.setQrCode( ticket.getQrCode() );
         ticketResponse.setPriceAtPurchase( ticket.getPriceAtPurchase() );
         ticketResponse.setTicketStatus( ticket.getTicketStatus() );
+        ticketResponse.setSeatNumber( ticket.getSeatNumber() );
         ticketResponse.setCheckInAt( ticket.getCheckInAt() );
 
         return ticketResponse;

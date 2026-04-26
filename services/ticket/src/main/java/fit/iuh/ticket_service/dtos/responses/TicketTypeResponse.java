@@ -3,6 +3,7 @@ package fit.iuh.ticket_service.dtos.responses;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -18,5 +19,10 @@ public class TicketTypeResponse {
     private Integer soldQuantity;
     private Integer reservedQuantity;
     private Integer maxTicketsPerUser;
+    private Integer minTicketsPerUser;
+    private LocalDateTime sellFrom;
+    private LocalDateTime sellTo;
+    private String description;
+    private String imageUrl;
     private Long version;
 }

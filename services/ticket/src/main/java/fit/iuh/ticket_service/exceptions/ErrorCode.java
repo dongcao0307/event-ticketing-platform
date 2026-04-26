@@ -13,6 +13,7 @@ public enum ErrorCode {
     INVALID_POST_REQUEST("Invalid post request", HttpStatus.BAD_REQUEST),
     CAN_NOT_CHANGE_ACTIVE_ADMIN("Can not change active admin", HttpStatus.BAD_REQUEST),
     UNAUTHORIZED_ACCESS("Unauthorized access", HttpStatus.UNAUTHORIZED),
+    INVALID_TIME("Invalid time", HttpStatus.BAD_REQUEST),
     ;
 
     private final String message;

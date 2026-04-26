@@ -28,4 +28,6 @@ public class TicketCreateRequest {
     private String qrCode;
     @PositiveOrZero(message = "ticket type id must be greater than or equal 0")
     private BigDecimal priceAtPurchase;
+    @Length(max = 50, message = "seatNumber max length is 50")
+    private String seatNumber;
 }

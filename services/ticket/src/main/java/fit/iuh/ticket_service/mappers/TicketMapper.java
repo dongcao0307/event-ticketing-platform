@@ -13,7 +13,7 @@ import org.mapstruct.MappingTarget;
 public interface TicketMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "ticketType", source = "ticketTypeId")
-    @Mapping(target = "ticketStatus", constant = "ACTIVE")
+    @Mapping(target = "ticketStatus", constant = "PENDING")
     @Mapping(target = "checkInAt", ignore = true)
     Ticket toTicket(TicketCreateRequest request);
     @Mapping(target = "id", ignore = true)

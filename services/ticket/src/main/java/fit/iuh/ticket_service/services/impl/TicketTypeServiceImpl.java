@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -104,6 +105,7 @@ public class TicketTypeServiceImpl implements TicketTypeService {
         if (!violations.isEmpty()) {
             throw new PostException(violations);
         }
+        validateBusinessRules(request);
     }
 
     private <T> void validateBatchRequest(List<T> requests) {
@@ -131,6 +133,21 @@ public class TicketTypeServiceImpl implements TicketTypeService {
         if (!errors.isEmpty()) {
             throw new PostException(Collections.emptySet(), errors);
         }
+        for (T request : requests) {
+            validateBusinessRules(request);
+        }
+    }
+
+    private <T> void validateBusinessRules(T request) {
+        if (request instanceof TicketTypeCreateRequest req) {
+            if (req.getSellFrom() != null && req.getSellFrom().isBefore(LocalDateTime.now())) {
+                throw new AppException(ErrorCode.INVALID_TIME);
+            }
+        } else if (request instanceof TicketTypeBulkWriteRequest req) {
+            if (req.getId() == null && req.getSellFrom() != null && req.getSellFrom().isBefore(LocalDateTime.now())) {
+                throw new AppException(ErrorCode.INVALID_TIME);
+            }
+        }
     }
 
     private TicketType mapBulkWriteRequest(TicketTypeBulkWriteRequest request) {
@@ -148,6 +165,11 @@ public class TicketTypeServiceImpl implements TicketTypeService {
         ticketType.setPrice(request.getPrice());
         ticketType.setTotalQuantity(request.getTotalQuantity());
         ticketType.setMaxTicketsPerUser(request.getMaxTicketsPerUser());
+        ticketType.setMinTicketsPerUser(request.getMinTicketsPerUser());
+        ticketType.setSellFrom(request.getSellFrom());
+        ticketType.setSellTo(request.getSellTo());
+        ticketType.setDescription(request.getDescription());
+        ticketType.setImageUrl(request.getImageUrl());
         ticketType.setVersion(request.getVersion());
 
         if (request.getId() != null) {

@@ -34,5 +34,7 @@ public class Ticket {
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private TicketStatus ticketStatus;
+    @Column(length = 50)
+    private String seatNumber;
     private LocalDateTime checkInAt;
 }
