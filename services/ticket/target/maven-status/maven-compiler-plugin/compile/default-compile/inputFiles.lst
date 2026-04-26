@@ -1,5 +1,5 @@
+C:\Users\QUANG MINH\Documents\lap_trinh_IntelliJIDEA_Java\KienTrucVaThietKePhanMem\event-ticketing-platform\services\ticket\src\main\java\fit\iuh\ticket_service\config\BookingRabbitProperties.java
 C:\Users\QUANG MINH\Documents\lap_trinh_IntelliJIDEA_Java\KienTrucVaThietKePhanMem\event-ticketing-platform\services\ticket\src\main\java\fit\iuh\ticket_service\config\CorsConfig.java
-C:\Users\QUANG MINH\Documents\lap_trinh_IntelliJIDEA_Java\KienTrucVaThietKePhanMem\event-ticketing-platform\services\ticket\src\main\java\fit\iuh\ticket_service\config\OrderRabbitProperties.java
 C:\Users\QUANG MINH\Documents\lap_trinh_IntelliJIDEA_Java\KienTrucVaThietKePhanMem\event-ticketing-platform\services\ticket\src\main\java\fit\iuh\ticket_service\config\RabbitMqConfig.java
 C:\Users\QUANG MINH\Documents\lap_trinh_IntelliJIDEA_Java\KienTrucVaThietKePhanMem\event-ticketing-platform\services\ticket\src\main\java\fit\iuh\ticket_service\controllers\TicketTypeController.java
 C:\Users\QUANG MINH\Documents\lap_trinh_IntelliJIDEA_Java\KienTrucVaThietKePhanMem\event-ticketing-platform\services\ticket\src\main\java\fit\iuh\ticket_service\dtos\ApiResponse.java
@@ -19,8 +19,8 @@ C:\Users\QUANG MINH\Documents\lap_trinh_IntelliJIDEA_Java\KienTrucVaThietKePhanM
 C:\Users\QUANG MINH\Documents\lap_trinh_IntelliJIDEA_Java\KienTrucVaThietKePhanMem\event-ticketing-platform\services\ticket\src\main\java\fit\iuh\ticket_service\exceptions\PostException.java
 C:\Users\QUANG MINH\Documents\lap_trinh_IntelliJIDEA_Java\KienTrucVaThietKePhanMem\event-ticketing-platform\services\ticket\src\main\java\fit\iuh\ticket_service\mappers\TicketMapper.java
 C:\Users\QUANG MINH\Documents\lap_trinh_IntelliJIDEA_Java\KienTrucVaThietKePhanMem\event-ticketing-platform\services\ticket\src\main\java\fit\iuh\ticket_service\mappers\TicketTypeMapper.java
-C:\Users\QUANG MINH\Documents\lap_trinh_IntelliJIDEA_Java\KienTrucVaThietKePhanMem\event-ticketing-platform\services\ticket\src\main\java\fit\iuh\ticket_service\messaging\OrderPaidEvent.java
-C:\Users\QUANG MINH\Documents\lap_trinh_IntelliJIDEA_Java\KienTrucVaThietKePhanMem\event-ticketing-platform\services\ticket\src\main\java\fit\iuh\ticket_service\messaging\OrderPaidListener.java
+C:\Users\QUANG MINH\Documents\lap_trinh_IntelliJIDEA_Java\KienTrucVaThietKePhanMem\event-ticketing-platform\services\ticket\src\main\java\fit\iuh\ticket_service\messaging\BookingPaidEvent.java
+C:\Users\QUANG MINH\Documents\lap_trinh_IntelliJIDEA_Java\KienTrucVaThietKePhanMem\event-ticketing-platform\services\ticket\src\main\java\fit\iuh\ticket_service\messaging\BookingPaidListener.java
 C:\Users\QUANG MINH\Documents\lap_trinh_IntelliJIDEA_Java\KienTrucVaThietKePhanMem\event-ticketing-platform\services\ticket\src\main\java\fit\iuh\ticket_service\repositories\TicketRepository.java
 C:\Users\QUANG MINH\Documents\lap_trinh_IntelliJIDEA_Java\KienTrucVaThietKePhanMem\event-ticketing-platform\services\ticket\src\main\java\fit\iuh\ticket_service\repositories\TicketTypeRepository.java
 C:\Users\QUANG MINH\Documents\lap_trinh_IntelliJIDEA_Java\KienTrucVaThietKePhanMem\event-ticketing-platform\services\ticket\src\main\java\fit\iuh\ticket_service\services\impl\TicketServiceImpl.java
