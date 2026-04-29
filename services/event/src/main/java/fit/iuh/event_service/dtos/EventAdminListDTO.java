@@ -1,6 +1,6 @@
-package fit.iuh.event_service.feature.admin_event.dto;
+package fit.iuh.event_service.dtos;
 
-import fit.iuh.event_service.entity.EventStatus;
+import fit.iuh.event_service.models.enums.EventStatus;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

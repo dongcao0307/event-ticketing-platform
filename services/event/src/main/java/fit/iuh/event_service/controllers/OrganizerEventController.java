@@ -12,7 +12,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/organizer/events")
@@ -86,13 +88,43 @@ public class OrganizerEventController {
     public ResponseEntity<?> createFullEvent(
             @RequestHeader("X-User-Id") Long organizerId,
             @RequestBody FullEventCreateRequest request) {
+
+        // 📸 CAMERA 1: Đón khách ở cửa
+        System.out.println("==================================================");
+        System.out.println(">>> [DEBUG 1] ĐÃ VÀO CONTROLLER. Tên sự kiện: " + request.getTitle());
+        System.out.println("==================================================");
+
         try {
+            // 📸 CAMERA 2: Chuyển hàng xuống Service
+            System.out.println(">>> [DEBUG 2] Đang gọi Service để lưu Database...");
             Event createdEvent = organizerEventService.createFullEvent(organizerId, request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdEvent);
+
+            // 📸 CAMERA 3: Xác nhận lưu Database thành công
+            System.out.println(">>> [DEBUG 3] LƯU DB THÀNH CÔNG! Đã tạo ID sự kiện: " + createdEvent.getId());
+
+            // 🛡️ CHIÊU BỌC THÉP TRÁNH TRÀN RAM: Tạo Map thay vì trả nguyên Entity
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Tạo sự kiện mega thành công!");
+            response.put("eventId", createdEvent.getId());
+
+            // 📸 CAMERA 4: Trả hàng về Frontend
+            System.out.println(">>> [DEBUG 4] Gửi phản hồi 200 OK về cho Frontend...");
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+
         } catch (Exception e) {
-            e.printStackTrace(); // Log ra để dễ debug nếu thời gian parse bị lỗi
+            // Bắt các lỗi do Logic, Data (Exception)
+            System.err.println(">>> [LỖI EXCEPTION] Xảy ra lỗi Logic/Database:");
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Lỗi hệ thống khi lưu toàn bộ sự kiện: " + e.getMessage());
+
+        } catch (Error err) {
+            // LƯỚI TRỜI LỒNG LỘNG: Bắt cả lỗi tràn RAM (StackOverflowError)
+            System.err.println(">>> [LỖI SERVER NGHIÊM TRỌNG - ERROR] Tràn bộ nhớ / Sập luồng:");
+            err.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi hệ thống nghiêm trọng: Máy chủ bị quá tải hoặc vòng lặp vô tận.");
         }
     }
 

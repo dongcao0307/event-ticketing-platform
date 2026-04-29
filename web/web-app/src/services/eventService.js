@@ -1,7 +1,7 @@
 // src/services/eventService.js
 import { get } from './apiClient';
 
-<<<<<<< HEAD
+// ==================== Dữ liệu Mock / Fallback ====================
 const featuredEvents = [
   {
     id: "featured-1",
@@ -9,8 +9,7 @@ const featuredEvents = [
     date: '24 tháng 02, 2026',
     location: 'Sân vận động Mỹ Đình',
     price: 'Từ 750.000đ',
-    image:
-      'https://images.unsplash.com/photo-1519638399535-1b036603ac77?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1519638399535-1b036603ac77?auto=format&fit=crop&w=1200&q=80',
   },
   {
     id: "featured-2",
@@ -18,8 +17,7 @@ const featuredEvents = [
     date: '07 tháng 02, 2026',
     location: 'Hội trường GV3',
     price: 'Từ 350.000đ',
-    image:
-      'https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=1200&q=80',
   },
   {
     id: "featured-3",
@@ -27,124 +25,80 @@ const featuredEvents = [
     date: '25 tháng 01, 2026',
     location: 'TP. Hồ Chí Minh',
     price: 'Từ 250.000đ',
-    image:
-      'https://images.unsplash.com/photo-1542144582-dc4f5f8b5a50?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1542144582-dc4f5f8b5a50?auto=format&fit=crop&w=1200&q=80',
   },
 ];
 
-  const normalizeEvent = (e) => ({
-    id: String(e.id),
-    title: e.title,
-    date: e.formattedDate || '',
-    location: e.location || e.city || '',
-    city: e.city || '',
-    price: e.priceDisplay || 'Mien phi',
-    image: e.imageUrl || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=800&q=80',
-    category: e.category || 'OTHER',
-    status: e.status || 'UPCOMING',
-    description: e.description || '',
-    minPrice: e.minPrice,
-    maxPrice: e.maxPrice,
-    startTime: e.startTime,
-    endTime: e.endTime,
-    availableTickets: e.availableTickets,
-    totalTickets: e.totalTickets,
-    organizerName: e.organizerName,
-    isFeatured: e.isFeatured,
-    viewCount: e.viewCount,
-  });
+const fallbackFeatured = [
+  { id: 'f1', title: 'ARGU - Live in Vietnam 2026', date: '24 thang 04, 2026', location: 'SVD My Dinh, Ha Noi', price: 'Tu 999.000d', image: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80' },
+  { id: 'f2', title: 'The Traditional Water Puppet Show', date: '20 thang 04, 2026', location: 'Nha hat Mua roi Thang Long', price: 'Tu 350.000d', image: 'https://images.unsplash.com/photo-1519730901064-18ed6fdf2cd4?auto=format&fit=crop&w=1200&q=80' },
+  { id: 'f3', title: 'Le hoi Anh sang Ha Noi 2026', date: '15 thang 05, 2026', location: 'Cong vien Thong Nhat, Ha Noi', price: 'Tu 180.000d', image: 'https://images.unsplash.com/photo-1453974336165-b28f7a47d14d?auto=format&fit=crop&w=1200&q=80' },
+];
 
-  const fallbackFeatured = [
-    { id: 'f1', title: 'ARGU - Live in Vietnam 2026', date: '24 thang 04, 2026', location: 'SVD My Dinh, Ha Noi', price: 'Tu 999.000d', image: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80' },
-    { id: 'f2', title: 'The Traditional Water Puppet Show', date: '20 thang 04, 2026', location: 'Nha hat Mua roi Thang Long', price: 'Tu 350.000d', image: 'https://images.unsplash.com/photo-1519730901064-18ed6fdf2cd4?auto=format&fit=crop&w=1200&q=80' },
-    { id: 'f3', title: 'Le hoi Anh sang Ha Noi 2026', date: '15 thang 05, 2026', location: 'Cong vien Thong Nhat, Ha Noi', price: 'Tu 180.000d', image: 'https://images.unsplash.com/photo-1453974336165-b28f7a47d14d?auto=format&fit=crop&w=1200&q=80' },
-  ];
+const fallbackTrending = [
+  { id: 't1', title: 'DEM THANH - Dem nhac Trung Quan', date: '23 thang 04, 2026', location: 'Trung tam HNQG, Ha Noi', price: 'Tu 700.000d', image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=80', badge: '1' },
+  { id: 't2', title: 'Mr. Siro Concert 2026', date: '28 thang 05, 2026', location: 'Cung The thao Quan Ngua', price: 'Tu 450.000d', image: 'https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=1200&q=80', badge: '2' },
+  { id: 't3', title: 'Crossroads - The Untold Stories', date: '21 thang 04, 2026', location: 'Nha hat Hoa Binh, HCM', price: 'Tu 575.000d', image: 'https://images.unsplash.com/photo-1495121605193-b116b5b09bf5?auto=format&fit=crop&w=1200&q=80', badge: '3' },
+];
 
-  const fallbackTrending = [
-    { id: 't1', title: 'DEM THANH - Dem nhac Trung Quan', date: '23 thang 04, 2026', location: 'Trung tam HNQG, Ha Noi', price: 'Tu 700.000d', image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=80', badge: '1' },
-    { id: 't2', title: 'Mr. Siro Concert 2026', date: '28 thang 05, 2026', location: 'Cung The thao Quan Ngua', price: 'Tu 450.000d', image: 'https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=1200&q=80', badge: '2' },
-    { id: 't3', title: 'Crossroads - The Untold Stories', date: '21 thang 04, 2026', location: 'Nha hat Hoa Binh, HCM', price: 'Tu 575.000d', image: 'https://images.unsplash.com/photo-1495121605193-b116b5b09bf5?auto=format&fit=crop&w=1200&q=80', badge: '3' },
-  ];
+const fallbackRecommended = [
+  { id: 'r1', title: 'Kich Xom - Mua 3', date: '05 thang 05, 2026', location: 'San khau IDECAF, HCM', price: 'Tu 200.000d', image: 'https://images.unsplash.com/photo-1527060397950-31b8f0b6fe03?auto=format&fit=crop&w=1200&q=80' },
+  { id: 'r2', title: 'Workshop Terrarium & Candle', date: '08 thang 05, 2026', location: 'The Garden Workshop, Ha Noi', price: 'Tu 420.000d', image: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=1200&q=80' },
+  { id: 'r3', title: 'Concert Jazz Night Da Nang', date: '12 thang 05, 2026', location: 'Aria Hotel & Spa, Da Nang', price: 'Tu 350.000d', image: 'https://images.unsplash.com/photo-1513283487479-d8d9c1c0b7c1?auto=format&fit=crop&w=1200&q=80' },
+];
 
-  const fallbackRecommended = [
-    { id: 'r1', title: 'Kich Xom - Mua 3', date: '05 thang 05, 2026', location: 'San khau IDECAF, HCM', price: 'Tu 200.000d', image: 'https://images.unsplash.com/photo-1527060397950-31b8f0b6fe03?auto=format&fit=crop&w=1200&q=80' },
-    { id: 'r2', title: 'Workshop Terrarium & Candle', date: '08 thang 05, 2026', location: 'The Garden Workshop, Ha Noi', price: 'Tu 420.000d', image: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=1200&q=80' },
-    { id: 'r3', title: 'Concert Jazz Night Da Nang', date: '12 thang 05, 2026', location: 'Aria Hotel & Spa, Da Nang', price: 'Tu 350.000d', image: 'https://images.unsplash.com/photo-1513283487479-d8d9c1c0b7c1?auto=format&fit=crop&w=1200&q=80' },
-  ];
+const mockVenues = [
+    { id: 'v1', name: 'Sân vận động Mỹ Đình', address: 'Lê Đức Thọ, Mỹ Đình, Nam Từ Liêm, Hà Nội' },
+    { id: 'v2', name: 'Hội trường GV3', address: 'Đại học Công nghiệp TP.HCM' }
+];
 
-  const tryApi = async (apiFn, fallback) => {
-    try {
-      return await apiFn();
-    } catch (err) {
-      console.warn('[EventService] API unavailable, using fallback data:', err.message);
-      return fallback;
-    }
-  };
+// ==================== Helper Functions ====================
+const API_BASE_URL = 'http://localhost:8082/api/admin';
 
-  export const getFeaturedEvents = async () =>
-    tryApi(async () => {
-      const res = await get('/events/featured');
-      return (res.data || []).map(normalizeEvent);
-    }, fallbackFeatured);
+const simulateFetch = (data) => new Promise((resolve) => {
+    setTimeout(() => resolve(data), 500);
+});
 
-  export const getTrendingEvents = async () =>
-    tryApi(async () => {
-      const res = await get('/events/trending');
-      return (res.data || []).map((e, i) => ({ ...normalizeEvent(e), badge: String(i + 1) }));
-    }, fallbackTrending);
+const normalizeEvent = (e) => ({
+  id: String(e.id),
+  title: e.title,
+  date: e.formattedDate || '',
+  location: e.location || e.city || '',
+  city: e.city || '',
+  price: e.priceDisplay || 'Miễn phí',
+  image: e.imageUrl || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=800&q=80',
+  category: e.category || 'OTHER',
+  status: e.status || 'UPCOMING',
+  description: e.description || '',
+  minPrice: e.minPrice,
+  maxPrice: e.maxPrice,
+  startTime: e.startTime,
+  endTime: e.endTime,
+  availableTickets: e.availableTickets,
+  totalTickets: e.totalTickets,
+  organizerName: e.organizerName,
+  isFeatured: e.isFeatured,
+  viewCount: e.viewCount,
+});
 
-  export const getRecommendedEvents = async () =>
-    tryApi(async () => {
-      const res = await get('/events/latest');
-      return (res.data || []).slice(0, 6).map(normalizeEvent);
-    }, fallbackRecommended);
+const tryApi = async (apiFn, fallback) => {
+  try {
+    return await apiFn();
+  } catch (err) {
+    console.warn('[EventService] API unavailable, using fallback data:', err.message);
+    return fallback;
+  }
+};
 
-  export const getResaleEvents = async () =>
-    tryApi(async () => {
-      const res = await get('/events/search', { size: 6 });
-      return (res.data?.content || []).map(normalizeEvent);
-    }, fallbackRecommended);
+// ==================== Public Events API ====================
 
-  export const getWeekendEvents = async () =>
-    tryApi(async () => {
-      const res = await get('/events/category/FESTIVAL');
-      return (res.data || []).slice(0, 3).map(normalizeEvent);
-    }, [fallbackFeatured[2]]);
+export const getFeaturedEvents = async () =>
+  tryApi(async () => {
+    const res = await get('/events/featured');
+    return (res.data || []).map(normalizeEvent);
+  }, featuredEvents);
 
-  export const getMonthEvents = async () =>
-    tryApi(async () => {
-      const res = await get('/events/category/WORKSHOP');
-      return (res.data || []).slice(0, 3).map(normalizeEvent);
-    }, [fallbackRecommended[1]]);
-
-  export const searchEvents = async (keyword, filters = {}, page = 0, size = 20) =>
-    tryApi(async () => {
-      const params = { page, size };
-      if (keyword) params.keyword = keyword;
-      if (filters.category) params.category = filters.category;
-      if (filters.city) params.city = filters.city;
-      if (filters.status) params.status = filters.status;
-      const res = await get('/events/search', params);
-      return {
-        events: (res.data?.content || []).map(normalizeEvent),
-        totalElements: res.data?.totalElements || 0,
-        totalPages: res.data?.totalPages || 0,
-        page: res.data?.page || 0,
-      };
-    }, {
-      events: [...fallbackFeatured, ...fallbackTrending, ...fallbackRecommended],
-      totalElements: 9,
-      totalPages: 1,
-      page: 0,
-    });
-
-  export const getEventById = async (id) =>
-    tryApi(async () => {
-      const res = await get(`/events/${id}`);
-      return normalizeEvent(res.data);
-    }, null);
-
-
+export const getTrendingEvents = async () =>
   tryApi(async () => {
     const res = await get('/events/trending');
     return (res.data || []).map((e, i) => ({ ...normalizeEvent(e), badge: String(i + 1) }));
@@ -193,7 +147,6 @@ export const searchEvents = async (keyword, filters = {}, page = 0, size = 20) =
     totalElements: 9,
     totalPages: 1,
     page: 0,
->>>>>>> 770b79d10724ba128b509504f07153f4b616632e
   });
 
 export const getEventById = async (id) =>
@@ -201,46 +154,22 @@ export const getEventById = async (id) =>
     const res = await get(`/events/${id}`);
     return normalizeEvent(res.data);
   }, null);
-const API_BASE_URL = 'http://localhost:8082/api/admin';
 
-// ========== Public Events ==========
-export const getFeaturedEvents = async () => simulateFetch(featuredEvents);
-export const getTrendingEvents = async () => simulateFetch(trendingEvents);
-export const getRecommendedEvents = async () => simulateFetch(recommendedEvents);
-export const getResaleEvents = async () => simulateFetch(resaleEvents);
-export const getWeekendEvents = async () => simulateFetch(weekendEvents);
-export const getMonthEvents = async () => simulateFetch(monthEvents);
-export const getMockEvents = async () => simulateFetch(mockEvents);
+export const getMockEvents = async () => simulateFetch(featuredEvents);
 export const getMockVenues = async () => simulateFetch(mockVenues);
-// export const serviceFindEventById = async (eventId) => simulateFetch(
-//   mockEvents[Math.floor(Math.random() * 2.999999)]
-// )
-// export const serviceFindVenueById = async (venueId) => simulateFetch(
-//   mockVenues.find(v => v.id === venueId)
-// )
 
-// ========== Admin Event API Functions ==========
+// ==================== Admin Event API Functions ====================
 
-/**
- * Get all events with optional filters
- * @param {string} status - Filter by status: DRAFT, PUBLISHER, CANCELLED (optional)
- * @param {string} search - Search keyword (optional)
- */
 export const getAllAdminEvents = async (status = null, search = null) => {
   try {
     let url = `${API_BASE_URL}/events`;
     const params = new URLSearchParams();
-    
     if (status) params.append('status', status);
     if (search) params.append('search', search);
-    
-    if (params.toString()) {
-      url += `?${params.toString()}`;
-    }
+    if (params.toString()) url += `?${params.toString()}`;
     
     const response = await fetch(url);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    
     const data = await response.json();
     return data.data || [];
   } catch (error) {
@@ -249,15 +178,10 @@ export const getAllAdminEvents = async (status = null, search = null) => {
   }
 };
 
-/**
- * Get single event detail
- * @param {number} eventId - Event ID
- */
 export const getAdminEventDetail = async (eventId) => {
   try {
     const response = await fetch(`${API_BASE_URL}/events/${eventId}`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    
     const data = await response.json();
     return data.data || null;
   } catch (error) {
@@ -266,10 +190,6 @@ export const getAdminEventDetail = async (eventId) => {
   }
 };
 
-/**
- * Approve event (DRAFT -> PUBLISHER)
- * @param {number} eventId - Event ID to approve
- */
 export const approveEvent = async (eventId) => {
   try {
     const response = await fetch(`${API_BASE_URL}/events/${eventId}/approve`, {
@@ -278,7 +198,6 @@ export const approveEvent = async (eventId) => {
       body: JSON.stringify({}),
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    
     const data = await response.json();
     return data.data || null;
   } catch (error) {
@@ -287,11 +206,6 @@ export const approveEvent = async (eventId) => {
   }
 };
 
-/**
- * Reject event (DRAFT -> CANCELLED)
- * @param {number} eventId - Event ID to reject
- * @param {string} reason - Rejection reason
- */
 export const rejectEvent = async (eventId, reason = '') => {
   try {
     const response = await fetch(`${API_BASE_URL}/events/${eventId}/reject`, {
@@ -300,7 +214,6 @@ export const rejectEvent = async (eventId, reason = '') => {
       body: JSON.stringify({ eventId, reason }),
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    
     const data = await response.json();
     return data.data || null;
   } catch (error) {
@@ -309,11 +222,6 @@ export const rejectEvent = async (eventId, reason = '') => {
   }
 };
 
-/**
- * Lock event (any status -> CANCELLED)
- * @param {number} eventId - Event ID to lock
- * @param {string} reason - Lock reason
- */
 export const lockEvent = async (eventId, reason = '') => {
   try {
     const response = await fetch(`${API_BASE_URL}/events/${eventId}/lock`, {
@@ -322,7 +230,6 @@ export const lockEvent = async (eventId, reason = '') => {
       body: JSON.stringify({ eventId, reason }),
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    
     const data = await response.json();
     return data.data || null;
   } catch (error) {
@@ -331,22 +238,12 @@ export const lockEvent = async (eventId, reason = '') => {
   }
 };
 
-/**
- * Search events
- * @param {string} query - Search query (required)
- * @param {string} status - Filter by status (optional)
- */
 export const searchAdminEvents = async (query, status = null) => {
   try {
     let url = `${API_BASE_URL}/events/search?query=${encodeURIComponent(query)}`;
-    
-    if (status) {
-      url += `&status=${status}`;
-    }
-    
+    if (status) url += `&status=${status}`;
     const response = await fetch(url);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    
     const data = await response.json();
     return data.data || [];
   } catch (error) {
@@ -354,4 +251,3 @@ export const searchAdminEvents = async (query, status = null) => {
     throw error;
   }
 };
-

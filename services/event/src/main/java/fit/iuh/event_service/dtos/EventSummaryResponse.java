@@ -1,5 +1,6 @@
 package fit.iuh.event_service.dtos;
 
+
 import fit.iuh.event_service.models.enums.EventStatus;
 import lombok.Data;
 import java.time.LocalDateTime;

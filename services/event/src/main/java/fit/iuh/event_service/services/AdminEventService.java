@@ -1,12 +1,12 @@
-package fit.iuh.event_service.feature.admin_event.service;
+package fit.iuh.event_service.services;
 
-import fit.iuh.event_service.entity.Event;
-import fit.iuh.event_service.entity.EventPerformance;
-import fit.iuh.event_service.entity.EventStatus;
-import fit.iuh.event_service.feature.admin_event.dto.EventAdminDetailDTO;
-import fit.iuh.event_service.feature.admin_event.dto.EventAdminListDTO;
-import fit.iuh.event_service.repository.EventRepository;
-import fit.iuh.event_service.repository.EventPerformanceRepository;
+import fit.iuh.event_service.models.Event;
+import fit.iuh.event_service.models.EventPerformance;
+import fit.iuh.event_service.models.enums.EventStatus;
+import fit.iuh.event_service.dtos.EventAdminDetailDTO;
+import fit.iuh.event_service.dtos.EventAdminListDTO;
+import fit.iuh.event_service.repositories.EventRepository;
+import fit.iuh.event_service.repositories.EventPerformanceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -58,7 +58,7 @@ public class AdminEventService {
             throw new RuntimeException("Only DRAFT events can be approved");
         }
         
-        event.setStatus(EventStatus.PUBLISHER);
+        event.setStatus(EventStatus.PUBLISHED);
         Event saved = eventRepository.save(event);
         log.info("Event approved successfully: {}", eventId);
         return convertToDetailDTO(saved);
@@ -139,10 +139,8 @@ public class AdminEventService {
         List<EventPerformance> performances = performanceRepository.findByEventId(event.getId());
         if (!performances.isEmpty()) {
             EventPerformance perf = performances.get(0);
-            // Convert Unix timestamp to LocalDateTime
-            startDate = java.time.Instant.ofEpochMilli(perf.getStartTime())
-                    .atZone(java.time.ZoneId.systemDefault())
-                    .toLocalDateTime();
+            // Cả startTime và endTime bây giờ đều đã là LocalDateTime chuẩn rồi, chỉ cần gán trực tiếp!
+            startDate = perf.getStartTime();
             endDate = perf.getEndTime();
         }
         

@@ -2,6 +2,9 @@ import React, { useRef, useState, useEffect } from 'react';
 import axios from 'axios';
 import { ImageIcon, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify, List, ListOrdered, Image as ImageIcon2, PlaySquare, ChevronDown } from 'lucide-react';
 
+// === SỬA BƯỚC 1: Kéo API_URL về để trỏ đúng sang Backend (Cổng 8080) ===
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8082';
+
 const Step1EventInfo = ({ eventData, setEventData }) => {
   // 1. Tham chiếu đến các input file ẩn
   const thumbnailRef = useRef(null);
@@ -67,6 +70,7 @@ useEffect(() => {
   // Tương tự, bỏ selectedDistrictCode ra khỏi dependency
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [eventData?.district, districts]);
+
   // --- CÁC HÀM XỬ LÝ CHỌN ĐỊA CHỈ ---
   const handleProvinceChange = (e) => {
     const code = e.target.value;
@@ -126,7 +130,8 @@ useEffect(() => {
       formData.append('file', file);
 
       try {
-        const response = await axios.post('/api/organizer/files/upload', formData, {
+        // === SỬA BƯỚC 2: Thêm biến ${API_URL} vào trước link gọi API ===
+        const response = await axios.post(`${API_URL}/organizer/files/upload`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           }

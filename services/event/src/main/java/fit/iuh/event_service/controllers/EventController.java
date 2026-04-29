@@ -1,9 +1,9 @@
-package fit.iuh.event_service.controller;
+package fit.iuh.event_service.controllers;
 
-import fit.iuh.event_service.dto.ApiResponse;
-import fit.iuh.event_service.dto.EventResponse;
-import fit.iuh.event_service.dto.PageResponse;
-import fit.iuh.event_service.service.EventService;
+import fit.iuh.event_service.dtos.ApiResponse;
+import fit.iuh.event_service.dtos.EventResponse;
+import fit.iuh.event_service.dtos.PageResponse;
+import fit.iuh.event_service.services.EventService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

@@ -1,11 +1,11 @@
-package fit.iuh.event_service.feature.admin_event.controller;
+package fit.iuh.event_service.controllers;
 
-import fit.iuh.event_service.entity.EventStatus;
-import fit.iuh.event_service.feature.admin_event.dto.ApiResponseDTO;
-import fit.iuh.event_service.feature.admin_event.dto.EventAdminDetailDTO;
-import fit.iuh.event_service.feature.admin_event.dto.EventAdminListDTO;
-import fit.iuh.event_service.feature.admin_event.dto.EventApprovalRequestDTO;
-import fit.iuh.event_service.feature.admin_event.service.AdminEventService;
+import fit.iuh.event_service.models.enums.EventStatus;
+import fit.iuh.event_service.dtos.ApiResponseDTO;
+import fit.iuh.event_service.dtos.EventAdminDetailDTO;
+import fit.iuh.event_service.dtos.EventAdminListDTO;
+import fit.iuh.event_service.dtos.EventApprovalRequestDTO;
+import fit.iuh.event_service.services.AdminEventService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -18,7 +18,6 @@ import java.util.List;
 @RequestMapping("/api/admin/events")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class AdminEventController {
     private final AdminEventService adminEventService;
     

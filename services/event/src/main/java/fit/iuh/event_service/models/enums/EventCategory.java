@@ -1,4 +1,4 @@
-package fit.iuh.event_service.entity.enums;
+package fit.iuh.event_service.models.enums;
 
 public enum EventCategory {
     MUSIC,

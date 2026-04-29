@@ -138,6 +138,11 @@ services:
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
 
+      AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION}
+
   booking-service:
     build:
       context: ./services/booking
@@ -225,7 +230,7 @@ services:
       rabbitmq:
         condition: service_healthy
     ports:
-      - "8087:8087"
+      - "8090:8090"
     networks:
       - ticketbox-net
     environment:

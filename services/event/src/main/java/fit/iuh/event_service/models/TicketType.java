@@ -3,6 +3,7 @@ package fit.iuh.event_service.models;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Data
 @Entity
@@ -22,11 +23,12 @@ public class TicketType {
     private Integer soldQuantity = 0; // Mặc định là 0 khi mới tạo
     private Integer reservedQuantity = 0; // Mặc định là 0
     private Integer maxTicketsPerUser;
+
     @Column(name = "sale_start")
-    private String saleStart; // Có thể dùng LocalDateTime nếu bạn muốn parse
+    private LocalDateTime saleStart;
 
     @Column(name = "sale_end")
-    private String saleEnd;
+    private LocalDateTime saleEnd;
 
     @Version
     private Long version; // Khớp với UML dùng để Lock Optimistic

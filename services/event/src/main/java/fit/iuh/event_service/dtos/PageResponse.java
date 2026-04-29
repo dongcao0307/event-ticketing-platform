@@ -1,4 +1,4 @@
-package fit.iuh.event_service.dto;
+package fit.iuh.event_service.dtos;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

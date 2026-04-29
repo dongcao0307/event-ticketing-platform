@@ -1,6 +1,6 @@
 package fit.iuh.event_service.exception;
 
-import fit.iuh.event_service.dto.ApiResponse;
+import fit.iuh.event_service.dtos.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
