@@ -1,11 +1,11 @@
-package fit.iuh.event_service.service;
+package fit.iuh.event_service.services;
 
-import fit.iuh.event_service.dto.EventResponse;
-import fit.iuh.event_service.dto.PageResponse;
-import fit.iuh.event_service.entity.enums.EventCategory;
-import fit.iuh.event_service.entity.enums.EventStatus;
+import fit.iuh.event_service.dtos.EventResponse;
+import fit.iuh.event_service.dtos.PageResponse;
+import fit.iuh.event_service.models.enums.EventCategory;
+import fit.iuh.event_service.models.enums.EventStatus;
 import fit.iuh.event_service.exception.ResourceNotFoundException;
-import fit.iuh.event_service.repository.EventRepository;
+import fit.iuh.event_service.repositories.EventRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;

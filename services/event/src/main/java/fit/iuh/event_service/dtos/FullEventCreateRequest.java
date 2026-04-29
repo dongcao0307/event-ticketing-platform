@@ -1,10 +1,14 @@
 package fit.iuh.event_service.dtos;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
+
 import java.math.BigDecimal;
+import java.time.LocalDateTime; // Thêm thư viện thời gian
 import java.util.List;
 
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true) // ---> BẢO VỆ CLASS CHA
 public class FullEventCreateRequest {
     // --- Step 1 Data ---
     private String title;
@@ -29,25 +33,33 @@ public class FullEventCreateRequest {
 
     // Class lồng hứng Suất diễn & Vé
     @Data
+    @JsonIgnoreProperties(ignoreUnknown = true) // ---> BẢO VỆ CLASS SUẤT DIỄN
     public static class PerformanceRequest {
-        private String startTime;
-        private String endTime;
+
+        private LocalDateTime startTime;
+
+        private LocalDateTime endTime;
+
         private List<TicketRequest> tickets;
     }
 
     @Data
+    @JsonIgnoreProperties(ignoreUnknown = true) // ---> BẢO VỆ CLASS VÉ
     public static class TicketRequest {
         private String name;
-        private BigDecimal price; // Đổi sang BigDecimal theo UML
-        private Integer totalQuantity; // Bổ sung để khớp UML
+        private BigDecimal price;
+        private Integer totalQuantity;
         private Integer maxTicketsPerUser;
         private boolean isFree;
-        private String saleStart;
-        private String saleEnd;
+
+        private LocalDateTime saleStart;
+
+        private LocalDateTime saleEnd;
     }
 
     // Class lồng hứng Cài đặt (Step 3)
     @Data
+    @JsonIgnoreProperties(ignoreUnknown = true) // ---> BẢO VỆ CÀI ĐẶT
     public static class SettingsRequest {
         private String customUrl;
         private String privacy;
@@ -55,13 +67,14 @@ public class FullEventCreateRequest {
         private boolean enableQuestionnaire;
     }
 
-    // Class lồng hứng Thanh toán (Step 4) - Khớp với bảng OrganizerPaymentInfo
+    // Class lồng hứng Thanh toán (Step 4)
     @Data
+    @JsonIgnoreProperties(ignoreUnknown = true) // ---> BẢO VỆ THANH TOÁN
     public static class PaymentInfoRequest {
-        private String accountName; // Sẽ map vào accountOwner
+        private String accountName;
         private String accountNumber;
         private String bankName;
-        private String branch; // Sẽ map vào bankBranch
+        private String branch;
         private String businessType;
         private String fullName;
         private String address;

@@ -1,6 +1,6 @@
-package fit.iuh.event_service.dto;
+package fit.iuh.event_service.dtos;
 
-import fit.iuh.event_service.entity.Event;
+import fit.iuh.event_service.models.Event;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

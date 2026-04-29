@@ -1,5 +1,6 @@
 package fit.iuh.event_service.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -11,7 +12,10 @@ public class OrganizerPaymentInfo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long eventId; // External ID theo UML
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "event_id")
+    @JsonIgnore
+    private Event event;
 
     private String accountNumber;
     private String accountOwner;

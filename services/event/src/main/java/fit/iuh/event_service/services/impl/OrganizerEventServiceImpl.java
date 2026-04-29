@@ -115,11 +115,11 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
                 perf.setStatus(PerformanceStatus.OPEN);
 
                 // Xử lý an toàn chuỗi thời gian suất diễn
-                if (perfReq.getStartTime() != null && !perfReq.getStartTime().trim().isEmpty()) {
-                    perf.setStartTime(LocalDateTime.parse(perfReq.getStartTime()));
+                if (perfReq.getStartTime() != null) {
+                    perf.setStartTime(perfReq.getStartTime());
                 }
-                if (perfReq.getEndTime() != null && !perfReq.getEndTime().trim().isEmpty()) {
-                    perf.setEndTime(LocalDateTime.parse(perfReq.getEndTime()));
+                if (perfReq.getEndTime() != null) {
+                    perf.setEndTime(perfReq.getEndTime());
                 }
 
                 // Tính tổng sức chứa
@@ -302,11 +302,11 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
                 perf.setStatus(PerformanceStatus.OPEN);
 
                 // Xử lý an toàn thời gian gửi từ Frontend (Chống chuỗi rỗng)
-                if (perfReq.getStartTime() != null && !perfReq.getStartTime().trim().isEmpty()) {
-                    perf.setStartTime(LocalDateTime.parse(perfReq.getStartTime()));
+                if (perfReq.getStartTime() != null) {
+                    perf.setStartTime(perfReq.getStartTime());
                 }
-                if (perfReq.getEndTime() != null && !perfReq.getEndTime().trim().isEmpty()) {
-                    perf.setEndTime(LocalDateTime.parse(perfReq.getEndTime()));
+                if (perfReq.getEndTime() != null) {
+                    perf.setEndTime(perfReq.getEndTime());
                 }
 
                 // Tự động tính tổng sức chứa (totalCapacity) dựa trên tổng số lượng vé
@@ -351,7 +351,7 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
         // ==========================================
         if (request.getPaymentInfo() != null) {
             OrganizerPaymentInfo payment = new OrganizerPaymentInfo();
-            payment.setEventId(savedEvent.getId());
+            payment.setEvent(savedEvent);
 
             // Map dữ liệu từ DTO sang Entity (Theo UML của bạn)
             payment.setAccountOwner(request.getPaymentInfo().getAccountName());
