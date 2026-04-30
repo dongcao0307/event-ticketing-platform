@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -12,12 +13,14 @@ import java.math.BigDecimal;
 @ToString
 @Builder
 @Entity
-@Table(name = "ticket_types")
+@Table(name = "ticket_types", check = {
+        @CheckConstraint(constraint = "sale_start < sale_end")
+})
 public class TicketType {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(nullable = false)
+    @Column(name = "performance_id", nullable = false)
     private Long performanceId;
     @Column(nullable = false, length = 50)
     private String name;
@@ -25,12 +28,16 @@ public class TicketType {
     private BigDecimal price;
     @Column(nullable = false, check = @CheckConstraint(constraint = "total_quantity > 0"))
     private Integer totalQuantity;
-    @Column(nullable = false, check = @CheckConstraint(constraint = "sold_quantity >= 0"))
-    private Integer soldQuantity;
-    @Column(nullable = false, check = @CheckConstraint(constraint = "reserved_quantity >= 0"))
-    private Integer reservedQuantity;
-    @Column(nullable = false, check = @CheckConstraint(constraint = "max_tickets_per_user > 0"))
+    @Column(check = @CheckConstraint(constraint = "sold_quantity >= 0"))
+    private Integer soldQuantity = 0;
+    @Column(check = @CheckConstraint(constraint = "reserved_quantity >= 0"))
+    private Integer reservedQuantity = 0;
+    @Column(name = "max_tickets_per_user", nullable = false)
     private Integer maxTicketsPerUser;
-    @Column(nullable = false)
+    @Column(name = "sale_start", nullable = false)
+    private LocalDateTime saleStart;
+    @Column(name = "sale_end", nullable = false)
+    private LocalDateTime saleEnd;
+    @Version
     private Long version;
 }

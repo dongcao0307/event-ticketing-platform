@@ -6,6 +6,7 @@ import lombok.*;
 import org.hibernate.validator.constraints.Length;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -23,5 +24,7 @@ public class TicketTypeCreateRequest {
     private Integer totalQuantity;
     @Positive(message = "max tickets per user must be greater than 0")
     private Integer maxTicketsPerUser;
+    private LocalDateTime saleStart;
+    private LocalDateTime saleEnd;
     private Long version;
 }

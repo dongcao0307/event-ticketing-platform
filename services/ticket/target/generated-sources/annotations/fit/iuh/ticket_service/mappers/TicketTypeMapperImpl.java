@@ -9,8 +9,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-04-17T21:38:52+0700",
-    comments = "version: 1.6.3, compiler: javac, environment: Java 23 (Oracle Corporation)"
+    date = "2026-04-30T14:52:46+0700",
+    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.0.v20260407-0427, environment: Java 21.0.10 (Eclipse Adoptium)"
 )
 @Component
 public class TicketTypeMapperImpl implements TicketTypeMapper {
@@ -28,6 +28,8 @@ public class TicketTypeMapperImpl implements TicketTypeMapper {
         ticketType.price( request.getPrice() );
         ticketType.totalQuantity( request.getTotalQuantity() );
         ticketType.maxTicketsPerUser( request.getMaxTicketsPerUser() );
+        ticketType.saleStart( request.getSaleStart() );
+        ticketType.saleEnd( request.getSaleEnd() );
         ticketType.version( request.getVersion() );
 
         ticketType.reservedQuantity( 0 );
@@ -67,6 +69,8 @@ public class TicketTypeMapperImpl implements TicketTypeMapper {
         ticketTypeResponse.setSoldQuantity( ticketType.getSoldQuantity() );
         ticketTypeResponse.setReservedQuantity( ticketType.getReservedQuantity() );
         ticketTypeResponse.setMaxTicketsPerUser( ticketType.getMaxTicketsPerUser() );
+        ticketTypeResponse.setSaleStart( ticketType.getSaleStart() );
+        ticketTypeResponse.setSaleEnd( ticketType.getSaleEnd() );
         ticketTypeResponse.setVersion( ticketType.getVersion() );
 
         return ticketTypeResponse;

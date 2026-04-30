@@ -5,8 +5,10 @@ import lombok.*;
 @Getter
 @ToString
 public enum TicketStatus {
-    ACTIVE,
+    PENDING,
+    PAID,
     USED,
     REFUNDED,
-    CANCELLED
+    CANCELLED,
+    EXPIRED
 }
