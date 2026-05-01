@@ -195,3 +195,7 @@ export const serviceUpdateTicketTypes = async (ticketTypes) => {
 export const serviceUpsertTicketTypes = async (ticketTypes) => {
   return axios.post("http://localhost:8084/api/organizer/ticket_type/upsert/bulk", ticketTypes)
 }
+
+export const serviceGetBookedSeats = async (performanceId) => {
+  return axios.get(`http://localhost:8080/api/tickets/performance/${performanceId}/booked-seats`)
+}

@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, MapPin, Clock } from 'lucide-react';
 import { getDetailedEventById, serviceAddBookingItems, serviceCreateBooking, serviceCreateTickets } from '../services/bookingService';
 import { buildFreeCheckoutPayload, serviceCreateFreeCheckout } from '../services/paymentService';
+import { serviceGetBookedSeats } from '../services/ticketService';
 import { useEvent } from '../hooks/useEvent';
 
 const EMPTY_ARRAY = [];
@@ -25,6 +26,7 @@ const SeatSelectionPage = () => {
   const { setBookingSelection, setBookingOrderData } = useEvent();
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [bookedSeats, setBookedSeats] = useState([]);
 
   useEffect(() => {
     const load = async () => {
@@ -36,8 +38,8 @@ const SeatSelectionPage = () => {
   }, [id]);
 
   const occupiedSet = useMemo(
-    () => new Set(event?.occupiedSeats || []),
-    [event]
+    () => new Set([...(event?.occupiedSeats || []), ...bookedSeats]),
+    [event, bookedSeats]
   );
 
   const activePerformance = useMemo(() => {
@@ -52,6 +54,18 @@ const SeatSelectionPage = () => {
 
   useEffect(() => {
     setSelectedSeats([]);
+    if (!activePerformance?.id) return;
+    const fetchBookedSeats = async () => {
+      try {
+        const res = await serviceGetBookedSeats(activePerformance.id);
+        if (res.data?.body || res.data?.data) {
+          setBookedSeats(res.data.body || res.data.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch booked seats', err);
+      }
+    };
+    fetchBookedSeats();
   }, [activePerformance?.id]);
 
   const toggleSeat = (seatKey) => {

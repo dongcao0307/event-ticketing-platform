@@ -24,13 +24,22 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.ArrayList;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import fit.iuh.ticket_service.redis.TicketRedisKeys;
+import java.util.concurrent.TimeUnit;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TicketServiceImpl implements TicketService {
     private final TicketRepository ticketRepository;
     private final TicketMapper ticketMapper;
     private final TicketExpiryScheduler ticketExpiryScheduler;
+    private final StringRedisTemplate stringRedisTemplate;
+    private final ObjectMapper objectMapper;
 
     @Override
     public Ticket findByIdRaw(Long id) {
@@ -98,5 +107,29 @@ public class TicketServiceImpl implements TicketService {
         }
         ticketMapper.updateTicket(request, findByIdRaw(request.getId()));
         return true;
+    }
+
+    @Override
+    public List<String> getBookedSeats(Long performanceId) {
+        String key = TicketRedisKeys.bookedSeatsKey(performanceId);
+        if (Boolean.TRUE.equals(stringRedisTemplate.hasKey(key))) {
+            String cached = stringRedisTemplate.opsForValue().get(key);
+            try {
+                if (cached != null && !cached.isEmpty()) {
+                    return objectMapper.readValue(cached, new TypeReference<List<String>>(){});
+                }
+            } catch (Exception e) {
+                log.error("Failed to parse cached booked seats for performanceId {}", performanceId, e);
+            }
+            return new ArrayList<>();
+        }
+
+        List<String> bookedSeats = ticketRepository.findBookedSeatsByPerformanceId(performanceId);
+        try {
+            stringRedisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(bookedSeats), 30, TimeUnit.MINUTES);
+        } catch (Exception e) {
+            log.error("Failed to cache booked seats for performanceId {}", performanceId, e);
+        }
+        return bookedSeats;
     }
 }

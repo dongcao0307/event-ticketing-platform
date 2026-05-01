@@ -12,4 +12,5 @@ public interface TicketService {
     boolean addTicket(TicketCreateRequest request);
     boolean bulkAddTickets(List<TicketCreateRequest> requests);
     boolean updateTicket(TicketUpdateRequest request);
+    List<String> getBookedSeats(Long performanceId);
 }
