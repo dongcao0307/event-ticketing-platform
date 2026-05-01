@@ -12,6 +12,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.concurrent.TimeUnit;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import fit.iuh.ticket_service.redis.TicketRedisKeys;
 
 @Slf4j
 @Component
@@ -20,6 +26,8 @@ import java.util.List;
 public class BookingPaidListener {
     private final TicketRepository ticketRepository;
     private final TicketExpiryScheduler ticketExpiryScheduler;
+    private final StringRedisTemplate stringRedisTemplate;
+    private final ObjectMapper objectMapper;
 
     @RabbitListener(queues = "${booking.messaging.queue}")
     @Transactional
@@ -46,6 +54,24 @@ public class BookingPaidListener {
         if (updatedCount > 0) {
             ticketRepository.saveAll(tickets);
             log.info("Updated {} tickets to PAID for booking {}", updatedCount, event.getBookingId());
+
+            Set<Long> performanceIds = tickets.stream()
+                .filter(t -> t.getTicketStatus() == TicketStatus.PAID)
+                .map(Ticket::getPerformanceId)
+                .collect(Collectors.toSet());
+
+            for (Long performanceId : performanceIds) {
+                String key = TicketRedisKeys.bookedSeatsKey(performanceId);
+                if (Boolean.TRUE.equals(stringRedisTemplate.hasKey(key))) {
+                    List<String> bookedSeats = ticketRepository.findBookedSeatsByPerformanceId(performanceId);
+                    try {
+                        stringRedisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(bookedSeats), 30, TimeUnit.MINUTES);
+                        log.info("Updated Redis cache for booked seats of performance {}", performanceId);
+                    } catch (Exception e) {
+                        log.error("Failed to update Redis cache for booked seats of performance {}", performanceId, e);
+                    }
+                }
+            }
         }
     }
 }

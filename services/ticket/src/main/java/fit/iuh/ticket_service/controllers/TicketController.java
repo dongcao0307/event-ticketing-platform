@@ -47,4 +47,14 @@ public class TicketController {
                         .build()
         );
     }
+
+    @GetMapping("/performance/{performanceId}/booked-seats")
+    public ResponseEntity<ApiResponse<List<String>>> getBookedSeats(@PathVariable Long performanceId) {
+        List<String> bookedSeats = ticketService.getBookedSeats(performanceId);
+        return ResponseEntity.ok(
+                ApiResponse.<List<String>>builder()
+                        .body(bookedSeats)
+                        .build()
+        );
+    }
 }
