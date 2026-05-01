@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Search, Bell, Settings, TrendingUp, Users, CalendarDays,
@@ -6,6 +6,7 @@ import {
   ShieldCheck, ShoppingBag, UserPlus, ChevronRight,
 } from 'lucide-react'
 import AdminSidebar from '../components/AdminSidebar'
+import { getAllAdminEvents } from '../services/eventService'
 
 /* ── helpers ─────────────────────────────────────────────────── */
 const Card = ({ children, className = '' }) => (
@@ -88,6 +89,38 @@ const QUICK_ACTIONS = [
 /* ── page ────────────────────────────────────────────────────── */
 const AdminDashboard = () => {
   const [chartFilter, setChartFilter] = useState('7d')
+  const [events, setEvents] = useState([])
+  const [eventsLoading, setEventsLoading] = useState(true)
+  const [draftCount, setDraftCount] = useState(0)
+
+  // Load events from API
+  useEffect(() => {
+    const loadEvents = async () => {
+      try {
+        setEventsLoading(true)
+        const data = await getAllAdminEvents()
+        setEvents(data)
+        setDraftCount(data.filter(e => e.status === 'DRAFT').length)
+      } catch (error) {
+        console.error('Error loading events:', error)
+      } finally {
+        setEventsLoading(false)
+      }
+    }
+
+    loadEvents()
+  }, [])
+
+  // Map API events to upcoming format
+  const UPCOMING = events.slice(0, 3).map(event => ({
+    id: event.id,
+    name: event.title,
+    date: event.createdAt ? new Date(event.createdAt).toLocaleDateString('vi-VN') : 'N/A',
+    badge: event.status === 'DRAFT' ? 'Chờ duyệt' : event.status === 'PUBLISHER' ? 'Đã duyệt' : 'Bị từ chối',
+    badgeCls: event.status === 'DRAFT' ? 'text-yellow-400 bg-yellow-500/10' : event.status === 'PUBLISHER' ? 'text-[#26bc71] bg-[#26bc71]/10' : 'text-red-400 bg-red-500/10',
+    tickets: '0 vé',
+    sold: 0,
+  }))
 
   return (
     <div className="min-h-screen bg-[#1a1a1a] text-white flex">
@@ -126,7 +159,7 @@ const AdminDashboard = () => {
             {[
               { label: 'Tổng doanh thu',    value: '425.800.000 ₫', sub: 'so với tháng trước', change: '+12.5%', up: true,  icon: TrendingUp,   iconBg: 'bg-[#26bc71]' },
               { label: 'Người dùng mới',    value: '1.240',         sub: 'tốc độ tăng trưởng', change: '+8.2%',  up: true,  icon: Users,        iconBg: 'bg-blue-600' },
-              { label: 'Sự kiện chờ duyệt', value: '14',            sub: 'Cần xử lý ngay',     change: null,      up: false, icon: CalendarDays, iconBg: 'bg-orange-600', alert: true },
+              { label: 'Sự kiện chờ duyệt', value: `${draftCount}`,  sub: 'Cần xử lý ngay',     change: null,      up: false, icon: CalendarDays, iconBg: 'bg-orange-600', alert: true },
               { label: 'Vé đang lưu hành',  value: '8.450',         sub: 'đang trong lưu thông', change: '+5.1%', up: true, icon: Ticket,        iconBg: 'bg-violet-600' },
             ].map((s) => (
               <Card key={s.label}>

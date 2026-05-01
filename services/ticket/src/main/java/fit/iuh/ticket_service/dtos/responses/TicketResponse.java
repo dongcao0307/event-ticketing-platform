@@ -21,5 +21,6 @@ public class TicketResponse {
     private String qrCode;
     private BigDecimal priceAtPurchase;
     private TicketStatus ticketStatus;
+    private String seatNumber;
     private LocalDateTime checkInAt;
 }
