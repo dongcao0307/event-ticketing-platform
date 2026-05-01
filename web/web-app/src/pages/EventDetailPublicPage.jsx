@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { Calendar, MapPin, ChevronRight, Clock, Building2, Share2, Heart } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { getEventById, getTrendingEvents } from '../services/eventService';
+import { getTrendingEvents } from '../services/eventService';
+import { getDetailedEventById } from '../services/bookingService';
 
 const EventDetailPublicPage = () => {
   const { id } = useParams();
@@ -12,12 +13,13 @@ const EventDetailPublicPage = () => {
   const [relatedEvents, setRelatedEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState(false);
+  const [expandedPerformanceId, setExpandedPerformanceId] = useState(null);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
-        const data = await getEventById(id);
+        const data = await getDetailedEventById(id);
         setEvent(data);
         const related = await getTrendingEvents();
         setRelatedEvents(related || []);
@@ -31,11 +33,32 @@ const EventDetailPublicPage = () => {
     load();
   }, [id]);
 
-  const formatPrice = (p) =>
-    p?.toLocaleString('vi-VN') + 'đ';
+  const formatPrice = (p) => (Number(p) || 0).toLocaleString('vi-VN') + 'đ';
 
-  const handleBookNow = () => {
-    navigate(`/event/${id}/tickets`);
+  const formatTime = (value) => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatDate = (value) => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+
+  const isSeatEvent = (event?.category || '').toUpperCase() === 'THEATER';
+
+  const handlePurchase = (performanceId) => {
+    const params = new URLSearchParams({ showtime: performanceId });
+    const nextPath = isSeatEvent ? 'seats' : 'tickets';
+    navigate(`/event/${id}/${nextPath}?${params.toString()}`);
+  };
+
+  const togglePerformance = (performanceId) => {
+    setExpandedPerformanceId((prev) => (prev === performanceId ? null : performanceId));
   };
 
   if (loading) {
@@ -75,7 +98,7 @@ const EventDetailPublicPage = () => {
             <div className="flex-1 min-w-0">
               {/* Banner */}
               <div className="rounded-xl overflow-hidden shadow-md mb-5">
-                <img src={event.image} alt={event.title} className="w-full h-64 lg:h-80 object-cover" />
+                <img src={event.image || event.imageUrl} alt={event.title} className="w-full h-64 lg:h-80 object-cover" />
               </div>
 
               {/* Title & actions */}
@@ -153,29 +176,67 @@ const EventDetailPublicPage = () => {
                 <p className="text-sm leading-relaxed text-gray-600">{event.description || 'Chưa có mô tả chi tiết cho sự kiện này.'}</p>
               </div>
 
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div className="bg-[#1a1a2e] p-4 text-white">
-                  <h3 className="font-bold text-base">{event.title}</h3>
+              <div className="bg-[#1f2937] rounded-xl shadow-sm overflow-hidden">
+                <div className="bg-[#111827] p-4 text-white border-b border-white/10">
+                  <h3 className="font-bold text-base">Lịch diễn & vé</h3>
                   <div className="flex items-center gap-1.5 mt-2 text-sm text-gray-300">
                     <MapPin size={14} />
                     <span>{event.location || event.city}</span>
                   </div>
                 </div>
-                <div className="p-4">
-                  <div className="text-sm font-semibold text-gray-700 mb-3">Giá vé</div>
-                  <div className="text-2xl font-bold text-[#26bc71]">{event.price || event.priceDisplay || 'Miễn phí'}</div>
-                  <div className="mt-3 text-sm text-gray-500">
-                    {event.organizerName ? `Tổ chức bởi ${event.organizerName}` : 'Ban tổ chức chưa cập nhật'}
-                  </div>
-                </div>
-                <div className="p-4 pt-0">
-                  <button
-                    onClick={handleBookNow}
-                    className="w-full py-3 bg-[#26bc71] text-white font-bold rounded-xl hover:bg-[#1fa86a] transition text-sm flex items-center justify-center gap-2"
-                  >
-                    Mua vé ngay
-                    <ChevronRight size={16} />
-                  </button>
+                <div className="divide-y divide-white/10">
+                  {(event.performances || []).length === 0 && (
+                    <div className="p-4 text-sm text-gray-400">Chưa có suất diễn cho sự kiện này.</div>
+                  )}
+                  {(event.performances || []).map((perf) => {
+                    const timeLabel = perf.label || `${formatTime(perf.startTime)} - ${formatTime(perf.endTime)}`;
+                    const dateLabel = perf.date || formatDate(perf.startTime) || 'Đang cập nhật';
+                    const isDisabled = perf.status && perf.status !== 'OPEN';
+                    const isExpanded = expandedPerformanceId === perf.id;
+                    return (
+                      <div key={perf.id} className="bg-[#1f2937]">
+                        <button
+                          onClick={() => togglePerformance(perf.id)}
+                          className="w-full px-4 py-3 flex items-center justify-between gap-3 text-left hover:bg-[#2b3340] transition"
+                        >
+                          <div>
+                            <div className="text-sm text-white font-semibold">{timeLabel || 'Chưa có giờ'}</div>
+                            <div className="text-xs text-[#26bc71] mt-0.5">{dateLabel}</div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {isDisabled && (
+                              <span className="text-xs text-gray-400">Vé ngừng bán online</span>
+                            )}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePurchase(perf.id);
+                              }}
+                              disabled={isDisabled}
+                              className="px-3 py-1.5 bg-[#26bc71] text-white text-xs font-semibold rounded-md hover:bg-[#1fa86a] transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                            >
+                              Mua vé ngay
+                              <ChevronRight size={14} />
+                            </button>
+                          </div>
+                        </button>
+                        {isExpanded && (
+                          <div className="bg-[#111827] px-4 py-3">
+                            <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-2">Thông tin vé</div>
+                            {(perf.tickets || []).length === 0 && (
+                              <div className="text-xs text-gray-500">Chưa có loại vé cho suất diễn này.</div>
+                            )}
+                            {(perf.tickets || []).map((tt) => (
+                              <div key={tt.id} className="flex items-center justify-between py-2 border-b border-white/10 last:border-0">
+                                <span className="text-xs text-gray-200">{tt.label || tt.name}</span>
+                                <span className="text-xs font-semibold text-[#26bc71]">{formatPrice(tt.price)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>

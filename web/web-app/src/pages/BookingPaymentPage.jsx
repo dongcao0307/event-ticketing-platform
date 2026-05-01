@@ -1,21 +1,54 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Calendar, Clock3, MapPin, Ticket } from 'lucide-react';
+import { Calendar, MapPin, Ticket } from 'lucide-react';
 import Header from '../components/Header';
 import { useEvent } from '../hooks/useEvent';
-import { serviceGetOrderById } from '../services/bookingService';
+import { serviceGetBookingById } from '../services/bookingService';
 import { serviceGetMomoPaymentStatus, serviceGetVnPayPaymentStatus } from '../services/paymentService';
 
 const PAYMENT_METHODS = [
-  { value: 'MOMO', label: 'MoMo (Thanh toan tren web)' },
-  { value: 'VNPAY', label: 'VNPAY/Ung dung ngan hang' },
+  { value: 'MOMO', label: 'MoMo (Thanh toan tren web)', badge: 'MoMo', accent: '#d82d78' },
+  { value: 'VNPAY', label: 'VNPAY/Ung dung ngan hang', badge: 'VNPay', accent: '#0a6cff' },
 ];
 
 const formatPrice = (value) => Number(value || 0).toLocaleString('vi-VN') + ' đ';
 
+const UI_TIMEOUT_MINUTES = 10;
+
+const parseServerDate = (value) => {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  const raw = String(value).trim();
+  if (!raw) return null;
+  const hasTimezone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(raw);
+  const normalized = hasTimezone ? raw : `${raw}Z`;
+  const parsed = new Date(normalized);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const resolveUiExpiredAt = (booking) => {
+  if (!booking) return null;
+
+  const createdAt = parseServerDate(booking.createdAt);
+  const serverExpiredAt = parseServerDate(booking.expiredAt);
+  const createdMs = createdAt ? createdAt.getTime() : null;
+  const serverMs = serverExpiredAt ? serverExpiredAt.getTime() : null;
+
+  if (createdMs != null) {
+    const uiMs = createdMs + UI_TIMEOUT_MINUTES * 60 * 1000;
+    if (serverMs != null) {
+      return new Date(Math.min(uiMs, serverMs));
+    }
+    return new Date(uiMs);
+  }
+
+  return serverMs != null ? new Date(serverMs) : null;
+};
+
 const toSecondsLeft = (expiredAt) => {
   if (!expiredAt) return 0;
-  const milliseconds = new Date(expiredAt).getTime() - Date.now();
+  const timeValue = expiredAt instanceof Date ? expiredAt.getTime() : new Date(expiredAt).getTime();
+  const milliseconds = timeValue - Date.now();
   return Math.max(0, Math.floor(milliseconds / 1000));
 };
 
@@ -57,7 +90,8 @@ const BookingPaymentPage = () => {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(
     normalizeProvider(bookingPayment?.provider) || paymentProviderFromQuery || 'MOMO'
   );
-  const [countdownSec, setCountdownSec] = useState(toSecondsLeft(bookingOrder?.expiredAt));
+  const [uiExpiredAt, setUiExpiredAt] = useState(resolveUiExpiredAt(bookingOrder));
+  const [countdownSec, setCountdownSec] = useState(toSecondsLeft(resolveUiExpiredAt(bookingOrder)));
   const [paying, setPaying] = useState(false);
   const [paymentError, setPaymentError] = useState('');
   const [paymentStatus, setPaymentStatus] = useState(null);
@@ -73,7 +107,9 @@ const BookingPaymentPage = () => {
   useEffect(() => {
     if (bookingOrder) {
       setOrder(bookingOrder);
-      setCountdownSec(toSecondsLeft(bookingOrder.expiredAt));
+      const nextUiExpiredAt = resolveUiExpiredAt(bookingOrder);
+      setUiExpiredAt(nextUiExpiredAt);
+      setCountdownSec(toSecondsLeft(nextUiExpiredAt));
     }
   }, [bookingOrder]);
 
@@ -95,9 +131,11 @@ const BookingPaymentPage = () => {
       setLoadingOrder(true);
       setLoadError('');
       try {
-        const data = await serviceGetOrderById(orderIdFromQuery);
+        const data = await serviceGetBookingById(orderIdFromQuery);
         setOrder(data);
-        setCountdownSec(toSecondsLeft(data?.expiredAt));
+        const nextUiExpiredAt = resolveUiExpiredAt(data);
+        setUiExpiredAt(nextUiExpiredAt);
+        setCountdownSec(toSecondsLeft(nextUiExpiredAt));
       } catch (error) {
         setLoadError(error?.response?.data?.message || 'Khong tai duoc don hang.');
       } finally {
@@ -109,7 +147,7 @@ const BookingPaymentPage = () => {
   }, [bookingOrder, orderIdFromQuery]);
 
   useEffect(() => {
-    if (!order?.expiredAt) return undefined;
+    if (!uiExpiredAt) return undefined;
 
     const timer = setInterval(() => {
       setCountdownSec((prev) => {
@@ -122,10 +160,18 @@ const BookingPaymentPage = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [order?.expiredAt]);
+  }, [uiExpiredAt]);
 
   const timerParts = useMemo(() => formatTimer(countdownSec), [countdownSec]);
   const isExpired = countdownSec <= 0 || order?.status === 'EXPIRED' || order?.status === 'CANCELLED';
+
+  useEffect(() => {
+    if (!isExpired) return undefined;
+    const timeout = setTimeout(() => {
+      navigate('/');
+    }, 600000);
+    return () => clearTimeout(timeout);
+  }, [isExpired, navigate]);
 
   const orderItems = useMemo(() => {
     if (bookingOrderItems?.length) return bookingOrderItems;
@@ -135,6 +181,16 @@ const BookingPaymentPage = () => {
       unitPrice: item.unitPrice,
     })) || [];
   }, [bookingOrderItems, order]);
+
+  const ticketLabelMap = useMemo(() => {
+    const map = new Map();
+    const tickets = bookingCheckoutContext?.tickets || [];
+    tickets.forEach((ticket) => {
+      const label = ticket.label || ticket.name || `Ticket #${ticket.id}`;
+      map.set(String(ticket.id), label);
+    });
+    return map;
+  }, [bookingCheckoutContext?.tickets]);
 
   const event = bookingCheckoutContext?.event;
   const showtime = bookingCheckoutContext?.showtime;
@@ -237,7 +293,7 @@ const BookingPaymentPage = () => {
         setPaymentError('');
         setPaying(true);
 
-        const returnUrl = `${window.location.origin}/event/${id}/payment?orderId=${order.id}&provider=${selectedPaymentMethod}`;
+        const returnUrl = 'http://localhost:3000';
         const checkout = selectedPaymentMethod === 'MOMO'
           ? await createMomoCheckout({
               order,
@@ -361,7 +417,13 @@ const BookingPaymentPage = () => {
                       checked={selectedPaymentMethod === method.value}
                       onChange={() => setSelectedPaymentMethod(method.value)}
                     />
-                    <span>{method.label}</span>
+                    <div
+                      className="w-11 h-11 rounded-lg flex items-center justify-center text-xs font-bold text-white"
+                      style={{ backgroundColor: method.accent }}
+                    >
+                      {method.badge}
+                    </div>
+                    <span className="text-sm font-semibold">{method.label}</span>
                   </label>
                 ))}
               </div>
@@ -389,7 +451,9 @@ const BookingPaymentPage = () => {
                 {orderItems.map((item, idx) => (
                   <div key={`${item.ticketTypeId}-${idx}`} className="grid grid-cols-[1fr_auto] gap-2 border-b border-gray-100 pb-2">
                     <div className="text-sm">
-                      <div className="font-medium">Ticket #{item.ticketTypeId}</div>
+                      <div className="font-medium">
+                        {ticketLabelMap.get(String(item.ticketTypeId)) || `Ticket #${item.ticketTypeId}`}
+                      </div>
                       <div className="text-gray-500">{formatPrice(item.unitPrice || 0)}</div>
                     </div>
                     <div className="text-sm text-gray-600">{item.quantity}</div>

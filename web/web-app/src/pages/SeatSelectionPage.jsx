@@ -1,7 +1,11 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, MapPin, Clock } from 'lucide-react';
-import { getDetailedEventById } from '../services/bookingService';
+import { getDetailedEventById, serviceAddBookingItems, serviceCreateBooking, serviceCreateTickets } from '../services/bookingService';
+import { buildFreeCheckoutPayload, serviceCreateFreeCheckout } from '../services/paymentService';
+import { useEvent } from '../hooks/useEvent';
+
+const EMPTY_ARRAY = [];
 
 const LEGEND = [
   { color: '#22c55e', label: 'Đang trống' },
@@ -18,6 +22,9 @@ const SeatSelectionPage = () => {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedSeats, setSelectedSeats] = useState([]);
+  const { setBookingSelection, setBookingOrderData } = useEvent();
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
     const load = async () => {
@@ -33,7 +40,19 @@ const SeatSelectionPage = () => {
     [event]
   );
 
-  const activeShowtime = event?.showtimes?.find((s) => s.id === showtimeId) || event?.showtimes?.[0];
+  const activePerformance = useMemo(() => {
+    if (!event?.performances?.length) return null;
+    const matched = event.performances.find((p) => String(p.id) === String(showtimeId));
+    return matched || event.performances[0];
+  }, [event, showtimeId]);
+
+  const activeShowtime = activePerformance
+    ? { label: activePerformance.label, date: activePerformance.date }
+    : null;
+
+  useEffect(() => {
+    setSelectedSeats([]);
+  }, [activePerformance?.id]);
 
   const toggleSeat = (seatKey) => {
     if (occupiedSet.has(seatKey)) return;
@@ -48,38 +67,190 @@ const SeatSelectionPage = () => {
     return null;
   };
 
-  const getZoneColor = (row) => {
-    if (!event) return '#22c55e';
-    for (const zone of event.ticketZones) {
-      if (zone.rows.includes(row)) return zone.color;
+  const buildZonesFromSeatMap = (seatMapConfig, tickets) => {
+    if (!seatMapConfig) return [];
+    let parsed = null;
+    try {
+      parsed = JSON.parse(seatMapConfig);
+    } catch {
+      parsed = null;
     }
-    return '#22c55e';
+    const zoneLabels = Array.isArray(parsed?.zones) ? parsed.zones : [];
+    if (!zoneLabels.length) return [];
+
+    const colors = ['#f97316', '#3b82f6', '#0ea5e9', '#22c55e', '#a855f7', '#ef4444'];
+    const rowsPerZone = 4;
+    const seatsPerRow = 22;
+    const fallbackPrice = tickets?.[0]?.price || 0;
+
+    let rowIndex = 0;
+    return zoneLabels.map((label, index) => {
+      const rows = Array.from({ length: rowsPerZone }, (_, i) => String.fromCharCode(65 + rowIndex + i));
+      rowIndex += rowsPerZone;
+      const match = tickets?.find((t) => (t.name || t.label || '').toLowerCase().includes(String(label).toLowerCase()));
+      return {
+        id: `zone-${index}`,
+        label,
+        color: colors[index % colors.length],
+        price: match?.price ?? fallbackPrice,
+        rows,
+        seatsPerRow,
+      };
+    });
   };
 
+  const ticketTypes = activePerformance?.tickets || EMPTY_ARRAY;
+  const defaultTicketType = ticketTypes[0];
+
+  const zonesGrouped = useMemo(() => {
+    if (!activePerformance) return [];
+    if (event?.ticketZones?.length) return event.ticketZones;
+    return buildZonesFromSeatMap(activePerformance?.venue?.seatMapConfig, ticketTypes);
+  }, [activePerformance, event?.ticketZones, ticketTypes]);
+
   const getZoneForRow = (row) => {
-    if (!event) return null;
-    return event.ticketZones.find((z) => z.rows.includes(row)) || null;
+    if (!zonesGrouped.length) return null;
+    return zonesGrouped.find((z) => z.rows.includes(row)) || null;
   };
 
   const totalPrice = useMemo(() => {
-    if (!event) return 0;
-    return selectedSeats.reduce((sum, seatKey) => {
-      const row = seatKey.split('-')[0];
-      const zone = getZoneForRow(row);
-      return sum + (zone?.price || 0);
-    }, 0);
-  }, [selectedSeats, event]);
+    if (!defaultTicketType) return 0;
+    return selectedSeats.length * (defaultTicketType.price || 0);
+  }, [selectedSeats, defaultTicketType]);
 
-  const formatPrice = (p) => p.toLocaleString('vi-VN') + 'đ';
+  const formatPrice = (p) => (Number(p) || 0).toLocaleString('vi-VN') + 'đ';
 
-  const handleContinue = () => {
-    if (selectedSeats.length === 0) return;
-    const params = new URLSearchParams({
-      showtime: showtimeId || '',
-      seats: selectedSeats.join(','),
-    });
-    navigate(`/event/${id}/booking?${params.toString()}`);
+  const resolveMockUserId = () => {
+    try {
+      const userDataRaw = localStorage.getItem('user_data');
+      if (!userDataRaw) return 1;
+
+      const userData = JSON.parse(userDataRaw);
+      if (Number.isFinite(Number(userData?.id))) {
+        return Number(userData.id);
+      }
+
+      if (userData?.email) {
+        let hash = 0;
+        for (let i = 0; i < userData.email.length; i += 1) {
+          hash = (hash * 31 + userData.email.charCodeAt(i)) % 100000;
+        }
+        return hash + 1;
+      }
+    } catch {
+      return 1;
+    }
+    return 1;
   };
+
+  const toValidLong = (rawValue, fieldLabel) => {
+    const parsed = Number(rawValue);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      throw new Error(`Khong tim thay ${fieldLabel} hop le.`);
+    }
+    return parsed;
+  };
+
+  const buildQrCode = () => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    return `QR-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+  };
+
+  const handleContinue = async () => {
+    if (!activePerformance || !defaultTicketType || selectedSeats.length === 0 || submitting) return;
+    setSubmitError('');
+    setSubmitting(true);
+
+    try {
+      const performanceId = toValidLong(activePerformance.id, 'suat dien');
+      const ticketTypeId = toValidLong(defaultTicketType.id, 'loai ve');
+      const userId = resolveMockUserId();
+
+      const orderItemsPayload = [{
+        ticketTypeId,
+        quantity: selectedSeats.length,
+        unitPrice: Number(defaultTicketType.price) || 0,
+      }];
+
+      const createdBooking = await serviceCreateBooking({
+        userId,
+        idempotenceKey: `BOOK-${id}-${performanceId}-${Date.now()}`,
+        discountAmount: 0,
+      });
+
+      const bookingId = createdBooking?.id;
+      if (!bookingId) {
+        throw new Error('Khong nhan duoc ma don hang tu backend.');
+      }
+
+      const updatedBooking = await serviceAddBookingItems(bookingId, orderItemsPayload);
+      const finalBooking = updatedBooking ?? createdBooking;
+
+      const ticketPayload = selectedSeats.map((seat) => ({
+        ticketTypeId,
+        performanceId,
+        userId,
+        orderId: bookingId,
+        qrCode: buildQrCode(),
+        priceAtPurchase: Number(defaultTicketType.price) || 0,
+        seatNumber: seat,
+      }));
+
+      if (ticketPayload.length) {
+        await serviceCreateTickets(ticketPayload);
+      }
+
+      const showtimeContext = activePerformance
+        ? { id: activePerformance.id, label: activePerformance.label, date: activePerformance.date }
+        : null;
+
+      setBookingOrderData({
+        order: finalBooking,
+        orderItems: orderItemsPayload,
+        context: {
+          event,
+          showtime: showtimeContext,
+          seats: selectedSeats,
+          tickets: defaultTicketType ? [{ ...defaultTicketType, quantity: selectedSeats.length }] : [],
+          total: totalPrice,
+        },
+      });
+
+      const totalAmount = Number(finalBooking?.totalAmount ?? totalPrice);
+      if (!Number.isFinite(totalAmount) || totalAmount <= 0) {
+        const payload = buildFreeCheckoutPayload({
+          order: finalBooking,
+          event,
+          showtime: showtimeContext,
+        });
+        await serviceCreateFreeCheckout(payload);
+        navigate('/');
+        return;
+      }
+
+      navigate(`/event/${id}/payment?orderId=${bookingId}`);
+    } catch (error) {
+      setSubmitError(error?.response?.data?.message || error?.message || 'Tao don hang that bai.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!activePerformance) return;
+    const tickets = defaultTicketType
+      ? [{ ...defaultTicketType, quantity: selectedSeats.length }]
+      : [];
+    setBookingSelection({
+      eventId: event?.id,
+      performanceId: activePerformance.id,
+      seats: selectedSeats,
+      tickets,
+      source: 'seats',
+    });
+  }, [activePerformance, defaultTicketType, event?.id, selectedSeats, setBookingSelection]);
 
   if (loading) {
     return (
@@ -96,12 +267,7 @@ const SeatSelectionPage = () => {
     );
   }
 
-  const allRows = event.ticketZones.flatMap((z) => z.rows);
-
-  const zonesGrouped = event.ticketZones.map((zone) => ({
-    ...zone,
-    seatsPerRow: zone.seatsPerRow || 22,
-  }));
+  const hasZones = zonesGrouped.length > 0;
 
   return (
     <div className="min-h-screen bg-[#111] flex flex-col">
@@ -155,13 +321,12 @@ const SeatSelectionPage = () => {
                     <div key={row} className="flex items-center gap-2">
                       <span className="text-gray-400 text-xs w-4 text-center font-mono">{row}</span>
                       <div className="flex gap-1 flex-wrap justify-center flex-1">
-                        {Array.from({ length: zone.seatsPerRow }, (_, i) => {
+                        {Array.from({ length: zone.seatsPerRow || 22 }, (_, i) => {
                           const seatNum = i + 1;
                           const seatKey = `${row}-${seatNum}`;
                           const overrideColor = getSeatColor(seatKey);
                           const zoneColor = zone.color;
                           const isOccupied = occupiedSet.has(seatKey);
-                          const isSelected = selectedSeats.includes(seatKey);
                           return (
                             <button
                               key={seatNum}
@@ -209,7 +374,10 @@ const SeatSelectionPage = () => {
           {/* Ticket zone pricing */}
           <div className="p-4 border-b border-gray-800">
             <div className="text-xs text-gray-400 font-semibold mb-3 uppercase tracking-wide">Giá vé</div>
-            {event.ticketZones.map((zone) => (
+            {!hasZones && (
+              <div className="text-xs text-gray-500">Chưa có cấu hình chỗ ngồi.</div>
+            )}
+            {zonesGrouped.map((zone) => (
               <div key={zone.id} className="flex items-center justify-between py-2 border-b border-gray-800 last:border-0">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: zone.color }} />
@@ -248,6 +416,11 @@ const SeatSelectionPage = () => {
 
           {/* Bottom total + continue */}
           <div className="p-4 border-t border-gray-800">
+            {submitError && (
+              <div className="mb-3 text-xs text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+                {submitError}
+              </div>
+            )}
             {selectedSeats.length > 0 && (
               <div className="flex items-center justify-between mb-3 text-sm">
                 <span className="text-gray-400">Tổng cộng</span>
@@ -256,10 +429,10 @@ const SeatSelectionPage = () => {
             )}
             <button
               onClick={handleContinue}
-              disabled={selectedSeats.length === 0}
+              disabled={selectedSeats.length === 0 || submitting}
               className="w-full py-3 bg-[#26bc71] text-white font-bold rounded-xl hover:bg-[#1fa86a] transition text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              Vui lòng chọn vé
+              {submitting ? 'Dang tao don hang...' : 'Tiep tuc thanh toan'}
               <ChevronRight size={16} />
             </button>
           </div>

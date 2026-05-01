@@ -1,7 +1,8 @@
 import axios from 'axios';
 
-const VNPAY_BASE_URL = 'http://localhost:8085/api/payment/vnpay';
-const MOMO_BASE_URL = 'http://localhost:8085/api/payment/momo';
+const VNPAY_BASE_URL = 'http://localhost:8080/api/payment/vnpay';
+const MOMO_BASE_URL = 'http://localhost:8080/api/payment/momo';
+const FREE_BASE_URL = 'http://localhost:8080/api/payment/free';
 
 const toStableMockLong = (rawId, prefix) => {
   const safeId = String(rawId ?? '').trim();
@@ -85,6 +86,31 @@ export const buildMomoCheckoutPayload = ({
   };
 };
 
+export const buildFreeCheckoutPayload = ({
+  order,
+  event,
+  showtime,
+  paymentMethodId = 'FREE',
+}) => {
+  const amount = Number(order?.totalAmount ?? 0);
+  if (!Number.isFinite(amount) || amount < 0) {
+    throw new Error('Tong tien thanh toan khong hop le de tao giao dich FREE.');
+  }
+
+  const orderId = Number(order?.id);
+  if (!Number.isFinite(orderId) || orderId <= 0) {
+    throw new Error('Khong tim thay order.id hop le.');
+  }
+
+  return {
+    orderId,
+    eventId: mapEventIdToLong(event?.id ?? orderId),
+    eventPerformanceId: mapEventPerformanceIdToLong(showtime?.id ?? 'default'),
+    amount,
+    paymentMethodId,
+  };
+};
+
 export const serviceCreateVnPayCheckout = async (payload) => {
   const response = await axios.post(`${VNPAY_BASE_URL}/checkout`, payload);
   return unwrapApiResponseBody(response);
@@ -102,5 +128,10 @@ export const serviceCreateMomoCheckout = async (payload) => {
 
 export const serviceGetMomoPaymentStatus = async (paymentId) => {
   const response = await axios.get(`${MOMO_BASE_URL}/${paymentId}/status`);
+  return unwrapApiResponseBody(response);
+};
+
+export const serviceCreateFreeCheckout = async (payload) => {
+  const response = await axios.post(`${FREE_BASE_URL}/checkout`, payload);
   return unwrapApiResponseBody(response);
 };

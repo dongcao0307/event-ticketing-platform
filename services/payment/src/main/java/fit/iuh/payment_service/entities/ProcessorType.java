@@ -6,5 +6,6 @@ public enum ProcessorType {
     VNPayProcessor,
     VietQRProcessor,
     ShopeePayProcessor,
-    CreditCardProcessor
+    CreditCardProcessor,
+    FreeProcessor
 }
