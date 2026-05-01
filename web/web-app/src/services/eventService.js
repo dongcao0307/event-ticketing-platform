@@ -1,5 +1,5 @@
 // src/services/eventService.js
-import { get } from './apiClient';
+import { get, post } from './apiClient';
 
 // ==================== Dữ liệu Mock / Fallback ====================
 const featuredEvents = [
@@ -53,7 +53,7 @@ const mockVenues = [
 ];
 
 // ==================== Helper Functions ====================
-const API_BASE_URL = 'http://localhost:8082/api/admin';
+const API_BASE_URL = '/events/management';
 
 const simulateFetch = (data) => new Promise((resolve) => {
     setTimeout(() => resolve(data), 500);
@@ -161,93 +161,37 @@ export const getMockVenues = async () => simulateFetch(mockVenues);
 // ==================== Admin Event API Functions ====================
 
 export const getAllAdminEvents = async (status = null, search = null) => {
-  try {
-    let url = `${API_BASE_URL}/events`;
-    const params = new URLSearchParams();
-    if (status) params.append('status', status);
-    if (search) params.append('search', search);
-    if (params.toString()) url += `?${params.toString()}`;
-    
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
-    return data.data || [];
-  } catch (error) {
-    console.error('Error fetching admin events:', error);
-    throw error;
-  }
+  const params = {};
+  if (status) params.status = status;
+  if (search) params.search = search;
+  
+  const res = await get(API_BASE_URL, params);
+  return res.data || [];
 };
 
 export const getAdminEventDetail = async (eventId) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/events/${eventId}`);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
-    return data.data || null;
-  } catch (error) {
-    console.error('Error fetching event detail:', error);
-    throw error;
-  }
+  const res = await get(`${API_BASE_URL}/${eventId}`);
+  return res.data || null;
 };
 
 export const approveEvent = async (eventId) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/events/${eventId}/approve`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
-    return data.data || null;
-  } catch (error) {
-    console.error('Error approving event:', error);
-    throw error;
-  }
+  const res = await post(`${API_BASE_URL}/${eventId}/approve`, {});
+  return res.data || null;
 };
 
 export const rejectEvent = async (eventId, reason = '') => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/events/${eventId}/reject`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ eventId, reason }),
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
-    return data.data || null;
-  } catch (error) {
-    console.error('Error rejecting event:', error);
-    throw error;
-  }
+  const res = await post(`${API_BASE_URL}/${eventId}/reject`, { eventId, reason });
+  return res.data || null;
 };
 
 export const lockEvent = async (eventId, reason = '') => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/events/${eventId}/lock`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ eventId, reason }),
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
-    return data.data || null;
-  } catch (error) {
-    console.error('Error locking event:', error);
-    throw error;
-  }
+  const res = await post(`${API_BASE_URL}/${eventId}/lock`, { eventId, reason });
+  return res.data || null;
 };
 
 export const searchAdminEvents = async (query, status = null) => {
-  try {
-    let url = `${API_BASE_URL}/events/search?query=${encodeURIComponent(query)}`;
-    if (status) url += `&status=${status}`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
-    return data.data || [];
-  } catch (error) {
-    console.error('Error searching events:', error);
-    throw error;
-  }
+  const params = { query };
+  if (status) params.status = status;
+  const res = await get(`${API_BASE_URL}/search`, params);
+  return res.data || [];
 };
