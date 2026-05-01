@@ -14,6 +14,7 @@ public class VnPayProperties {
     private Boolean sandboxEnabled;
     private String payUrl;
     private String returnUrl;
+    private String timezone;
     private Integer expireMinutes;
     private BigDecimal feeRatePercent;
     private String version;

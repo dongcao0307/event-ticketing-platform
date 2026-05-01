@@ -196,6 +196,7 @@ services:
       RABBITMQ_USERNAME: guest
       RABBITMQ_PASSWORD: guest
       PAYMENT_VNPAY_RETURN_URL: https://youtube.com
+      PAYMENT_VNPAY_TIMEZONE: Asia/Ho_Chi_Minh
       PAYMENT_MOMO_RETURN_URL: https://youtube.com
       PAYMENT_MOMO_IPN_URL: https://1b5z6mvn-8085.asse.devtunnels.ms/api/payment/momo/ipn
 
