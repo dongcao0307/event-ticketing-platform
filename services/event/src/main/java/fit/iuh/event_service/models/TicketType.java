@@ -5,6 +5,8 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.ColumnDefault;
+
 @Data
 @Entity
 @Table(name = "ticket_types")
@@ -20,7 +22,9 @@ public class TicketType {
     private BigDecimal price;
 
     private Integer totalQuantity;
+    @ColumnDefault("0")
     private Integer soldQuantity = 0; // Mặc định là 0 khi mới tạo
+    @ColumnDefault("0")
     private Integer reservedQuantity = 0; // Mặc định là 0
     private Integer maxTicketsPerUser;
 

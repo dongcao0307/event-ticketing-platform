@@ -113,7 +113,7 @@ public class Event {
     @OneToOne(mappedBy = "event", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private OrganizerPaymentInfo paymentInfo;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "venue_id")
     private Venue venue;
 
