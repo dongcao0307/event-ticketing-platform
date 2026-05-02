@@ -140,8 +140,8 @@ const SeatSelectionPage = () => {
       if (!userDataRaw) return 1;
 
       const userData = JSON.parse(userDataRaw);
-      if (Number.isFinite(Number(userData?.id))) {
-        return Number(userData.id);
+      if (Number.isFinite(Number(userData?.userId))) {
+        return Number(userData.userId);
       }
 
       if (userData?.email) {
