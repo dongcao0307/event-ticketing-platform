@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@EnableConfigurationProperties(OrderRabbitProperties.class)
+@EnableConfigurationProperties(BookingRabbitProperties.class)
 public class RabbitMqConfig {
 
     @Bean
@@ -21,26 +21,26 @@ public class RabbitMqConfig {
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = "order.messaging", name = "enabled", havingValue = "true")
-    public TopicExchange orderExchange(OrderRabbitProperties properties) {
+    @ConditionalOnProperty(prefix = "booking.messaging", name = "enabled", havingValue = "true")
+    public TopicExchange bookingExchange(BookingRabbitProperties properties) {
         return new TopicExchange(properties.getExchange(), true, false);
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = "order.messaging", name = "enabled", havingValue = "true")
-    public Queue orderPaidQueue(OrderRabbitProperties properties) {
+    @ConditionalOnProperty(prefix = "booking.messaging", name = "enabled", havingValue = "true")
+    public Queue bookingPaidQueue(BookingRabbitProperties properties) {
         return new Queue(properties.getQueue(), true);
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = "order.messaging", name = "enabled", havingValue = "true")
-    public Binding orderPaidBinding(
-            Queue orderPaidQueue,
-            TopicExchange orderExchange,
-            OrderRabbitProperties properties
+    @ConditionalOnProperty(prefix = "booking.messaging", name = "enabled", havingValue = "true")
+    public Binding bookingPaidBinding(
+            Queue bookingPaidQueue,
+            TopicExchange bookingExchange,
+            BookingRabbitProperties properties
     ) {
-        return BindingBuilder.bind(orderPaidQueue)
-                .to(orderExchange)
+        return BindingBuilder.bind(bookingPaidQueue)
+                .to(bookingExchange)
                 .with(properties.getRoutingKey());
     }
 }

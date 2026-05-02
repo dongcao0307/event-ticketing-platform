@@ -5,8 +5,8 @@ import {
   getDetailedEventById,
   mapTicketTypeIdToLong,
   mapTicketZoneIdToLong,
-  serviceAddOrderItems,
-  serviceCreateOrder,
+    serviceAddBookingItems,
+    serviceCreateBooking,
 } from '../services/bookingService';
 import { useEvent } from '../hooks/useEvent';
 
@@ -155,19 +155,19 @@ const BookingInfoPage = () => {
         return;
       }
 
-      const createdOrder = await serviceCreateOrder({
+      const createdBooking = await serviceCreateBooking({
         userId: resolveMockUserId(),
         idempotenceKey: `BOOK-${id}-${Date.now()}`,
         discountAmount: 0,
       });
 
-      const orderId = createdOrder?.id;
-      if (!orderId) {
+      const bookingId = createdBooking?.id;
+      if (!bookingId) {
         throw new Error('Không nhận được mã đơn hàng từ backend.');
       }
 
-      const updatedOrder = await serviceAddOrderItems(orderId, orderItemsPayload);
-      const finalOrder = updatedOrder ?? createdOrder;
+      const updatedBooking = await serviceAddBookingItems(bookingId, orderItemsPayload);
+      const finalOrder = updatedBooking ?? createdBooking;
 
       setBookingOrderData({
         order: finalOrder,
@@ -182,7 +182,7 @@ const BookingInfoPage = () => {
         },
       });
 
-      navigate(`/event/${id}/payment?orderId=${orderId}`);
+      navigate(`/event/${id}/payment?orderId=${bookingId}`);
     } catch (error) {
       setSubmitError(error?.response?.data?.message || error?.message || 'Tạo đơn hàng thất bại. Vui lòng thử lại.');
     } finally {

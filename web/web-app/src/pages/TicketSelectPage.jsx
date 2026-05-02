@@ -1,7 +1,11 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, MapPin, Clock, Info, Plus, Minus } from 'lucide-react';
-import { getDetailedEventById } from '../services/bookingService';
+import { getDetailedEventById, serviceAddBookingItems, serviceCreateBooking, serviceCreateTickets } from '../services/bookingService';
+import { buildFreeCheckoutPayload, serviceCreateFreeCheckout } from '../services/paymentService';
+import { useEvent } from '../hooks/useEvent';
+
+const EMPTY_ARRAY = [];
 
 const TicketSelectPage = () => {
   const { id } = useParams();
@@ -12,24 +16,38 @@ const TicketSelectPage = () => {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [quantities, setQuantities] = useState({});
+  const { setBookingSelection, setBookingOrderData } = useEvent();
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
     const load = async () => {
       const data = await getDetailedEventById(id);
       setEvent(data);
-      if (data?.ticketTypes) {
-        const init = {};
-        data.ticketTypes.forEach((tt) => { init[tt.id] = 0; });
-        setQuantities(init);
-      }
       setLoading(false);
     };
     load();
   }, [id]);
 
-  const activeShowtime = event?.showtimes?.find((s) => s.id === showtimeId) || event?.showtimes?.[0];
+  const activePerformance = useMemo(() => {
+    if (!event?.performances?.length) return null;
+    const matched = event.performances.find((p) => String(p.id) === String(showtimeId));
+    return matched || event.performances[0];
+  }, [event, showtimeId]);
 
-  const formatPrice = (p) => p.toLocaleString('vi-VN') + 'đ';
+  const ticketTypes = activePerformance?.tickets || EMPTY_ARRAY;
+
+  useEffect(() => {
+    const init = {};
+    ticketTypes.forEach((tt) => { init[tt.id] = 0; });
+    setQuantities(init);
+  }, [ticketTypes]);
+
+  const activeShowtime = activePerformance
+    ? { label: activePerformance.label, date: activePerformance.date }
+    : null;
+
+  const formatPrice = (p) => (Number(p) || 0).toLocaleString('vi-VN') + 'đ';
 
   const changeQty = (ttId, delta) => {
     setQuantities((prev) => ({
@@ -39,26 +57,148 @@ const TicketSelectPage = () => {
   };
 
   const selectedItems = useMemo(() => {
-    if (!event?.ticketTypes) return [];
-    return event.ticketTypes
+    if (!ticketTypes.length) return [];
+    return ticketTypes
       .filter((tt) => quantities[tt.id] > 0)
       .map((tt) => ({ ...tt, quantity: quantities[tt.id] }));
-  }, [quantities, event]);
+  }, [quantities, ticketTypes]);
 
   const totalQty = selectedItems.reduce((s, i) => s + i.quantity, 0);
   const totalPrice = selectedItems.reduce((s, i) => s + i.quantity * i.price, 0);
 
-  const handleContinue = () => {
-    if (totalQty === 0) return;
-    const ticketParam = selectedItems
-      .map((i) => `${i.id}:${i.quantity}`)
-      .join(',');
-    const params = new URLSearchParams({
-      showtime: showtimeId || '',
-      tickets: ticketParam,
-    });
-    navigate(`/event/${id}/booking?${params.toString()}`);
+  const resolveMockUserId = () => {
+    try {
+      const userDataRaw = localStorage.getItem('user_data');
+      if (!userDataRaw) return 1;
+
+      const userData = JSON.parse(userDataRaw);
+      if (Number.isFinite(Number(userData?.userId))) {
+        return Number(userData.userId);
+      }
+
+      if (userData?.email) {
+        let hash = 0;
+        for (let i = 0; i < userData.email.length; i += 1) {
+          hash = (hash * 31 + userData.email.charCodeAt(i)) % 100000;
+        }
+        return hash + 1;
+      }
+    } catch {
+      return 1;
+    }
+    return 1;
   };
+
+  const toValidLong = (rawValue, fieldLabel) => {
+    const parsed = Number(rawValue);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      throw new Error(`Khong tim thay ${fieldLabel} hop le.`);
+    }
+    return parsed;
+  };
+
+  const buildQrCode = () => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    return `QR-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+  };
+
+  const handleContinue = async () => {
+    if (!activePerformance || totalQty === 0 || submitting) return;
+    setSubmitError('');
+    setSubmitting(true);
+
+    try {
+      const performanceId = toValidLong(activePerformance.id, 'suat dien');
+      const userId = resolveMockUserId();
+
+      const orderItemsPayload = selectedItems.map((item) => ({
+        ticketTypeId: toValidLong(item.id, 'loai ve'),
+        quantity: Number(item.quantity) || 0,
+        unitPrice: Number(item.price) || 0,
+      })).filter((item) => item.quantity > 0);
+
+      if (!orderItemsPayload.length) {
+        throw new Error('Khong co ve hop le de tao don hang.');
+      }
+
+      const createdBooking = await serviceCreateBooking({
+        userId,
+        idempotenceKey: `BOOK-${id}-${performanceId}-${Date.now()}`,
+        discountAmount: 0,
+      });
+
+      const bookingId = createdBooking?.id;
+      if (!bookingId) {
+        throw new Error('Khong nhan duoc ma don hang tu backend.');
+      }
+
+      const updatedBooking = await serviceAddBookingItems(bookingId, orderItemsPayload);
+      const finalBooking = updatedBooking ?? createdBooking;
+
+      const ticketPayload = orderItemsPayload.flatMap((item) =>
+        Array.from({ length: item.quantity }, () => ({
+          ticketTypeId: item.ticketTypeId,
+          performanceId,
+          userId,
+          orderId: bookingId,
+          qrCode: buildQrCode(),
+          priceAtPurchase: item.unitPrice,
+          seatNumber: null,
+        }))
+      );
+
+      if (ticketPayload.length) {
+        await serviceCreateTickets(ticketPayload);
+      }
+
+      const showtimeContext = activePerformance
+        ? { id: activePerformance.id, label: activePerformance.label, date: activePerformance.date }
+        : null;
+
+      setBookingOrderData({
+        order: finalBooking,
+        orderItems: orderItemsPayload,
+        context: {
+          event,
+          showtime: showtimeContext,
+          seats: [],
+          tickets: selectedItems,
+          total: totalPrice,
+        },
+      });
+
+      const totalAmount = Number(finalBooking?.totalAmount ?? totalPrice);
+      if (!Number.isFinite(totalAmount) || totalAmount <= 0) {
+        const payload = buildFreeCheckoutPayload({
+          order: finalBooking,
+          event,
+          showtime: showtimeContext,
+        });
+        await serviceCreateFreeCheckout(payload);
+        navigate('/');
+        return;
+      }
+
+      navigate(`/event/${id}/payment?orderId=${bookingId}`);
+    } catch (error) {
+      setSubmitError(error?.response?.data?.message || error?.message || 'Tao don hang that bai.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!activePerformance) return;
+    setBookingSelection({
+      eventId: event?.id,
+      performanceId: activePerformance.id,
+      seats: [],
+      tickets: selectedItems,
+      source: 'tickets',
+    });
+  }, [activePerformance, event?.id, selectedItems, setBookingSelection]);
 
   if (loading) {
     return (
@@ -94,13 +234,16 @@ const TicketSelectPage = () => {
         {/* Ticket list */}
         <div className="flex-1 overflow-auto p-6">
           <div className="max-w-2xl mx-auto space-y-4">
-            {event.ticketTypes.map((tt) => {
+            {ticketTypes.length === 0 && (
+              <div className="text-sm text-gray-500">Chưa có loại vé cho suất diễn này.</div>
+            )}
+            {ticketTypes.map((tt) => {
               const qty = quantities[tt.id] || 0;
               return (
                 <div key={tt.id} className="bg-[#1c1c1c] rounded-xl border border-gray-800 overflow-hidden">
                   <div className="p-4 flex items-center gap-4">
                     <div className="flex-1">
-                      <div className="text-white font-semibold text-sm">{tt.label}</div>
+                      <div className="text-white font-semibold text-sm">{tt.label || tt.name}</div>
                       <div className="text-[#26bc71] font-bold text-base mt-1">{formatPrice(tt.price)}</div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -151,9 +294,9 @@ const TicketSelectPage = () => {
           {/* Selected ticket summary */}
           <div className="p-4 flex-1 overflow-auto">
             <div className="text-xs text-gray-400 font-semibold mb-3 uppercase tracking-wide">Giá vé</div>
-            {event.ticketTypes.map((tt) => (
+            {ticketTypes.map((tt) => (
               <div key={tt.id} className="flex items-start justify-between py-2 border-b border-gray-800 last:border-0 gap-2">
-                <span className="text-xs text-gray-300 leading-tight">{tt.label}</span>
+                <span className="text-xs text-gray-300 leading-tight">{tt.label || tt.name}</span>
                 <span className="text-xs font-semibold text-white shrink-0">{formatPrice(tt.price)}</span>
               </div>
             ))}
@@ -163,7 +306,7 @@ const TicketSelectPage = () => {
                 <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-2">Đã chọn</div>
                 {selectedItems.map((item) => (
                   <div key={item.id} className="flex items-center justify-between text-xs">
-                    <span className="text-gray-300 truncate">{item.label} x{item.quantity}</span>
+                    <span className="text-gray-300 truncate">{item.label || item.name} x{item.quantity}</span>
                     <span className="text-white font-semibold shrink-0 ml-2">{formatPrice(item.quantity * item.price)}</span>
                   </div>
                 ))}
@@ -173,6 +316,11 @@ const TicketSelectPage = () => {
 
           {/* Bottom total + continue */}
           <div className="p-4 border-t border-gray-800">
+            {submitError && (
+              <div className="mb-3 text-xs text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+                {submitError}
+              </div>
+            )}
             {totalQty > 0 && (
               <div className="flex items-center justify-between mb-3 text-sm">
                 <span className="text-gray-400">Tổng cộng ({totalQty} vé)</span>
@@ -181,10 +329,10 @@ const TicketSelectPage = () => {
             )}
             <button
               onClick={handleContinue}
-              disabled={totalQty === 0}
+              disabled={totalQty === 0 || submitting}
               className="w-full py-3 bg-[#26bc71] text-white font-bold rounded-xl hover:bg-[#1fa86a] transition text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              Vui lòng chọn vé
+              {submitting ? 'Dang tao don hang...' : 'Tiep tuc thanh toan'}
               <ChevronRight size={16} />
             </button>
           </div>

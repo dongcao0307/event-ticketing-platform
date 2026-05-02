@@ -38,6 +38,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HexFormat;
@@ -214,7 +216,8 @@ public class VnPayPaymentServiceImpl implements VnPayPaymentService {
                 ? vnPayProperties.getReturnUrl()
                 : request.getReturnUrl();
         String amount = request.getAmount().multiply(new BigDecimal("100")).setScale(0, RoundingMode.HALF_UP).toPlainString();
-        LocalDateTime now = LocalDateTime.now();
+        ZoneId zoneId = resolveZoneId();
+        ZonedDateTime now = ZonedDateTime.now(zoneId);
         String createDate = now.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         String expireDate = now.plusMinutes(resolveExpireMinutes()).format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
 
@@ -244,11 +247,11 @@ public class VnPayPaymentServiceImpl implements VnPayPaymentService {
 
     private String buildTxnRef(Long paymentId) {
         String randomPart = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
-        return "PAY" + paymentId + randomPart;
+        return "PAY-" + paymentId + "-" + randomPart;
     }
 
     private Long extractPaymentIdFromTxnRef(String txnRef) {
-        Matcher matcher = Pattern.compile("^PAY(\\d+).*$").matcher(txnRef);
+        Matcher matcher = Pattern.compile("^PAY-(\\d+)-.*$").matcher(txnRef);
         if (!matcher.matches()) {
             return null;
         }
@@ -290,6 +293,14 @@ public class VnPayPaymentServiceImpl implements VnPayPaymentService {
     private int resolveExpireMinutes() {
         Integer value = vnPayProperties.getExpireMinutes();
         return value == null || value <= 0 ? 15 : value;
+    }
+
+    private ZoneId resolveZoneId() {
+        String configured = vnPayProperties.getTimezone();
+        if (configured == null || configured.isBlank()) {
+            return ZoneId.of("Asia/Ho_Chi_Minh");
+        }
+        return ZoneId.of(configured.trim());
     }
 
     private boolean verifyIpnSignature(VnPayIpnRequest request) {

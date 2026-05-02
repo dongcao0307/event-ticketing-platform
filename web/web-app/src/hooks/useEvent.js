@@ -1,5 +1,6 @@
 import { configureStore, createAsyncThunk, createSlice } from "@reduxjs/toolkit"
 import { useSelector, useDispatch } from 'react-redux';
+import { useCallback } from 'react';
 import { serviceAddTicketTypes, serviceUpdateTicketTypes, serviceUpsertTicketTypes } from "../services/ticketService";
 import {
     buildMomoCheckoutPayload,
@@ -33,6 +34,7 @@ const eventSlice = createSlice({
         bookingOrderItems: [],
         bookingCheckoutContext: null,
         bookingPayment: null,
+        bookingSelection: null,
     },
     reducers: {
         reducerAddPerformance: (state) => {
@@ -101,6 +103,12 @@ const eventSlice = createSlice({
         },
         reducerClearBookingPaymentData: (state) => {
             state.bookingPayment = null
+        },
+        reducerSetBookingSelection: (state, action) => {
+            state.bookingSelection = action.payload ?? null
+        },
+        reducerClearBookingSelection: (state) => {
+            state.bookingSelection = null
         }
     },
     extraReducers: (builder) => {
@@ -124,6 +132,8 @@ export const {
     reducerClearBookingOrderData,
     reducerSetBookingPaymentData,
     reducerClearBookingPaymentData,
+    reducerSetBookingSelection,
+    reducerClearBookingSelection,
 } = eventSlice.actions
 export const eventReducer = eventSlice.reducer;
 export const eventStore = configureStore({
@@ -140,6 +150,7 @@ export const useEvent = () => {
         bookingOrderItems,
         bookingCheckoutContext,
         bookingPayment,
+        bookingSelection,
     } = useSelector((state) => state.eventSlice);
     const dispatch = useDispatch();
 
@@ -151,6 +162,12 @@ export const useEvent = () => {
     const clearBookingOrderData = () => dispatch(reducerClearBookingOrderData())
     const setBookingPaymentData = (payload) => dispatch(reducerSetBookingPaymentData(payload))
     const clearBookingPaymentData = () => dispatch(reducerClearBookingPaymentData())
+    const setBookingSelection = useCallback((payload) => {
+        dispatch(reducerSetBookingSelection(payload))
+    }, [dispatch])
+    const clearBookingSelection = useCallback(() => {
+        dispatch(reducerClearBookingSelection())
+    }, [dispatch])
     const addTicketTypesDB = (ticketTypes) => serviceAddTicketTypes(ticketTypes)
     const updateTicketTypesDB = (ticketTypes) => serviceUpdateTicketTypes(ticketTypes)
     const upsertTicktTypesDB = (ticketTypes) => dispatch(asyncThunkUpsertTicketTypesDB(ticketTypes)).unwrap()
@@ -190,10 +207,13 @@ export const useEvent = () => {
         bookingOrderItems,
         bookingCheckoutContext,
         bookingPayment,
+        bookingSelection,
         setBookingOrderData,
         clearBookingOrderData,
         setBookingPaymentData,
         clearBookingPaymentData,
+        setBookingSelection,
+        clearBookingSelection,
         createVnPayCheckout,
         createMomoCheckout,
         addTicketTypesDB,

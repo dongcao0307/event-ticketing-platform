@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/organizer/ticket_type")
+@RequestMapping("/api/ticket_types")
 @RequiredArgsConstructor
 public class TicketTypeController {
     private final TicketTypeService ticketTypeService;

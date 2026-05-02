@@ -89,6 +89,9 @@ services:
     depends_on:
       - identity-service
       - event-service
+      - booking-service
+      - payment-service
+      - ticket-service
     ports:
       - "8080:80"
     networks:
@@ -153,6 +156,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     ports:
       - "8083:8083"
     networks:
@@ -161,10 +166,12 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
-      SPRING_RABBITMQ_HOST: rabbitmq
-      SPRING_RABBITMQ_PORT: 5672
-      SPRING_RABBITMQ_USERNAME: guest
-      SPRING_RABBITMQ_PASSWORD: guest
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
 
   payment-service:
     build:
@@ -174,6 +181,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     ports:
       - "8085:8085"
     networks:
@@ -182,6 +191,14 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      PAYMENT_VNPAY_RETURN_URL: https://youtube.com
+      PAYMENT_VNPAY_TIMEZONE: Asia/Ho_Chi_Minh
+      PAYMENT_MOMO_RETURN_URL: https://youtube.com
+      PAYMENT_MOMO_IPN_URL: https://1b5z6mvn-8085.asse.devtunnels.ms/api/payment/momo/ipn
 
   ticket-service:
     build:
@@ -191,6 +208,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     ports:
       - "8084:8084"
     networks:
@@ -199,6 +218,12 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
 
   seat-service:
     build:

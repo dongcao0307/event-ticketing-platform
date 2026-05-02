@@ -206,6 +206,8 @@ public class MoMoPaymentServiceImpl implements MoMoPaymentService {
                                                        String ipnUrl,
                                                        String requestType,
                                                        String extraData) {
+        // MoMo spec requires signature data ordered as:
+        // partnerCode|accessKey|requestId|amount|orderId|orderInfo|redirectUrl|ipnUrl|extraData|requestType
         String signatureData = "accessKey=" + moMoSecretProperties.getAccessKey()
                 + "&amount=" + amount
                 + "&extraData=" + extraData
