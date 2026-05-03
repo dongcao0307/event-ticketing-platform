@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar'; 
 import OrganizerHeader from '../components/OrganizerHeader'; 
 import { organizerEventService } from '../services/organizerEventService'; 
@@ -13,6 +13,7 @@ const OrganizerPage = () => {
   // 1. LẤY ID TỪ URL (Nếu URL có ID -> Chế độ Sửa, Nếu không có -> Tạo mới)
   const { id } = useParams(); 
   const isEditMode = !!id; 
+  const location = useLocation();
 
   const [currentStep, setCurrentStep] = useState(1);
   const navigate = useNavigate();
@@ -150,7 +151,7 @@ const OrganizerPage = () => {
 
   // 6. RENDER NỘI DUNG TƯƠNG ỨNG MỖI BƯỚC
   const renderStepContent = () => {
-    const props = { eventData, setEventData };
+    const props = { eventData, setEventData, key: location.pathname};
 
     switch (currentStep) {
       case 1:
