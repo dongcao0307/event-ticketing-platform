@@ -15,17 +15,18 @@ public class TicketExpiryScheduler {
     @Value("${ticket.expire.minutes:15}")
     private long expireMinutes;
 
-    public void schedule(Long ticketId, Duration ttl) {
+    public void schedule(Long ticketId, Duration ttl, Long eventPerformanceId) {
         if (ttl == null || ttl.isZero() || ttl.isNegative()) {
             // set a very small TTL to trigger expiration quickly
             ttl = Duration.ofSeconds(1);
         }
         String key = TicketRedisKeys.expireKey(ticketId);
-        stringRedisTemplate.opsForValue().set(key, "1", ttl);
+        String value = eventPerformanceId != null ? String.valueOf(eventPerformanceId) : "0";
+        stringRedisTemplate.opsForValue().set(key, value, ttl);
     }
 
-    public void scheduleDefault(Long ticketId) {
-        schedule(ticketId, Duration.ofMinutes(expireMinutes));
+    public void scheduleDefault(Long ticketId, Long eventPerformanceId) {
+        schedule(ticketId, Duration.ofMinutes(expireMinutes), eventPerformanceId);
     }
 
     public void cancel(Long ticketId) {
