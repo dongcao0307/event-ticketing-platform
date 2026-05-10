@@ -87,3 +87,6 @@ gateway/certs/*.key
 .venv/
 venv/
 env/
+
+# Mock data for payment process
+init_paymentprocess.sql
