@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import CancelTicketModal from "../../components/account/CancelTicketModal";
 import TicketCard from "../../components/account/TicketCard";
 import TicketSuggestionGrid from "../../components/account/TicketSuggestionGrid";
-import { getTickets } from "../../services/ticketService";
+import { serviceGetBookingsByUser } from "../../services/bookingService";
 import { getFeaturedEvents } from "../../services/eventService";
 
 const PER_PAGE = 4;
@@ -23,20 +23,53 @@ const MyTickets = () => {
   useEffect(() => {
     const fetchAllData = async () => {
       try {
-        setLoading(true); // Đảm bảo bắt đầu là true
+        setLoading(true);
 
-        // Chạy cả 2 đồng thời và đợi cả 2 cùng xong
-        const [tickets, featured] = await Promise.all([
-          getTickets(),
+        const userDataRaw = localStorage.getItem('user_data');
+        const userData = userDataRaw ? JSON.parse(userDataRaw) : null;
+        const userId = userData?.userId || 1;
+
+        const [bookingsData, featured] = await Promise.all([
+          serviceGetBookingsByUser(userId),
           getFeaturedEvents()
         ]);
 
-        setTicketsData(tickets);
+        const mappedTickets = (Array.isArray(bookingsData) ? bookingsData : []).map(booking => {
+          const perf = booking.eventPerformance || {};
+          const event = booking.event || {};
+          const start = perf.startTime;
+          const end = perf.endTime;
+
+          let timeStr = "";
+          if (start && end) {
+            const dStart = new Date(start);
+            const dEnd = new Date(end);
+            
+            const formatD = (d) => {
+              return `${d.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}, ${d.toLocaleDateString('vi-VN', {day:'2-digit', month:'short', year:'numeric'})}`;
+            }
+
+            timeStr = `${formatD(dStart)} - ${formatD(dEnd)}`;
+          }
+
+          return {
+            id: booking.id,
+            title: event.title || "Vé sự kiện",
+            status: booking.status,
+            startDate: start,
+            endDate: end,
+            order: booking.id,
+            time: timeStr,
+            location: event.location || "Chưa xác định",
+          };
+        });
+
+        setTicketsData(mappedTickets);
         setFeaturedEvents(featured);
       } catch (error) {
         console.error("Lỗi khi tải dữ liệu:", error);
       } finally {
-        setLoading(false); // Chỉ tắt loading khi cả 2 đã xong
+        setLoading(false);
       }
     };
 
@@ -56,15 +89,18 @@ const MyTickets = () => {
       return data;
 
     if (timeFilter === "upcoming") {
-      data = data.filter(
-        (t) => new Date(t.startDate) > now
-      );
+      data = data.filter((t) => {
+        if (!t.startDate) return false;
+        const diff = new Date(t.startDate) - now;
+        return diff > 0 && diff <= 7 * 24 * 60 * 60 * 1000;
+      });
     }
 
     if (timeFilter === "past") {
-      data = data.filter(
-        (t) => new Date(t.startDate) < now
-      );
+      data = data.filter((t) => {
+        if (!t.endDate) return false;
+        return new Date(t.endDate) < now;
+      });
     }
 
     return data;
@@ -105,9 +141,9 @@ const MyTickets = () => {
 
         {[
           { key: "all", label: "Tất cả" },
-          { key: "success", label: "Thành công" },
-          { key: "processing", label: "Đang xử lý" },
-          { key: "cancel", label: "Đã hủy" },
+          { key: "PAID", label: "Thành công" },
+          { key: "PENDING", label: "Đang xử lý" },
+          { key: "CANCEL", label: "Đã hủy" },
         ].map((item) => (
           <button
             key={item.key}

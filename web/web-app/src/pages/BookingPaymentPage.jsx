@@ -13,7 +13,7 @@ const PAYMENT_METHODS = [
 
 const formatPrice = (value) => Number(value || 0).toLocaleString('vi-VN') + ' đ';
 
-const UI_TIMEOUT_MINUTES = 10;
+const UI_TIMEOUT_MINUTES = 15;
 
 const parseServerDate = (value) => {
   if (!value) return null;

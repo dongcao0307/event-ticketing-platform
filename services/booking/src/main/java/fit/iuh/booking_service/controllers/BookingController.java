@@ -5,6 +5,7 @@ import fit.iuh.booking_service.dtos.requests.AddBookingItemRequest;
 import fit.iuh.booking_service.dtos.requests.CreateBookingRequest;
 import fit.iuh.booking_service.dtos.requests.UpdateBookingStatusRequest;
 import fit.iuh.booking_service.dtos.responses.BookingResponse;
+import fit.iuh.booking_service.dtos.responses.BookingWithEventResponse;
 import fit.iuh.booking_service.services.BookingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -42,6 +43,13 @@ public class BookingController {
     public ApiResponse<BookingResponse> getBooking(@PathVariable Long bookingId) {
         return ApiResponse.<BookingResponse>builder()
                 .body(bookingService.findById(bookingId))
+                .build();
+    }
+
+    @GetMapping("/user/{userId}")
+    public ApiResponse<List<BookingWithEventResponse>> getBookingsByUser(@PathVariable Long userId) {
+        return ApiResponse.<List<BookingWithEventResponse>>builder()
+                .body(bookingService.getBookingsByUserId(userId))
                 .build();
     }
 }
