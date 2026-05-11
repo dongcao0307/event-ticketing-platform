@@ -71,7 +71,7 @@ const BookingPaymentPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
-  const orderIdFromQuery = searchParams.get('orderId');
+  const bookingIdFromQuery = searchParams.get('bookingId');
   const paymentIdFromQuery = searchParams.get('paymentId');
   const paymentProviderFromQuery = normalizeProvider(searchParams.get('provider'));
 
@@ -116,13 +116,13 @@ const BookingPaymentPage = () => {
   useEffect(() => {
     const canReuseStoreOrder =
       bookingOrder &&
-      (!orderIdFromQuery || String(bookingOrder.id) === String(orderIdFromQuery));
+      (!bookingIdFromQuery || String(bookingOrder.id) === String(bookingIdFromQuery));
 
     if (canReuseStoreOrder) {
       return;
     }
 
-    if (!orderIdFromQuery) {
+    if (!bookingIdFromQuery) {
       setLoadError('Khong tim thay ma don hang.');
       return;
     }
@@ -131,7 +131,7 @@ const BookingPaymentPage = () => {
       setLoadingOrder(true);
       setLoadError('');
       try {
-        const data = await serviceGetBookingById(orderIdFromQuery);
+        const data = await serviceGetBookingById(bookingIdFromQuery);
         setOrder(data);
         const nextUiExpiredAt = resolveUiExpiredAt(data);
         setUiExpiredAt(nextUiExpiredAt);
@@ -144,7 +144,7 @@ const BookingPaymentPage = () => {
     };
 
     loadOrder();
-  }, [bookingOrder, orderIdFromQuery]);
+  }, [bookingOrder, bookingIdFromQuery]);
 
   useEffect(() => {
     if (!uiExpiredAt) return undefined;

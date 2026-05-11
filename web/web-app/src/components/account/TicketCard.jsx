@@ -1,5 +1,4 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 
 const statusConfig = {
   PAID: {
@@ -26,8 +25,7 @@ const formatDateParts = (dateStr) => {
   };
 };
 
-const TicketCard = ({ ticket, openCancelModal }) => {
-  const navigate = useNavigate();
+const TicketCard = ({ ticket, rawBooking, onCardClick, onPaymentClick, openCancelModal }) => {
   const start = formatDateParts(ticket.startDate);
 
   const isPast = new Date(ticket.startDate) < new Date();
@@ -35,9 +33,14 @@ const TicketCard = ({ ticket, openCancelModal }) => {
   const hideCancel =
     ticket.status === "cancel" || isPast;
 
+  const handleCardClick = () => {
+    onCardClick(rawBooking);
+  };
+
   return (
     <div
-      className="flex bg-[#3a3c40] border border-[#4a4c50] rounded-lg overflow-hidden"
+      onClick={handleCardClick}
+      className="flex bg-[#3a3c40] border border-[#4a4c50] rounded-lg overflow-hidden cursor-pointer hover:border-[#26bc71] transition"
     >
 
       {/* DATE */}
@@ -91,7 +94,10 @@ const TicketCard = ({ ticket, openCancelModal }) => {
       <div className="flex items-center pr-4 gap-4">
         {ticket.status === "PENDING" && (
           <button
-            onClick={() => navigate(`/booking-payment?orderId=${ticket.id}`)}
+            onClick={(e) => {
+              e.stopPropagation(); // Ngừng propagation để không trigger card click
+              onPaymentClick(rawBooking);
+            }}
             className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
           >
             Tiếp tục thanh toán

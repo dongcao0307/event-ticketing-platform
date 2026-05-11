@@ -1,13 +1,32 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import CancelTicketModal from "../../components/account/CancelTicketModal";
 import TicketCard from "../../components/account/TicketCard";
 import TicketSuggestionGrid from "../../components/account/TicketSuggestionGrid";
 import { serviceGetBookingsByUser } from "../../services/bookingService";
 import { getFeaturedEvents } from "../../services/eventService";
+import { useEvent } from "../../hooks/useEvent";
 
 const PER_PAGE = 4;
 
+const formatTimeRange = (startTime, endTime) => {
+  if (!startTime || !endTime) return "";
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+  const startLabel = start.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+  const endLabel = end.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+  return `${startLabel} - ${endLabel}`;
+};
+
+const formatDateLabel = (dateStr) => {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+};
+
 const MyTickets = () => {
+  const navigate = useNavigate();
+  const { setBookingOrderData, setSelectedTicketDetail } = useEvent();
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [page, setPage] = useState(1);
 
@@ -15,6 +34,7 @@ const MyTickets = () => {
   const [timeFilter, setTimeFilter] = useState("all");
 
   const [ticketsData, setTicketsData] = useState([]);
+  const [bookingsData, setBookingsData] = useState([]);
   const [featuredEvents, setFeaturedEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,12 +49,14 @@ const MyTickets = () => {
         const userData = userDataRaw ? JSON.parse(userDataRaw) : null;
         const userId = userData?.userId || 1;
 
-        const [bookingsData, featured] = await Promise.all([
+        const [bookings, featured] = await Promise.all([
           serviceGetBookingsByUser(userId),
           getFeaturedEvents()
         ]);
 
-        const mappedTickets = (Array.isArray(bookingsData) ? bookingsData : []).map(booking => {
+        setBookingsData(Array.isArray(bookings) ? bookings : []);
+
+        const mappedTickets = (Array.isArray(bookings) ? bookings : []).map(booking => {
           const perf = booking.eventPerformance || {};
           const event = booking.event || {};
           const start = perf.startTime;
@@ -118,6 +140,78 @@ const MyTickets = () => {
     closeCancelModal()
   };
 
+  // Map booking data by ticket ID để dễ lookup
+  const bookingMap = useMemo(() => {
+    const map = new Map();
+    bookingsData.forEach(booking => {
+      map.set(booking.id, booking);
+    });
+    return map;
+  }, [bookingsData]);
+
+  // Handler để gọi khi nhấn vào ticket card
+  const handleTicketCardClick = (booking) => {
+    if (!booking) {
+      console.error("Invalid booking data:", booking);
+      return;
+    }
+
+    // DEBUG
+    console.log("=== Ticket Card Click ===");
+    console.log("Booking data:", booking);
+    console.log("Setting selectedTicketDetail...");
+
+    // Lưu booking vào Redux state
+    setSelectedTicketDetail(booking);
+
+    // Navigate đến chi tiết vé
+    navigate(`/ticket/${booking.id}`);
+  };
+
+  // Handler để gọi khi nhấn "Tiếp tục thanh toán"
+  const handlePaymentClick = (booking) => {
+    if (!booking || !booking.event) {
+      console.error("Invalid booking data:", booking);
+      return;
+    }
+
+    // Set Redux store với full booking data
+    setBookingOrderData({
+      order: {
+        id: booking.id,
+        subtotal: booking.subtotal || 0,
+        discountAmount: booking.discountAmount || 0,
+        totalAmount: booking.totalAmount || 0,
+        status: booking.status,
+        expiredAt: booking.expiredAt,
+        createdAt: booking.createdAt,
+      },
+      orderItems: booking.items || [],
+      context: {
+        event: {
+          id: booking.event?.id,
+          title: booking.event?.title,
+          location: booking.event?.venue?.name || booking.event?.venue?.address || "Chưa xác định",
+        },
+        showtime: {
+          id: booking.eventPerformance?.id,
+          startTime: booking.eventPerformance?.startTime,
+          endTime: booking.eventPerformance?.endTime,
+          label: formatTimeRange(booking.eventPerformance?.startTime, booking.eventPerformance?.endTime),
+          date: formatDateLabel(booking.eventPerformance?.startTime),
+        },
+        buyer: {
+          email: localStorage.getItem('user_email') || '',
+        },
+        tickets: [],
+      },
+    });
+
+    // Navigate đến trang payment với format /event/:id/payment?bookingId=xxx
+    // bookingId query param để an toàn khi refresh page (Redux state sẽ mất)
+    navigate(`/event/${booking.event.id}/payment?bookingId=${booking.id}`);
+  };
+
   const totalPages = Math.ceil(
     filteredTickets.length / PER_PAGE
   );
@@ -198,9 +292,19 @@ const MyTickets = () => {
             <div className="text-gray-400 text-center py-10">Không có vé nào</div>
           )}
 
-          {tickets.map((ticket) => (
-            <TicketCard key={ticket.id} ticket={ticket} openCancelModal={openCancelModal} />
-          ))}
+          {tickets.map((ticket) => {
+            const rawBooking = bookingMap.get(ticket.id);
+            return (
+              <TicketCard 
+                key={ticket.id} 
+                ticket={ticket}
+                rawBooking={rawBooking}
+                onCardClick={handleTicketCardClick}
+                onPaymentClick={handlePaymentClick}
+                openCancelModal={openCancelModal} 
+              />
+            );
+          })}
         </div>
       )}
 
