@@ -86,7 +86,10 @@ const Header = () => {
               <div className="h-5 w-[1px] bg-gray-200"></div>
               <button
                 type="button"
-                onClick={() => setIsSearchOpen((prev) => !prev)}
+                onClick={() => {
+                  setIsSearchOpen(false)
+                  navigate(`/search?find=${searchQuery}`)
+                }}
                 className="px-5 text-[#555] hover:text-[#26bc71] text-sm font-medium transition-colors whitespace-nowrap cursor-pointer"
               >
                 Tìm kiếm

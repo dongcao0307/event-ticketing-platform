@@ -305,7 +305,7 @@ const BookingPaymentPage = () => {
               order,
               event,
               showtime,
-              returnUrl,
+              returnUrl: `${returnUrl}/vnpay/call-back`,
             });
 
         if (checkout?.paymentId) {

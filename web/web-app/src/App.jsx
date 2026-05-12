@@ -13,6 +13,7 @@ import TicketDetailPage from './pages/TicketDetailPage'
 
 // Import trang mới vừa tạo
 import EventManagement from './pages/EventManagement'
+import VNPayCallBack from './pages/VNPayCallBack'
 import UserManagement from './pages/UserManagement'
 import AdminEventDetail from './pages/AdminEventDetail'
 import AdminAnalytics from './pages/AdminAnalytics'
@@ -40,6 +41,7 @@ function App() {
           <Route path="/event/:id/booking" element={<BookingInfoPage />} />
           <Route path="/event/:id/payment" element={<BookingPaymentPage />} />
 
+          <Route path="/vnpay/call-back" element={<VNPayCallBack />} />
           {/* Organizer */}
           <Route path="/organizer" element={<OrganizerPage />} />
           <Route path="/organizer/my-events" element={<MyEvents />} />
