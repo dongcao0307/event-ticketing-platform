@@ -5,8 +5,13 @@ import fit.iuh.booking_service.dtos.responses.BookingWithEventResponse;
 import fit.iuh.booking_service.entities.Booking;
 import fit.iuh.booking_service.entities.BookingItem;
 import fit.iuh.event_service.grpc.generated.GetEventAndPerformanceResponse;
+import fit.iuh.event_service.grpc.generated.TicketTypeDto;
 import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Mapper for converting Booking entities with gRPC event data to response DTOs.
@@ -30,6 +35,10 @@ public class BookingWithEventMapper {
             return null;
         }
 
+        // Cache ticket types vào Map để lookup nhanh O(1) thay vì O(n) cho mỗi item
+        Map<Long, TicketTypeDto> ticketTypesMap = grpcResponse.getTicketTypesList().stream()
+                .collect(Collectors.toMap(TicketTypeDto::getId, Function.identity()));
+
         return BookingWithEventResponse.builder()
                 .id(booking.getId())
                 .userId(booking.getUserId())
@@ -44,22 +53,29 @@ public class BookingWithEventMapper {
                 .event(eventGrpcMapper.toEventDetailDto(grpcResponse.getEvent()))
                 .eventPerformance(eventGrpcMapper.toEventPerformanceDetailDto(grpcResponse.getEventPerformance()))
                 .items(booking.getItems().stream()
-                        .map(this::toBookingItemWithEventResponse)
+                        .map(item -> toBookingItemWithEventResponse(item, ticketTypesMap))
                         .toList())
                 .build();
     }
 
     /**
-     * Convert BookingItem to BookingItemWithEventResponse (without event details).
+     * Convert BookingItem to BookingItemWithEventResponse with ticket name from cached ticket types Map.
+     * Uses O(1) HashMap lookup instead of O(n) stream filtering for better performance.
      */
-    public BookingItemWithEventResponse toBookingItemWithEventResponse(BookingItem item) {
+    public BookingItemWithEventResponse toBookingItemWithEventResponse(BookingItem item,
+            Map<Long, TicketTypeDto> ticketTypesMap) {
         if (item == null) {
             return null;
         }
 
+        // Lookup ticket type từ map - O(1) operation
+        TicketTypeDto ticketTypeDto = ticketTypesMap.get(item.getTicketTypeId());
+        String ticketName = ticketTypeDto != null ? ticketTypeDto.getName() : "Vé";
+
         return BookingItemWithEventResponse.builder()
                 .id(item.getId())
                 .ticketTypeId(item.getTicketTypeId())
+                .ticketName(ticketName)
                 .quantity(item.getQuantity())
                 .unitPrice(item.getUnitPrice())
                 .build();

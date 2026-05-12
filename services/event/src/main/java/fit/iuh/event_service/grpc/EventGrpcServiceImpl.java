@@ -98,7 +98,8 @@ public class EventGrpcServiceImpl extends EventGrpcServiceGrpc.EventGrpcServiceI
                 .setId(event.getId())
                 .setTitle(event.getTitle() != null ? event.getTitle() : "")
                 .setDescription(event.getDescription() != null ? event.getDescription() : "")
-                .setStatus(event.getStatus() != null ? event.getStatus().toString() : "");
+                .setStatus(event.getStatus() != null ? event.getStatus().toString() : "")
+                .setCategory(event.getCategory() != null ? event.getCategory().toString() : "");
 
         // Build Venue
         if (event.getVenue() != null) {

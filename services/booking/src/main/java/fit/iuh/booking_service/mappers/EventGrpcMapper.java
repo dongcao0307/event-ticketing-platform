@@ -24,6 +24,7 @@ public class EventGrpcMapper {
                 .title(eventDto.getTitle())
                 .description(eventDto.getDescription())
                 .status(eventDto.getStatus())
+                .category(eventDto.getCategory())
                 .venue(toVenueDetailDto(eventDto.getVenue()))
                 .build();
     }

@@ -12,5 +12,6 @@ public class EventDetailDto {
     private String title;
     private String description;
     private String status;
+    private String category;
     private VenueDetailDto venue;
 }

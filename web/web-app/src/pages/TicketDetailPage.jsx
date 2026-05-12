@@ -62,7 +62,7 @@ const convertBookingToTicket = (booking) => {
   const result = {
     title: event.title || "Vé sự kiện",
     image: event.imageUrl || "https://images.unsplash.com/photo-1519638399535-1b036603ac77?auto=format&fit=crop&w=600",
-    type: booking.status || "PENDING",
+    type: event.category || "OTHER",
     start: startTime,
     end: endTime,
     orderCode: `#${booking.id}`,
@@ -75,7 +75,7 @@ const convertBookingToTicket = (booking) => {
     },
     tickets: (booking.items || []).map((item, idx) => ({
       id: item.ticketTypeId,
-      name: `Vé #${item.ticketTypeId}`,
+      name: `${item.ticketName}`,
       quantity: item.quantity || 1,
       price: item.unitPrice || 0,
     })),

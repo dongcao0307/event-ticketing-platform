@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 public class BookingItemWithEventResponse {
     private Long id;
     private Long ticketTypeId;
+    private String ticketName;
     private Integer quantity;
     private BigDecimal unitPrice;
 }

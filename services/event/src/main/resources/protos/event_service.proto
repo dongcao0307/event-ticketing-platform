@@ -27,6 +27,7 @@ message EventDto {
     string description = 3;
     string status = 4;
     VenueDto venue = 5;
+    string category = 6;
 }
 
 message VenueDto {
