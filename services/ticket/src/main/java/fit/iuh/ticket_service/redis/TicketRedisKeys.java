@@ -13,4 +13,15 @@ public final class TicketRedisKeys {
     public static String bookedSeatsKey(Long performanceId) {
         return BOOKED_SEATS_KEY_PREFIX + performanceId;
     }
+
+    public static Long extractPerformanceIdFromExpireKey(String expireKey) {
+        if (expireKey == null || !expireKey.startsWith(TICKET_EXPIRE_KEY_PREFIX)) {
+            return null;
+        }
+        try {
+            return Long.parseLong(expireKey.substring(TICKET_EXPIRE_KEY_PREFIX.length()));
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
 }

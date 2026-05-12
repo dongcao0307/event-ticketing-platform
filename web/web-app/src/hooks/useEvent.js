@@ -35,6 +35,7 @@ const eventSlice = createSlice({
         bookingCheckoutContext: null,
         bookingPayment: null,
         bookingSelection: null,
+        selectedTicketDetail: null,
     },
     reducers: {
         reducerAddPerformance: (state) => {
@@ -109,6 +110,20 @@ const eventSlice = createSlice({
         },
         reducerClearBookingSelection: (state) => {
             state.bookingSelection = null
+        },
+        reducerSetSelectedTicketDetail: (state, action) => {
+            state.selectedTicketDetail = action.payload ?? null
+        },
+        reducerUpdateSelectedTicketDetail: (state, action) => {
+            if (state.selectedTicketDetail) {
+                state.selectedTicketDetail = {
+                    ...state.selectedTicketDetail,
+                    ...action.payload
+                }
+            }
+        },
+        reducerClearSelectedTicketDetail: (state) => {
+            state.selectedTicketDetail = null
         }
     },
     extraReducers: (builder) => {
@@ -134,6 +149,9 @@ export const {
     reducerClearBookingPaymentData,
     reducerSetBookingSelection,
     reducerClearBookingSelection,
+    reducerSetSelectedTicketDetail,
+    reducerUpdateSelectedTicketDetail,
+    reducerClearSelectedTicketDetail,
 } = eventSlice.actions
 export const eventReducer = eventSlice.reducer;
 export const eventStore = configureStore({
@@ -151,6 +169,7 @@ export const useEvent = () => {
         bookingCheckoutContext,
         bookingPayment,
         bookingSelection,
+        selectedTicketDetail,
     } = useSelector((state) => state.eventSlice);
     const dispatch = useDispatch();
 
@@ -167,6 +186,15 @@ export const useEvent = () => {
     }, [dispatch])
     const clearBookingSelection = useCallback(() => {
         dispatch(reducerClearBookingSelection())
+    }, [dispatch])
+    const setSelectedTicketDetail = useCallback((booking) => {
+        dispatch(reducerSetSelectedTicketDetail(booking))
+    }, [dispatch])
+    const updateSelectedTicketDetail = useCallback((updates) => {
+        dispatch(reducerUpdateSelectedTicketDetail(updates))
+    }, [dispatch])
+    const clearSelectedTicketDetail = useCallback(() => {
+        dispatch(reducerClearSelectedTicketDetail())
     }, [dispatch])
     const addTicketTypesDB = (ticketTypes) => serviceAddTicketTypes(ticketTypes)
     const updateTicketTypesDB = (ticketTypes) => serviceUpdateTicketTypes(ticketTypes)
@@ -208,12 +236,16 @@ export const useEvent = () => {
         bookingCheckoutContext,
         bookingPayment,
         bookingSelection,
+        selectedTicketDetail,
         setBookingOrderData,
         clearBookingOrderData,
         setBookingPaymentData,
         clearBookingPaymentData,
         setBookingSelection,
         clearBookingSelection,
+        setSelectedTicketDetail,
+        updateSelectedTicketDetail,
+        clearSelectedTicketDetail,
         createVnPayCheckout,
         createMomoCheckout,
         addTicketTypesDB,

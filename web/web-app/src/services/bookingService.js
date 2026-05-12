@@ -470,6 +470,11 @@ export const serviceGetBookingById = async (bookingId) => {
   return unwrapApiResponseBody(response);
 };
 
+export const serviceGetBookingsByUser = async (userId) => {
+  const response = await axios.get(`${BOOKING_SERVICE_BASE_URL}/user/${userId}`);
+  return response?.data?.data || response?.data?.body || response?.data;
+};
+
 export const serviceCreateTickets = async (payload) => {
   const response = await axios.post(`${TICKET_SERVICE_BASE_URL}/bulk`, payload);
   return unwrapApiResponseBody(response);

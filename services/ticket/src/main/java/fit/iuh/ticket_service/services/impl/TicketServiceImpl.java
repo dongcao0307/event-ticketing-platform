@@ -63,7 +63,7 @@ public class TicketServiceImpl implements TicketService {
         Ticket ticket = ticketMapper.toTicket(request);
         ticket.setTicketStatus(TicketStatus.PENDING);
         Ticket saved = ticketRepository.save(ticket);
-        ticketExpiryScheduler.scheduleDefault(saved.getId());
+        ticketExpiryScheduler.scheduleDefault(saved.getId(), saved.getPerformanceId());
         return true;
     }
 
@@ -89,11 +89,50 @@ public class TicketServiceImpl implements TicketService {
         }
 
         List<Ticket> savedTickets = ticketRepository.saveAll(ticketsToSave);
+        
+        // All tickets should be in the same performance
+        Long performanceId = savedTickets.isEmpty() ? null : savedTickets.get(0).getPerformanceId();
+        
         for (Ticket saved : savedTickets) {
-            ticketExpiryScheduler.scheduleDefault(saved.getId());
+            ticketExpiryScheduler.scheduleDefault(saved.getId(), saved.getPerformanceId());
+        }
+
+        // Update booked seats cache for this performance
+        if (performanceId != null) {
+            updateBookedSeatsCacheIncremental(performanceId, savedTickets);
         }
 
         return true;
+    }
+
+    private void updateBookedSeatsCacheIncremental(Long performanceId, List<Ticket> newTickets) {
+        try {
+            String cacheKey = TicketRedisKeys.bookedSeatsKey(performanceId);
+            
+            // Only update if cache exists
+            if (!Boolean.TRUE.equals(stringRedisTemplate.hasKey(cacheKey))) {
+                return;
+            }
+            
+            String cached = stringRedisTemplate.opsForValue().get(cacheKey);
+            if (cached == null || cached.isEmpty()) {
+                return;
+            }
+            
+            List<String> bookedSeats = objectMapper.readValue(cached, new TypeReference<List<String>>(){});
+            
+            // Add new booked seats
+            for (Ticket ticket : newTickets) {
+                if (ticket.getSeatNumber() != null && !bookedSeats.contains(ticket.getSeatNumber())) {
+                    bookedSeats.add(ticket.getSeatNumber());
+                }
+            }
+            
+            // Update cache
+            stringRedisTemplate.opsForValue().set(cacheKey, objectMapper.writeValueAsString(bookedSeats), 30, TimeUnit.MINUTES);
+        } catch (Exception e) {
+            log.error("Failed to update booked seats cache for performanceId {}: {}", performanceId, e.getMessage());
+        }
     }
 
     @Override

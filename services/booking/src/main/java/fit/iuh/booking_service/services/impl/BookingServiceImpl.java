@@ -3,7 +3,7 @@ package fit.iuh.booking_service.services.impl;
 import fit.iuh.booking_service.dtos.requests.AddBookingItemRequest;
 import fit.iuh.booking_service.dtos.requests.CreateBookingRequest;
 import fit.iuh.booking_service.dtos.requests.UpdateBookingStatusRequest;
-import fit.iuh.booking_service.dtos.responses.BookingResponse;
+import fit.iuh.booking_service.dtos.responses.*;
 import fit.iuh.booking_service.entities.Booking;
 import fit.iuh.booking_service.entities.BookingItem;
 import fit.iuh.booking_service.entities.BookingStatus;
@@ -13,14 +13,18 @@ import fit.iuh.booking_service.exceptions.PostException;
 import fit.iuh.booking_service.messaging.BookingEventPublisher;
 import fit.iuh.booking_service.messaging.BookingPaidEvent;
 import fit.iuh.booking_service.mappers.BookingMapper;
+import fit.iuh.booking_service.mappers.BookingWithEventMapper;
 import fit.iuh.booking_service.redis.BookingExpiryScheduler;
 import fit.iuh.booking_service.repositories.BookingRepository;
 import fit.iuh.booking_service.services.BookingService;
+import fit.iuh.booking_service.services.EventGrpcClient;
+import fit.iuh.event_service.grpc.generated.GetEventAndPerformanceResponse;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,15 +38,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
     private final BookingMapper bookingMapper;
+    private final BookingWithEventMapper bookingWithEventMapper;
     private final BookingExpiryScheduler bookingExpiryScheduler;
     private final BookingEventPublisher bookingEventPublisher;
+    private final EventGrpcClient eventGrpcClient;
 
-    @Value("${booking.expire.minutes:17}")
+    @Value("${booking.expire.minutes:15}")
     private long expireMinutes;
 
     @Override
@@ -150,6 +157,40 @@ public class BookingServiceImpl implements BookingService {
     public BookingResponse findById(Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
         return bookingMapper.toBookingResponse(booking);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BookingWithEventResponse> getBookingsByUserId(Long userId) {
+        log.info("Fetching bookings for userId: {}", userId);
+        
+        List<Booking> bookings = bookingRepository.findByUserId(userId);
+        
+        return bookings.stream()
+                .map(booking -> {
+                    try {
+                        // Get event details from first booking item
+                        if (booking.getItems().isEmpty()) {
+                            log.warn("Booking {} has no items", booking.getId());
+                            return null;
+                        }
+                        
+                        BookingItem firstItem = booking.getItems().get(0);
+                        
+                        // Call gRPC once to get event details
+                        GetEventAndPerformanceResponse grpcResponse = 
+                                eventGrpcClient.getEventDetailsByTicketTypeId(firstItem.getTicketTypeId());
+                        
+                        // Use mapper to convert with event details
+                        return bookingWithEventMapper.toBookingWithEventResponse(booking, grpcResponse);
+                        
+                    } catch (Exception e) {
+                        log.error("Error fetching event details for booking: {}", booking.getId(), e);
+                        return null;
+                    }
+                })
+                .filter(booking -> booking != null)
+                .toList();
     }
 
     private void recomputeTotals(Booking booking) {
