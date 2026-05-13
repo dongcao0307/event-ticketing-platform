@@ -1,63 +1,8 @@
 // src/services/eventService.js
 import { get, post } from './apiClient';
 
-// ==================== Dữ liệu Mock / Fallback ====================
-const featuredEvents = [
-  {
-    id: "featured-1",
-    title: 'SUPER SHOW 10 – Super Junior',
-    date: '24 tháng 02, 2026',
-    location: 'Sân vận động Mỹ Đình',
-    price: 'Từ 750.000đ',
-    image: 'https://images.unsplash.com/photo-1519638399535-1b036603ac77?auto=format&fit=crop&w=1200&q=80',
-  },
-  {
-    id: "featured-2",
-    title: 'HER Concert – Hòa nhạc lãng mạn',
-    date: '07 tháng 02, 2026',
-    location: 'Hội trường GV3',
-    price: 'Từ 350.000đ',
-    image: 'https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=1200&q=80',
-  },
-  {
-    id: "featured-3",
-    title: 'Hội chợ Workshop Handmade',
-    date: '25 tháng 01, 2026',
-    location: 'TP. Hồ Chí Minh',
-    price: 'Từ 250.000đ',
-    image: 'https://images.unsplash.com/photo-1542144582-dc4f5f8b5a50?auto=format&fit=crop&w=1200&q=80',
-  },
-];
-
-const fallbackFeatured = [
-  { id: 'f1', title: 'ARGU - Live in Vietnam 2026', date: '24 thang 04, 2026', location: 'SVD My Dinh, Ha Noi', price: 'Tu 999.000d', image: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80' },
-  { id: 'f2', title: 'The Traditional Water Puppet Show', date: '20 thang 04, 2026', location: 'Nha hat Mua roi Thang Long', price: 'Tu 350.000d', image: 'https://images.unsplash.com/photo-1519730901064-18ed6fdf2cd4?auto=format&fit=crop&w=1200&q=80' },
-  { id: 'f3', title: 'Le hoi Anh sang Ha Noi 2026', date: '15 thang 05, 2026', location: 'Cong vien Thong Nhat, Ha Noi', price: 'Tu 180.000d', image: 'https://images.unsplash.com/photo-1453974336165-b28f7a47d14d?auto=format&fit=crop&w=1200&q=80' },
-];
-
-const fallbackTrending = [
-  { id: 't1', title: 'DEM THANH - Dem nhac Trung Quan', date: '23 thang 04, 2026', location: 'Trung tam HNQG, Ha Noi', price: 'Tu 700.000d', image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=80', badge: '1' },
-  { id: 't2', title: 'Mr. Siro Concert 2026', date: '28 thang 05, 2026', location: 'Cung The thao Quan Ngua', price: 'Tu 450.000d', image: 'https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=1200&q=80', badge: '2' },
-  { id: 't3', title: 'Crossroads - The Untold Stories', date: '21 thang 04, 2026', location: 'Nha hat Hoa Binh, HCM', price: 'Tu 575.000d', image: 'https://images.unsplash.com/photo-1495121605193-b116b5b09bf5?auto=format&fit=crop&w=1200&q=80', badge: '3' },
-];
-
-const fallbackRecommended = [
-  { id: 'r1', title: 'Kich Xom - Mua 3', date: '05 thang 05, 2026', location: 'San khau IDECAF, HCM', price: 'Tu 200.000d', image: 'https://images.unsplash.com/photo-1527060397950-31b8f0b6fe03?auto=format&fit=crop&w=1200&q=80' },
-  { id: 'r2', title: 'Workshop Terrarium & Candle', date: '08 thang 05, 2026', location: 'The Garden Workshop, Ha Noi', price: 'Tu 420.000d', image: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=1200&q=80' },
-  { id: 'r3', title: 'Concert Jazz Night Da Nang', date: '12 thang 05, 2026', location: 'Aria Hotel & Spa, Da Nang', price: 'Tu 350.000d', image: 'https://images.unsplash.com/photo-1513283487479-d8d9c1c0b7c1?auto=format&fit=crop&w=1200&q=80' },
-];
-
-const mockVenues = [
-    { id: 'v1', name: 'Sân vận động Mỹ Đình', address: 'Lê Đức Thọ, Mỹ Đình, Nam Từ Liêm, Hà Nội' },
-    { id: 'v2', name: 'Hội trường GV3', address: 'Đại học Công nghiệp TP.HCM' }
-];
-
 // ==================== Helper Functions ====================
-const API_BASE_URL = '/events/management';
-
-const simulateFetch = (data) => new Promise((resolve) => {
-    setTimeout(() => resolve(data), 500);
-});
+const API_BASE_URL = '/api/admin/events';
 
 const normalizeEvent = (e) => ({
   id: String(e.id),
@@ -81,12 +26,12 @@ const normalizeEvent = (e) => ({
   viewCount: e.viewCount,
 });
 
-const tryApi = async (apiFn, fallback) => {
+const tryApi = async (apiFn, fallbackValue) => {
   try {
     return await apiFn();
   } catch (err) {
-    console.warn('[EventService] API unavailable, using fallback data:', err.message);
-    return fallback;
+    console.warn('[EventService] API unavailable:', err.message);
+    return fallbackValue;
   }
 };
 
@@ -96,37 +41,37 @@ export const getFeaturedEvents = async () =>
   tryApi(async () => {
     const res = await get('/events/featured');
     return (res.data || []).map(normalizeEvent);
-  }, featuredEvents);
+  }, []);
 
 export const getTrendingEvents = async () =>
   tryApi(async () => {
     const res = await get('/events/trending');
     return (res.data || []).map((e, i) => ({ ...normalizeEvent(e), badge: String(i + 1) }));
-  }, fallbackTrending);
+  }, []);
 
 export const getRecommendedEvents = async () =>
   tryApi(async () => {
     const res = await get('/events/latest');
     return (res.data || []).slice(0, 6).map(normalizeEvent);
-  }, fallbackRecommended);
+  }, []);
 
 export const getResaleEvents = async () =>
   tryApi(async () => {
     const res = await get('/events/search', { size: 6 });
     return (res.data?.content || []).map(normalizeEvent);
-  }, fallbackRecommended);
+  }, []);
 
 export const getWeekendEvents = async () =>
   tryApi(async () => {
     const res = await get('/events/category/FESTIVAL');
     return (res.data || []).slice(0, 3).map(normalizeEvent);
-  }, [fallbackFeatured[2]]);
+  }, []);
 
 export const getMonthEvents = async () =>
   tryApi(async () => {
     const res = await get('/events/category/WORKSHOP');
     return (res.data || []).slice(0, 3).map(normalizeEvent);
-  }, [fallbackRecommended[1]]);
+  }, []);
 
 export const searchEvents = async (keyword, filters = {}, page = 0, size = 20) =>
   tryApi(async () => {
@@ -143,9 +88,9 @@ export const searchEvents = async (keyword, filters = {}, page = 0, size = 20) =
       page: res.data?.page || 0,
     };
   }, {
-    events: [...fallbackFeatured, ...fallbackTrending, ...fallbackRecommended],
-    totalElements: 9,
-    totalPages: 1,
+    events: [],
+    totalElements: 0,
+    totalPages: 0,
     page: 0,
   });
 
@@ -154,9 +99,6 @@ export const getEventById = async (id) =>
     const res = await get(`/events/${id}`);
     return normalizeEvent(res.data);
   }, null);
-
-export const getMockEvents = async () => simulateFetch(featuredEvents);
-export const getMockVenues = async () => simulateFetch(mockVenues);
 
 // ==================== Admin Event API Functions ====================
 
