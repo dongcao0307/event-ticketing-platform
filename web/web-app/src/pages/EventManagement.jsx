@@ -5,7 +5,7 @@ import AdminSidebar from '../components/AdminSidebar';
 import EventTable from '../components/EventTable';
 import Pagination from '../components/Pagination';
 import { useToast } from '../context/ToastContext';
-import { getAllAdminEvents, approveEvent, rejectEvent } from '../services/eventService';
+import { getAllAdminEvents, approveEvent, rejectEvent, lockEvent } from '../services/eventService';
 
 const ALL_EVENTS = [
   { id: 0, name: 'Concert 2024 - The Grand Stage',    creator: 'Music Events Co.',  type: 'Offline', time: '2024-03-15 19:00', price: 'Có phí',    created: '2024-02-10', status: 'Pending'  },
@@ -136,6 +136,20 @@ const EventManagement = () => {
     }
   };
 
+  const handleLock = async (ev) => {
+    try {
+      await lockEvent(ev.id, 'Locked by admin');
+      setEvents((p) =>
+        p.map((e) =>
+          e.id === ev.id ? { ...e, status: 'Rejected', apiStatus: 'CANCELLED' } : e
+        )
+      );
+      toast.success('Event locked successfully');
+    } catch (err) {
+      toast.error('Error locking event: ' + err.message);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#1a1a1a] text-white flex">
       <AdminSidebar />
@@ -216,6 +230,7 @@ const EventManagement = () => {
               onView={(event) => navigate('/admin/events/' + event.id)}
               onApprove={handleApprove}
               onReject={handleReject}
+              onLock={handleLock}
             />
 
             {/* Pagination */}

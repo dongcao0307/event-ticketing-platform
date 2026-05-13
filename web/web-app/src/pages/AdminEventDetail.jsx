@@ -245,6 +245,13 @@ const AdminEventDetail = () => {
           </div>
           <div className="flex gap-3 shrink-0">
             <button
+              onClick={handleLock}
+              disabled={actionLoading}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-400 hover:bg-orange-500 hover:border-orange-500 hover:text-white text-sm font-medium transition-colors disabled:opacity-50"
+            >
+              <Lock size={16} /> Khóa sự kiện
+            </button>
+            <button
               onClick={() => setShowRejectModal(true)}
               disabled={actionLoading}
               className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500 hover:border-red-500 hover:text-white text-sm font-medium transition-colors disabled:opacity-50"
@@ -285,8 +292,8 @@ const AdminEventDetail = () => {
                 className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-gray-200 text-sm focus:outline-none focus:border-[#26bc71] mb-4"
                 rows="4"
               />
-              <div className="flex gap-2">
-                < button
+                <div className="flex gap-2">
+                <button
                   onClick={() => setShowRejectModal(false)}
                   className="flex-1 px-4 py-2 rounded-lg bg-[#1a1a1a] text-gray-400 hover:text-white transition-colors"
                 >
