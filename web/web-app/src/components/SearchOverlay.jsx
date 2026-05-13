@@ -45,27 +45,6 @@ const cities = [
   }
 ];
 
-const mockEvents = [
-  {
-    title: "Trải nghiệm bay dù lượn tại Sapa",
-    price: "Từ 2.190.000đ",
-    date: "28 tháng 01, 2026",
-    image: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee"
-  },
-  {
-    title: "SOAP HANDMADE WORKSHOP",
-    price: "Từ 279.000đ",
-    date: "14 tháng 03, 2026",
-    image: "https://images.unsplash.com/photo-1604908177522-402aa29d4c20"
-  },
-  {
-    title: "Nhà Hát Kịch IDECAF",
-    price: "Từ 300.000đ",
-    date: "14 tháng 03, 2026",
-    image: "https://images.unsplash.com/photo-1503095396549-807759245b35"
-  }
-];
-
 export default function SearchOverlay({ onSelectSuggestion }) {
 
   const [activeTab, setActiveTab] = useState("category");
@@ -185,53 +164,9 @@ export default function SearchOverlay({ onSelectSuggestion }) {
 
 
       {/* Recommended */}
-      <div className="mt-8">
-
-        <h3 className="font-semibold mb-4 text-gray-800">
-          Gợi ý dành cho bạn
-        </h3>
-
-        <div className="grid md:grid-cols-3 gap-5">
-
-          {mockEvents.map((event, i) => (
-
-            <div key={i} className="bg-gray-50 rounded-xl overflow-hidden hover:shadow-lg transition">
-
-              <img
-                src={event.image}
-                className="h-36 w-full object-cover"
-              />
-
-              <div className="p-3">
-
-                <h4 className="text-sm font-medium text-gray-800">
-                  {event.title}
-                </h4>
-
-                <p className="text-green-600 text-sm mt-1">
-                  {event.price}
-                </p>
-
-                <p className="text-gray-500 text-xs">
-                  {event.date}
-                </p>
-
-              </div>
-
-            </div>
-
-          ))}
-
-        </div>
-
-        <div className="flex justify-center mt-6">
-
-          <button className="bg-green-500 hover:bg-green-400 text-white px-5 py-2 rounded-full transition shadow-lg">
-            Xem thêm sự kiện
-          </button>
-
-        </div>
-
+      <div className="mt-8 rounded-xl border border-dashed border-gray-300 bg-white/60 p-5 text-center text-gray-500">
+        <h3 className="font-semibold mb-2 text-gray-800">Gợi ý từ database</h3>
+        <p className="text-sm">Phần gợi ý này chỉ hiển thị dữ liệu thật từ API khi có sự kiện được publish.</p>
       </div>
 
     </div>

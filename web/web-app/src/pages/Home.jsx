@@ -26,6 +26,8 @@ const Home = () => {
   const [monthEvents, setMonthEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const onlyPublished = (events = []) => events.filter((event) => event?.status === 'PUBLISHED');
+
   useEffect(() => {
     const loadEvents = async () => {
       setLoading(true);
@@ -39,12 +41,12 @@ const Home = () => {
         getMonthEvents(),
       ]);
 
-      setFeaturedEvents(featured);
-      setTrendingEvents(trending);
-      setRecommendedEvents(recommended);
-      setResaleEvents(resale);
-      setWeekendEvents(weekend);
-      setMonthEvents(month);
+      setFeaturedEvents(onlyPublished(featured));
+      setTrendingEvents(onlyPublished(trending));
+      setRecommendedEvents(onlyPublished(recommended));
+      setResaleEvents(onlyPublished(resale));
+      setWeekendEvents(onlyPublished(weekend));
+      setMonthEvents(onlyPublished(month));
       setLoading(false);
     };
 

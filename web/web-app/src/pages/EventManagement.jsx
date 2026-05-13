@@ -28,7 +28,7 @@ const mapStatusToDisplay = (apiStatus) => {
   switch (apiStatus) {
     case 'DRAFT':
       return 'Pending';
-    case 'PUBLISHER':
+    case 'PUBLISHED':
       return 'Approved';
     case 'CANCELLED':
       return 'Rejected';
@@ -115,7 +115,7 @@ const EventManagement = () => {
       await approveEvent(ev.id);
       setEvents((p) =>
         p.map((e) =>
-          e.id === ev.id ? { ...e, status: 'Approved', apiStatus: 'PUBLISHER' } : e
+          e.id === ev.id ? { ...e, status: 'Approved', apiStatus: 'PUBLISHED' } : e
         )
       );
     } catch (err) {
