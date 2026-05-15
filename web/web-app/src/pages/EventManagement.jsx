@@ -5,7 +5,7 @@ import AdminSidebar from '../components/AdminSidebar';
 import EventTable from '../components/EventTable';
 import Pagination from '../components/Pagination';
 import { useToast } from '../context/ToastContext';
-import { getAllAdminEvents, approveEvent, rejectEvent } from '../services/eventService';
+import { getAllAdminEvents, approveEvent, rejectEvent, lockEvent } from '../services/eventService';
 
 const ALL_EVENTS = [
   { id: 0, name: 'Concert 2024 - The Grand Stage',    creator: 'Music Events Co.',  type: 'Offline', time: '2024-03-15 19:00', price: 'Có phí',    created: '2024-02-10', status: 'Pending'  },
@@ -28,7 +28,7 @@ const mapStatusToDisplay = (apiStatus) => {
   switch (apiStatus) {
     case 'DRAFT':
       return 'Pending';
-    case 'PUBLISHER':
+    case 'PUBLISHED':
       return 'Approved';
     case 'CANCELLED':
       return 'Rejected';
@@ -115,7 +115,7 @@ const EventManagement = () => {
       await approveEvent(ev.id);
       setEvents((p) =>
         p.map((e) =>
-          e.id === ev.id ? { ...e, status: 'Approved', apiStatus: 'PUBLISHER' } : e
+          e.id === ev.id ? { ...e, status: 'Approved', apiStatus: 'PUBLISHED' } : e
         )
       );
     } catch (err) {
@@ -133,6 +133,20 @@ const EventManagement = () => {
       );
     } catch (err) {
       toast.error('Error rejecting event: ' + err.message);
+    }
+  };
+
+  const handleLock = async (ev) => {
+    try {
+      await lockEvent(ev.id, 'Locked by admin');
+      setEvents((p) =>
+        p.map((e) =>
+          e.id === ev.id ? { ...e, status: 'Rejected', apiStatus: 'CANCELLED' } : e
+        )
+      );
+      toast.success('Event locked successfully');
+    } catch (err) {
+      toast.error('Error locking event: ' + err.message);
     }
   };
 
@@ -216,6 +230,7 @@ const EventManagement = () => {
               onView={(event) => navigate('/admin/events/' + event.id)}
               onApprove={handleApprove}
               onReject={handleReject}
+              onLock={handleLock}
             />
 
             {/* Pagination */}
