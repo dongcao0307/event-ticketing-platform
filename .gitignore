@@ -90,3 +90,4 @@ env/
 
 # Mock data for payment process
 init_paymentprocess.sql
+docs/todo/
