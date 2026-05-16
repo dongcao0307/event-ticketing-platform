@@ -3,11 +3,16 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import successImg from '../assets/payment_successed.png';
 import failedImg from '../assets/payment_failed.png';
 
-const VNPayCallBack = () => {
+const PaymentCallBack = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const responseCode = searchParams.get('vnp_ResponseCode');
-  const isSuccess = responseCode === '00';
+  const successChecks = {
+    vnp_ResponseCode: '00',
+    resultCode: '0'
+  }
+  const isSuccess = Object.keys(successChecks).some(key =>
+    searchParams.has(key) && searchParams.get(key) === successChecks[key]
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -36,4 +41,4 @@ const VNPayCallBack = () => {
   );
 };
 
-export default VNPayCallBack;
+export default PaymentCallBack;

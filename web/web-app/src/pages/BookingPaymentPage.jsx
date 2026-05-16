@@ -293,7 +293,7 @@ const BookingPaymentPage = () => {
         setPaymentError('');
         setPaying(true);
 
-        const returnUrl = 'http://localhost:3000';
+        const returnUrl = 'http://localhost:3000/payment/call-back';
         const checkout = selectedPaymentMethod === 'MOMO'
           ? await createMomoCheckout({
               order,
@@ -305,7 +305,7 @@ const BookingPaymentPage = () => {
               order,
               event,
               showtime,
-              returnUrl: `${returnUrl}/vnpay/call-back`,
+              returnUrl,
             });
 
         if (checkout?.paymentId) {
