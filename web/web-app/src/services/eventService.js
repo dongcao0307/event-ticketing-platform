@@ -137,3 +137,26 @@ export const searchAdminEvents = async (query, status = null) => {
   const res = await get(`${API_BASE_URL}/search`, params);
   return res.data || [];
 };
+
+
+// Thêm hàm này vào file eventService.js để trang Home gọi động
+export const getEventsByCategory = async (categoryEnum) => {
+  return tryApi(async () => {
+    // Gọi trúng Endpoint xử lý thể loại có sẵn của Backend
+    const res = await get(`/events/category/${categoryEnum}`);
+    return (res.data || []).map(normalizeEvent); // Đi qua hàm chuẩn hóa dữ liệu luôn cho đồng bộ
+  }, []);
+};
+
+// Thêm hàm này vào cuối file eventService.js
+export const getLatestEvents = async () => {
+  try {
+    // Nếu team xài axios thì đổi thành: const response = await api.get('/events/latest');
+    const response = await fetch('http://localhost:8082/events/latest'); 
+    const data = await response.json();
+    return data.result?.data || data.result || []; // Trả về mảng data đã bóc tách từ ApiResponse
+  } catch (error) {
+    console.error("Lỗi lấy sự kiện mới nhất:", error);
+    return [];
+  }
+};
