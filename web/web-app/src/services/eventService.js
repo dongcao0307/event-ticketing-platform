@@ -4,27 +4,39 @@ import { get, post } from './apiClient';
 // ==================== Helper Functions ====================
 const API_BASE_URL = '/api/admin/events';
 
-const normalizeEvent = (e) => ({
-  id: String(e.id),
-  title: e.title,
-  date: e.formattedDate || '',
-  location: e.location || e.city || '',
-  city: e.city || '',
-  price: e.priceDisplay || 'Miễn phí',
-  image: e.imageUrl || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=800&q=80',
-  category: e.category || 'OTHER',
-  status: e.status || 'UPCOMING',
-  description: e.description || '',
-  minPrice: e.minPrice,
-  maxPrice: e.maxPrice,
-  startTime: e.startTime,
-  endTime: e.endTime,
-  availableTickets: e.availableTickets,
-  totalTickets: e.totalTickets,
-  organizerName: e.organizerName,
-  isFeatured: e.isFeatured,
-  viewCount: e.viewCount,
-});
+const normalizeEvent = (e) => {
+  if (!e) return null;
+
+  // 🌟 TỰ ĐỘNG FORMAT GIÁ TIỀN THÔNG MINH TỪ MIN_PRICE CỦA BACKEND
+  let displayPrice = 'Miễn phí';
+  if (e.minPrice !== null && e.minPrice !== undefined && Number(e.minPrice) > 0) {
+    displayPrice = `${Number(e.minPrice).toLocaleString('vi-VN')} đ`;
+  } else if (e.priceDisplay) {
+    displayPrice = e.priceDisplay; // Giữ lại backup nếu sau này backend tự trả chuỗi
+  }
+
+  return {
+    id: String(e.id),
+    title: e.title,
+    date: e.formattedDate || '',
+    location: e.location || e.city || '',
+    city: e.city || '',
+    price: displayPrice, // Now it dynamic!
+    image: e.imageUrl || e.thumbnailUrl || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=800&q=80',
+    category: e.category || 'OTHER',
+    status: e.status || 'UPCOMING',
+    description: e.description || '',
+    minPrice: e.minPrice,
+    maxPrice: e.maxPrice,
+    startTime: e.startTime,
+    endTime: e.endTime,
+    availableTickets: e.availableTickets,
+    totalTickets: e.totalTickets,
+    organizerName: e.organizerName,
+    isFeatured: e.isFeatured,
+    viewCount: e.viewCount,
+  };
+};
 
 const tryApi = async (apiFn, fallbackValue) => {
   try {
@@ -138,23 +150,20 @@ export const searchAdminEvents = async (query, status = null) => {
   return res.data || [];
 };
 
-
-// Thêm hàm này vào file eventService.js để trang Home gọi động
 export const getEventsByCategory = async (categoryEnum) => {
   return tryApi(async () => {
-    // Gọi trúng Endpoint xử lý thể loại có sẵn của Backend
     const res = await get(`/events/category/${categoryEnum}`);
-    return (res.data || []).map(normalizeEvent); // Đi qua hàm chuẩn hóa dữ liệu luôn cho đồng bộ
+    return (res.data || []).map(normalizeEvent); 
   }, []);
 };
 
-// Thêm hàm này vào cuối file eventService.js
 export const getLatestEvents = async () => {
   try {
-    // Nếu team xài axios thì đổi thành: const response = await api.get('/events/latest');
     const response = await fetch('http://localhost:8082/events/latest'); 
     const data = await response.json();
-    return data.result?.data || data.result || []; // Trả về mảng data đã bóc tách từ ApiResponse
+    const rawEvents = data.result?.data || data.result || [];
+    // 🌟 ĐÃ ĐỒNG BỘ: Ép chạy qua hàm chuẩn hóa để tránh lỗi mất ảnh, mất giá
+    return rawEvents.map(normalizeEvent); 
   } catch (error) {
     console.error("Lỗi lấy sự kiện mới nhất:", error);
     return [];
