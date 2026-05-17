@@ -1,6 +1,5 @@
 package fit.iuh.event_service.models;
 
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import fit.iuh.event_service.models.enums.EventCategory;
 import fit.iuh.event_service.models.enums.EventStatus;
@@ -117,14 +116,32 @@ public class Event {
     @JoinColumn(name = "venue_id")
     private Venue venue;
 
+    // --- TỰ ĐỘNG ĐỒNG BỘ DỮ LIỆU KHI LƯU HOẶC CẬP NHẬT ---
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        autoMapCategory();
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+        autoMapCategory();
+    }
+
+    private void autoMapCategory() {
+        if (this.categoryId != null) {
+            switch (this.categoryId.intValue()) {
+                case 1 -> this.category = EventCategory.THEATER;
+                case 2 -> this.category = EventCategory.MUSIC;
+                case 3 -> this.category = EventCategory.SPORTS;
+                case 4 -> this.category = EventCategory.WORKSHOP;
+                case 5 -> this.category = EventCategory.FESTIVAL;
+                case 6 -> this.category = EventCategory.COMEDY;
+                case 7 -> this.category = EventCategory.EXHIBITION;
+                default -> this.category = EventCategory.OTHER;
+            }
+        }
     }
 }

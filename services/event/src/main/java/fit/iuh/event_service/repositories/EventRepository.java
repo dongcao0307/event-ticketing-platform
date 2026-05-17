@@ -1,4 +1,5 @@
 package fit.iuh.event_service.repositories;
+
 import fit.iuh.event_service.models.enums.EventCategory;
 import fit.iuh.event_service.models.enums.EventStatus;
 import fit.iuh.event_service.models.Event;
@@ -9,10 +10,13 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional; // 🌟 Thêm import này để chạy @Modifying native query
+
 import java.util.List;
 
 @Repository
 public interface EventRepository extends JpaRepository<Event, Long> {
+
     // ==================== Các method từ branch feat/login ====================
     @Query("SELECT e FROM Event e WHERE " +
             "(:keyword IS NULL OR LOWER(e.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND " +
@@ -34,6 +38,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     List<Event> findByCategoryOrderByStartTimeAsc(EventCategory category);
 
     @Modifying
+    @Transactional
     @Query("UPDATE Event e SET e.viewCount = e.viewCount + 1 WHERE e.id = :id")
     void incrementViewCount(@Param("id") Long id);
 
@@ -42,5 +47,17 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     List<Event> findByOrganizerId(Long organizerId);
     List<Event> findByOrganizerIdAndTitleContainingIgnoreCase(Long organizerId, String title);
 
-
+    // ==================== TÍNH NĂNG TỰ ĐỘNG ĐỒNG BỘ GIÁ VÉ RA TRANG CHỦ ====================
+    /**
+     * Tự động quét bảng ticket_types kết hợp với event_performances để tính toán giá thấp nhất (MIN)
+     * và giá cao nhất (MAX) của sự kiện, sau đó ghi đè ngược lại vào bảng events (bảng cha).
+     * Hàm này sẽ gọi khi Admin bấm nút "Duyệt sự kiện" hoặc khi có bất kỳ thay đổi nào về vé.
+     */
+    @Modifying
+    @Transactional
+    @Query(value = "UPDATE events e SET " +
+            "e.min_price = (SELECT COALESCE(MIN(t.price), 0) FROM ticket_types t JOIN event_performances p ON t.performance_id = p.id WHERE p.event_id = :eventId), " +
+            "e.max_price = (SELECT COALESCE(MAX(t.price), 0) FROM ticket_types t JOIN event_performances p ON t.performance_id = p.id WHERE p.event_id = :eventId) " +
+            "WHERE e.id = :eventId", nativeQuery = true)
+    void syncPriceOnApproval(@Param("eventId") Long eventId);
 }
