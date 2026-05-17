@@ -6,7 +6,6 @@ const USER_DATA_KEY = "user_data";
 
 const DEFAULT_USER_DATA = {
   email: "",
-  password: "",
   user_avatar: "",
   name: "",
   phone: "",
@@ -15,13 +14,23 @@ const DEFAULT_USER_DATA = {
   gender: "Nam",
 };
 
+const normalizeUser = (parsed) => ({
+  email: parsed.email || "",
+  user_avatar: parsed.user_avatar || parsed.avatarUrl || parsed.avatar || "",
+  name: parsed.name || parsed.fullName || parsed.full_name || parsed.userName || "",
+  phone: parsed.phone || parsed.phoneNumber || parsed.phone_number || "",
+  countryCode: parsed.countryCode || "+84",
+  birthDate: parsed.birthDate || parsed.birth_date || parsed.dob || "",
+  gender: parsed.gender || "Nam",
+});
+
 const AccountSettings = () => {
   const initialData = () => {
     const raw = localStorage.getItem(USER_DATA_KEY);
     if (!raw) return { ...DEFAULT_USER_DATA };
     try {
       const parsed = JSON.parse(raw);
-      return parsed;
+      return normalizeUser(parsed);
     } catch {
       return { ...DEFAULT_USER_DATA };
     }
@@ -160,20 +169,6 @@ const AccountSettings = () => {
               value={userData.email}
               disabled
               className="w-full mt-1 bg-[#1f2b25] border border-[#38493f] rounded-lg p-3 opacity-70"
-            />
-          </div>
-
-          {/* Ngày sinh */}
-          <div>
-            <label className="text-sm text-gray-300">
-              Ngày tháng năm sinh
-            </label>
-
-            <input
-              type="date"
-              value={userData.birthDate}
-              onChange={(e) => handleChange("birthDate", e.target.value)}
-              className="w-full mt-1 bg-[#1f2b25] border border-[#38493f] rounded-lg p-3"
             />
           </div>
 

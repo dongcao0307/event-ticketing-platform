@@ -2,11 +2,19 @@ import React from 'react';
 import { Calendar, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=160&fit=crop&auto=format';
+
 const EventCard = ({ id, title, date, location, price, image, badge }) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
     if (id) navigate(`/event/${id}`);
+  };
+
+  const handleImageError = (e) => {
+    if (e.target.src !== FALLBACK_IMAGE) {
+      e.target.src = FALLBACK_IMAGE;
+    }
   };
 
   return (
@@ -16,9 +24,10 @@ const EventCard = ({ id, title, date, location, price, image, badge }) => {
     >
       <div className="relative h-40 bg-gray-100">
         <img
-          src={image}
+          src={image || FALLBACK_IMAGE}
           alt={title}
           className="w-full h-full object-cover"
+          onError={handleImageError}
         />
         {badge && (
           <div className="absolute left-3 top-3 rounded-full bg-[#26bc71] px-3 py-1 text-xs font-semibold text-white shadow">

@@ -1,16 +1,15 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 
 const statusConfig = {
-  success: {
+  PAID: {
     label: "Thành công",
     color: "bg-green-600",
   },
-  processing: {
+  PENDING: {
     label: "Đang xử lý",
     color: "bg-yellow-500",
   },
-  cancel: {
+  CANCEL: {
     label: "Đã hủy",
     color: "bg-red-600",
   },
@@ -26,8 +25,7 @@ const formatDateParts = (dateStr) => {
   };
 };
 
-const TicketCard = ({ ticket, openCancelModal }) => {
-  const navigate = useNavigate();
+const TicketCard = ({ ticket, rawBooking, onCardClick, onPaymentClick, openCancelModal }) => {
   const start = formatDateParts(ticket.startDate);
 
   const isPast = new Date(ticket.startDate) < new Date();
@@ -35,10 +33,14 @@ const TicketCard = ({ ticket, openCancelModal }) => {
   const hideCancel =
     ticket.status === "cancel" || isPast;
 
+  const handleCardClick = () => {
+    onCardClick(rawBooking);
+  };
+
   return (
     <div
-      // onClick={() => navigate(`/ticket/${ticket.id}`)}
-      className="flex bg-[#3a3c40] border border-[#4a4c50] rounded-lg overflow-hidden cursor-pointer hover:border-[#26bc71]"
+      onClick={handleCardClick}
+      className="flex bg-[#3a3c40] border border-[#4a4c50] rounded-lg overflow-hidden cursor-pointer hover:border-[#26bc71] transition"
     >
 
       {/* DATE */}
@@ -64,17 +66,10 @@ const TicketCard = ({ ticket, openCancelModal }) => {
         <div className="flex items-center gap-2 mt-2">
 
           <span
-            className={`text-xs px-2 py-1 rounded text-white ${statusConfig[ticket.status].color}`}
+            className={`text-xs px-2 py-1 rounded text-white ${statusConfig[ticket.status]?.color || 'bg-gray-500'}`}
           >
-            {statusConfig[ticket.status].label}
+            {statusConfig[ticket.status]?.label || ticket.status}
           </span>
-
-          {ticket.isElectronic && (
-            <span className="text-xs px-2 py-1 rounded bg-green-500 text-white">
-              Vé điện tử
-            </span>
-          )}
-
         </div>
 
         <div className="mt-2 text-xs text-gray-300 space-y-1">
@@ -97,18 +92,15 @@ const TicketCard = ({ ticket, openCancelModal }) => {
 
       {/* ACTION */}
       <div className="flex items-center pr-4 gap-4">
-        <button
-          onClick={() => navigate(`/ticket/${ticket.id}`)}
-          className="bg-green-500 text-white px-3 py-1 rounded"
-        >
-          Xem chi tiết
-        </button>
-        {!hideCancel && (
+        {ticket.status === "PENDING" && (
           <button
-            onClick={openCancelModal}
-            className="bg-red-500 text-white px-3 py-1 rounded"
+            onClick={(e) => {
+              e.stopPropagation(); // Ngừng propagation để không trigger card click
+              onPaymentClick(rawBooking);
+            }}
+            className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
           >
-            Hủy vé
+            Tiếp tục thanh toán
           </button>
         )}
       </div>

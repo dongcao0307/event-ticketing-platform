@@ -1,178 +1,220 @@
 // src/services/eventService.js
+import { get, post } from './apiClient';
 
-const featuredEvents = [
+// ==================== Helper Functions ====================
+const API_BASE_URL = '/api/admin/events';
+
+const normalizeEvent = (e) => ({
+  id: String(e.id),
+  title: e.title,
+  date: e.formattedDate || '',
+  location: e.location || e.city || '',
+  city: e.city || '',
+  price: e.priceDisplay || 'Miễn phí',
+  image: e.imageUrl || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=800&q=80',
+  category: e.category || 'OTHER',
+  status: e.status || 'UPCOMING',
+  description: e.description || '',
+  minPrice: e.minPrice,
+  maxPrice: e.maxPrice,
+  startTime: e.startTime,
+  endTime: e.endTime,
+  availableTickets: e.availableTickets,
+  totalTickets: e.totalTickets,
+  organizerName: e.organizerName,
+  isFeatured: e.isFeatured,
+  viewCount: e.viewCount,
+});
+
+const MOCK_EVENTS = [
   {
-    id: 'featured-1',
-    title: 'SUPER SHOW 10 – Super Junior',
-    date: '24 tháng 02, 2026',
-    location: 'Sân vận động Mỹ Đình',
-    price: 'Từ 750.000đ',
-    image:
-      'https://images.unsplash.com/photo-1519638399535-1b036603ac77?auto=format&fit=crop&w=1200&q=80',
+    id: 'mock-1', title: 'Đêm nhạc Bolero - Hoài niệm tuổi thơ', status: 'PUBLISHED',
+    date: '20/06/2026', location: 'Nhà hát lớn Hà Nội', price: '250.000đ',
+    image: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=400&h=220&fit=crop',
+    category: 'MUSIC', badge: null, isFeatured: true,
   },
   {
-    id: 'featured-2',
-    title: 'HER Concert – Hòa nhạc lãng mạn',
-    date: '07 tháng 02, 2026',
-    location: 'Hội trường GV3',
-    price: 'Từ 350.000đ',
-    image:
-      'https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=1200&q=80',
+    id: 'mock-2', title: 'Festival Âm nhạc Quốc tế Hà Nội 2026', status: 'PUBLISHED',
+    date: '15/07/2026', location: 'Sân vận động Mỹ Đình, Hà Nội', price: '500.000đ',
+    image: 'https://images.unsplash.com/photo-1506157786151-b8491531f063?w=400&h=220&fit=crop',
+    category: 'FESTIVAL', badge: null, isFeatured: true,
   },
   {
-    id: 'featured-3',
-    title: 'Hội chợ Workshop Handmade',
-    date: '25 tháng 01, 2026',
-    location: 'TP. Hồ Chí Minh',
-    price: 'Từ 250.000đ',
-    image:
-      'https://images.unsplash.com/photo-1542144582-dc4f5f8b5a50?auto=format&fit=crop&w=1200&q=80',
+    id: 'mock-3', title: 'Lễ hội ẩm thực đường phố Sài Gòn', status: 'PUBLISHED',
+    date: '05/07/2026', location: 'Phố đi bộ Nguyễn Huệ, TP.HCM', price: 'Miễn phí',
+    image: 'https://images.unsplash.com/photo-1555126634-323283e090fa?w=400&h=220&fit=crop',
+    category: 'FESTIVAL', badge: null, isFeatured: true,
+  },
+  {
+    id: 'mock-4', title: 'Workshop Nhiếp ảnh Đường phố cùng Master', status: 'PUBLISHED',
+    date: '28/06/2026', location: 'Quận 1, TP.HCM', price: '350.000đ',
+    image: 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=400&h=220&fit=crop',
+    category: 'WORKSHOP', badge: null,
+  },
+  {
+    id: 'mock-5', title: 'Show diễn Xiếc nghệ thuật đương đại', status: 'PUBLISHED',
+    date: '10/07/2026', location: 'Rạp xiếc Trung ương, Hà Nội', price: '180.000đ',
+    image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400&h=220&fit=crop',
+    category: 'ART', badge: null,
+  },
+  {
+    id: 'mock-6', title: 'Triển lãm nghệ thuật "Sắc màu Việt Nam"', status: 'PUBLISHED',
+    date: '01/07/2026', location: 'Bảo tàng Mỹ thuật TP.HCM', price: '50.000đ',
+    image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=400&h=220&fit=crop',
+    category: 'ART', badge: null,
+  },
+  {
+    id: 'mock-7', title: 'Giải Marathon quốc tế Đà Nẵng 2026', status: 'PUBLISHED',
+    date: '20/07/2026', location: 'Bãi biển Mỹ Khê, Đà Nẵng', price: '400.000đ',
+    image: 'https://images.unsplash.com/photo-1530549387789-4c1017266635?w=400&h=220&fit=crop',
+    category: 'SPORTS', badge: null,
+  },
+  {
+    id: 'mock-8', title: 'Hội thảo khởi nghiệp & Đổi mới sáng tạo', status: 'PUBLISHED',
+    date: '25/06/2026', location: 'Trung tâm Hội nghị Quốc gia, Hà Nội', price: '200.000đ',
+    image: 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=400&h=220&fit=crop',
+    category: 'WORKSHOP', badge: null,
+  },
+  {
+    id: 'mock-9', title: 'Concert Sơn Tùng M-TP - Sky Tour 2026', status: 'PUBLISHED',
+    date: '12/08/2026', location: 'Sân vận động Phú Thọ, TP.HCM', price: '750.000đ',
+    image: 'https://images.unsplash.com/photo-1540039155733-5bb30b631f55?w=400&h=220&fit=crop',
+    category: 'MUSIC', badge: null, isFeatured: true,
+  },
+  {
+    id: 'mock-10', title: 'Tuần lễ thời trang Hà Nội 2026', status: 'PUBLISHED',
+    date: '18/07/2026', location: 'Gem Center, Hà Nội', price: '300.000đ',
+    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=220&fit=crop',
+    category: 'OTHER', badge: null,
+  },
+  {
+    id: 'mock-11', title: 'Đêm hội Trung Thu cho thiếu nhi', status: 'PUBLISHED',
+    date: '06/09/2026', location: 'Công viên Thống Nhất, Hà Nội', price: 'Miễn phí',
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=220&fit=crop',
+    category: 'FESTIVAL', badge: null,
+  },
+  {
+    id: 'mock-12', title: 'Workshop Lập trình AI & Machine Learning', status: 'PUBLISHED',
+    date: '30/06/2026', location: 'Toà nhà FPT, Hà Nội', price: '450.000đ',
+    image: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=400&h=220&fit=crop',
+    category: 'WORKSHOP', badge: null,
   },
 ];
 
-const trendingEvents = [
-  {
-    id: 'trend-1',
-    title: 'DÉ GARDEN Moss Frame Workshop',
-    date: '19 tháng 02, 2026',
-    location: 'Hà Nội',
-    price: 'Từ 450.000đ',
-    image:
-      'https://images.unsplash.com/photo-1520975914767-4c01e147f37b?auto=format&fit=crop&w=1200&q=80',
-    badge: '1',
-  },
-  {
-    id: 'trend-2',
-    title: 'DÉ GARDEN Terrarium Workshop',
-    date: '13 tháng 03, 2026',
-    location: 'Hà Nội',
-    price: 'Từ 445.000đ',
-    image:
-      'https://images.unsplash.com/photo-1573164574395-0566f5e9280a?auto=format&fit=crop&w=1200&q=80',
-    badge: '2',
-  },
-  {
-    id: 'trend-3',
-    title: 'ART WORKSHOP "FRENCH LEMON MINI TARTE"',
-    date: '13 tháng 03, 2026',
-    location: 'Hà Nội',
-    price: 'Từ 390.000đ',
-    image:
-      'https://images.unsplash.com/photo-1558021212-51b6ec46ff44?auto=format&fit=crop&w=1200&q=80',
-    badge: '3',
-  },
-];
+const tryApi = async (apiFn, fallbackValue) => {
+  try {
+    return await apiFn();
+  } catch (err) {
+    console.warn('[EventService] API unavailable:', err.message);
+    return fallbackValue;
+  }
+};
 
-const recommendedEvents = [
-  {
-    id: 'rec-1',
-    title: 'SÂN KHẤU XÓM KỊCH: CĂN HỘ SỐ 13',
-    date: '15 tháng 03, 2026',
-    location: 'TP. Hồ Chí Minh',
-    price: 'Từ 250.000đ',
-    image:
-      'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=80',
-  },
-  {
-    id: 'rec-2',
-    title: 'IN BÓNG LONG THÀNH - SILHOUETTE OF THANG LONG',
-    date: '20 tháng 03, 2026',
-    location: 'Hà Nội',
-    price: 'Từ 500.000đ',
-    image:
-      'https://images.unsplash.com/photo-1515169067865-5387b23d7e86?auto=format&fit=crop&w=1200&q=80',
-  },
-  {
-    id: 'rec-3',
-    title: 'CHƯƠNG TRÌNH STARTUP STREET',
-    date: '28 tháng 03, 2026',
-    location: 'TP. Hồ Chí Minh',
-    price: 'Từ 199.000đ',
-    image:
-      'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=80',
-  },
-];
+// ==================== Public Events API ====================
 
-const resaleEvents = [
-  {
-    id: 'r1',
-    title: 'GAI HOME CONCERT',
-    date: '26 tháng 04, 2026',
-    location: 'Ocean Park',
-    price: 'Từ 250.000đ',
-    image: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4',
-  },
-  {
-    id: 'r2',
-    title: 'ĐÀO HOA HẬU',
-    date: '15 tháng 03, 2026',
-    location: 'Nhà hát Bến Thành',
-    price: 'Từ 350.000đ',
-    image: 'https://images.unsplash.com/photo-1518972559570-7cc1309f3229',
-  },
-  {
-    id: 'r3',
-    title: 'Mr Siro Concert',
-    date: '28 tháng 03, 2026',
-    location: 'Hà Nội',
-    price: 'Từ 450.000đ',
-    image: 'https://images.unsplash.com/photo-1506157786151-b8491531f063',
-  },
-  {
-    id: 'r4',
-    title: 'GAI HOME CONCERT',
-    date: '26 tháng 04, 2026',
-    location: 'Ocean Park',
-    price: 'Từ 250.000đ',
-    image: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4',
-  },
-  {
-    id: 'r5',
-    title: 'ĐÀO HOA HẬU',
-    date: '15 tháng 03, 2026',
-    location: 'Nhà hát Bến Thành',
-    price: 'Từ 350.000đ',
-    image: 'https://images.unsplash.com/photo-1518972559570-7cc1309f3229',
-  },
-  {
-    id: 'r6',
-    title: 'Mr Siro Concert',
-    date: '28 tháng 03, 2026',
-    location: 'Hà Nội',
-    price: 'Từ 450.000đ',
-    image: 'https://images.unsplash.com/photo-1506157786151-b8491531f063',
-  },
-];
+const MOCK_FEATURED = MOCK_EVENTS.filter(e => e.isFeatured);
+const MOCK_TRENDING = MOCK_EVENTS.slice(0, 6).map((e, i) => ({ ...e, badge: String(i + 1) }));
+const MOCK_RECOMMENDED = MOCK_EVENTS.slice(0, 6);
+const MOCK_WEEKEND = MOCK_EVENTS.filter(e => e.category === 'FESTIVAL').slice(0, 3);
+const MOCK_WORKSHOP = MOCK_EVENTS.filter(e => e.category === 'WORKSHOP').slice(0, 3);
 
-const weekendEvents = [
-  {
-    id: 'w1',
-    title: 'B.DUCK CITYFUNS @VINCOM',
-    date: '20 tháng 01, 2026',
-    price: 'Từ 82.500đ',
-    image: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4',
-  },
-];
+export const getFeaturedEvents = async () =>
+  tryApi(async () => {
+    const res = await get('/events/featured');
+    return (res.data || []).map(normalizeEvent);
+  }, MOCK_FEATURED);
 
-const monthEvents = [
-  {
-    id: 'm1',
-    title: 'Workshop Candle',
-    date: '24 tháng 01, 2026',
-    price: 'Từ 279.000đ',
-    image: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30',
-  },
-];
+export const getTrendingEvents = async () =>
+  tryApi(async () => {
+    const res = await get('/events/trending');
+    return (res.data || []).map((e, i) => ({ ...normalizeEvent(e), badge: String(i + 1) }));
+  }, MOCK_TRENDING);
 
-const simulateFetch = (data, delay = 500) =>
-  new Promise((resolve) => {
-    setTimeout(() => resolve([...data]), delay);
+export const getRecommendedEvents = async () =>
+  tryApi(async () => {
+    const res = await get('/events/latest');
+    return (res.data || []).slice(0, 6).map(normalizeEvent);
+  }, MOCK_RECOMMENDED);
+
+export const getResaleEvents = async () =>
+  tryApi(async () => {
+    const res = await get('/events/search', { size: 6 });
+    return (res.data?.content || []).map(normalizeEvent);
+  }, MOCK_EVENTS.slice(6, 12));
+
+export const getWeekendEvents = async () =>
+  tryApi(async () => {
+    const res = await get('/events/category/FESTIVAL');
+    return (res.data || []).slice(0, 3).map(normalizeEvent);
+  }, MOCK_WEEKEND);
+
+export const getMonthEvents = async () =>
+  tryApi(async () => {
+    const res = await get('/events/category/WORKSHOP');
+    return (res.data || []).slice(0, 3).map(normalizeEvent);
+  }, MOCK_WORKSHOP);
+
+export const searchEvents = async (keyword, filters = {}, page = 0, size = 20) =>
+  tryApi(async () => {
+    const params = { page, size };
+    if (keyword) params.keyword = keyword;
+    if (filters.category) params.category = filters.category;
+    if (filters.city) params.city = filters.city;
+    if (filters.status) params.status = filters.status;
+    const res = await get('/events/search', params);
+    return {
+      events: (res.data?.content || []).map(normalizeEvent),
+      totalElements: res.data?.totalElements || 0,
+      totalPages: res.data?.totalPages || 0,
+      page: res.data?.page || 0,
+    };
+  }, {
+    events: [],
+    totalElements: 0,
+    totalPages: 0,
+    page: 0,
   });
 
-export const getFeaturedEvents = async () => simulateFetch(featuredEvents);
-export const getTrendingEvents = async () => simulateFetch(trendingEvents);
-export const getRecommendedEvents = async () => simulateFetch(recommendedEvents);
-export const getResaleEvents = async () => simulateFetch(resaleEvents);
-export const getWeekendEvents = async () => simulateFetch(weekendEvents);
-export const getMonthEvents = async () => simulateFetch(monthEvents);
+export const getEventById = async (id) =>
+  tryApi(async () => {
+    const res = await get(`/events/${id}`);
+    return normalizeEvent(res.data);
+  }, null);
 
+// ==================== Admin Event API Functions ====================
+
+export const getAllAdminEvents = async (status = null, search = null) => {
+  const params = {};
+  if (status) params.status = status;
+  if (search) params.search = search;
+  
+  const res = await get(API_BASE_URL, params);
+  return res.data || [];
+};
+
+export const getAdminEventDetail = async (eventId) => {
+  const res = await get(`${API_BASE_URL}/${eventId}`);
+  return res.data || null;
+};
+
+export const approveEvent = async (eventId) => {
+  const res = await post(`${API_BASE_URL}/${eventId}/approve`, {});
+  return res.data || null;
+};
+
+export const rejectEvent = async (eventId, reason = '') => {
+  const res = await post(`${API_BASE_URL}/${eventId}/reject`, { eventId, reason });
+  return res.data || null;
+};
+
+export const lockEvent = async (eventId, reason = '') => {
+  const res = await post(`${API_BASE_URL}/${eventId}/lock`, { eventId, reason });
+  return res.data || null;
+};
+
+export const searchAdminEvents = async (query, status = null) => {
+  const params = { query };
+  if (status) params.status = status;
+  const res = await get(`${API_BASE_URL}/search`, params);
+  return res.data || [];
+};

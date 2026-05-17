@@ -1,0 +1,246 @@
+
+> frontend@0.0.0 dev
+> vite
+
+[1G[0K[vite:react-swc] We recommend switching to `@vitejs/plugin-react` for improved performance as no swc plugins are used. More information at https://vite.dev/rolldown
+
+  [32m[1mROLLDOWN-VITE[22m v7.2.5[39m  [2mready in [0m[1m231[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5000[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://172.31.93.2:[1m5000[22m/[39m
+[2m[32m  ➜[39m[22m[2m  press [22m[1mh + enter[22m[2m to show help[22m
+[2m8:16:55 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/featured[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:16:55 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/trending[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:16:55 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/latest[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:16:55 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/search?size=6[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:16:55 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/category/FESTIVAL[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:16:55 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/category/WORKSHOP[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:16:55 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/trending[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:16:55 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/featured[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:16:55 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/latest[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:16:55 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/search?size=6[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:16:55 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/category/FESTIVAL[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:16:55 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/category/WORKSHOP[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:16:57 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/trending[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:16:57 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/featured[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:16:57 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/latest[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:16:57 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/search?size=6[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:16:57 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/category/FESTIVAL[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:16:57 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/category/WORKSHOP[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:16:57 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/featured[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:16:57 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/trending[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:16:57 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/latest[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:16:57 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/search?size=6[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:16:57 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/category/FESTIVAL[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:16:57 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/category/WORKSHOP[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:17:19 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/featured[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:17:19 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/trending[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:17:19 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/latest[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:17:19 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/search?size=6[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:17:19 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/category/FESTIVAL[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:17:19 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/category/WORKSHOP[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:17:19 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/featured[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:17:19 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/trending[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:17:19 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/latest[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:17:19 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/search?size=6[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:17:19 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/category/FESTIVAL[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:17:19 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/category/WORKSHOP[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:39:33 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /auth/register[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m8:39:41 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /auth/register[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16) [33m(x2)[39m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m8:39:55 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /auth/register[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16) [33m(x3)[39m
+[2m8:45:49 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/featured[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:45:49 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/trending[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:45:49 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/latest[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:45:49 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/search?size=6[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:45:49 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/category/WORKSHOP[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:45:49 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/category/FESTIVAL[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:45:49 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/latest[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:45:49 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/featured[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:45:49 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/trending[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:45:49 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/search?size=6[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:45:49 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/category/WORKSHOP[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:45:49 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/category/FESTIVAL[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:49:40 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/featured[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:49:40 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/category/WORKSHOP[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:49:40 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/category/FESTIVAL[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:49:40 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/trending[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:49:40 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/latest[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:49:40 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/search?size=6[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:49:40 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/featured[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:49:40 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/trending[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:49:40 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/category/FESTIVAL[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:49:40 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/category/WORKSHOP[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:49:40 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/search?size=6[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m8:49:40 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/latest[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)

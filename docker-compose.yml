@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   # ═══════════════════════════════════════════════════════════
-  # INFRASTRUCTURE LAYER
+  # DATABASE
   # ═══════════════════════════════════════════════════════════
   mysql:
     image: mysql:8.0
@@ -10,21 +10,24 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: ticketbox
-    ports: ["3306:3306"]
+    ports:
+      - "3306:3306"          # Giữ cổng chuẩn 3306
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
       - ticketbox-net
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
 
   redis:
     image: redis:7-alpine
     container_name: ticketbox-redis
-    ports: ["6379:6379"]
+    ports:
+      - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
@@ -42,7 +45,8 @@ services:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin
       MONGO_INITDB_DATABASE: ticketbox
-    ports: ["27017:27017"]
+    ports:
+      - "27017:27017"
     volumes:
       - mongodb_data:/data/db
       - mongodb_config:/data/configdb
@@ -62,16 +66,17 @@ services:
       RABBITMQ_DEFAULT_PASS: guest
     ports:
       - "5672:5672"
-      - "15672:15672"
+      - "15672:15672"        # Management UI
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
       - ticketbox-net
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 15s
+      retries: 10
+      start_period: 60s
 
   # ═══════════════════════════════════════════════════════════
   # API GATEWAY
@@ -85,16 +90,16 @@ services:
       - identity-service
       - event-service
       - booking-service
-    ports: ["8080:80"]
+      - payment-service
+      - ticket-service
+    ports:
+      - "8080:80"
     networks:
       - ticketbox-net
-    environment:
-      - SERVICE_IDENTITY=identity-service:8081
-      - SERVICE_EVENT=event-service:8082
-      - SERVICE_BOOKING=booking-service:8083
+    restart: on-failure
 
   # ═══════════════════════════════════════════════════════════
-  # MICROSERVICES
+  # SERVICES
   # ═══════════════════════════════════════════════════════════
   identity-service:
     build:
@@ -104,13 +109,18 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-    ports: ["8081:8081"]
+    ports:
+      - "8087:8087"
     networks:
       - ticketbox-net
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
+      JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      JWT_ACCESS_TOKEN_EXPIRATION: 900000
+      JWT_REFRESH_TOKEN_EXPIRATION: 604800000
+    restart: on-failure
 
   event-service:
     build:
@@ -120,17 +130,23 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-      redis:
-        condition: service_healthy
-    ports: ["8082:8082"]
+    ports:
+      - "8082:8082"
+      - "50051:50051"       # gRPC server port
     networks:
       - ticketbox-net
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
+      GRPC_SERVER_PORT: 50051
+
+      AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION}
 
   booking-service:
     build:
@@ -142,17 +158,26 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    ports: ["8083:8083"]
+      redis:
+        condition: service_healthy
+      event-service:
+        condition: service_started
+    ports:
+      - "8083:8083"
     networks:
       - ticketbox-net
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
-      SPRING_RABBITMQ_HOST: rabbitmq
-      SPRING_RABBITMQ_PORT: 5672
-      SPRING_RABBITMQ_USERNAME: guest
-      SPRING_RABBITMQ_PASSWORD: guest
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      EVENT_SERVICE_GRPC_HOST: event-service
+      EVENT_SERVICE_GRPC_PORT: 50051
 
   payment-service:
     build:
@@ -162,13 +187,24 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-    ports: ["8085:8085"]
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "8085:8085"
     networks:
       - ticketbox-net
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      PAYMENT_VNPAY_RETURN_URL: https://youtube.com
+      PAYMENT_VNPAY_TIMEZONE: Asia/Ho_Chi_Minh
+      PAYMENT_MOMO_RETURN_URL: https://youtube.com
+      PAYMENT_MOMO_IPN_URL: https://1b5z6mvn-8085.asse.devtunnels.ms/api/payment/momo/ipn
 
   ticket-service:
     build:
@@ -178,13 +214,22 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-    ports: ["8084:8084"]
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "8084:8084"
     networks:
       - ticketbox-net
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
 
   seat-service:
     build:
@@ -196,11 +241,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    ports: ["8086:8086"]
+    ports:
+      - "8086:8086"
     networks:
       - ticketbox-net
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
       SPRING_REDIS_HOST: redis
@@ -214,7 +260,8 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
-    ports: ["8087:8087"]
+    ports:
+      - "8090:8090"
     networks:
       - ticketbox-net
     environment:
@@ -233,11 +280,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    ports: ["8088:8088"]
+    ports:
+      - "8088:8088"
     networks:
       - ticketbox-net
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
       SPRING_REDIS_HOST: redis
@@ -251,16 +299,17 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-    ports: ["8089:8089"]
+    ports:
+      - "8089:8089"
     networks:
       - ticketbox-net
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
 
   # ═══════════════════════════════════════════════════════════
-  # WEB APPLICATION
+  # WEB APPLICATION (React + Vite)
   # ═══════════════════════════════════════════════════════════
   web-app:
     build:
@@ -269,11 +318,11 @@ services:
     container_name: ticketbox-web
     depends_on:
       - gateway
-    ports: ["3000:3000"]
+    ports:
+      - "3000:3000"
     networks:
       - ticketbox-net
-    environment:
-      - VITE_API_URL=http://gateway:80
+    restart: on-failure
 
 volumes:
   mysql_data:

@@ -1,36 +1,100 @@
-import React, { useState } from 'react';
-import { X, Info, EyeOff, Eye, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Info, EyeOff, Eye, Loader2, ShieldAlert } from 'lucide-react';
 import mascotImg from '../assets/mascot.png';
-import { authService } from '../services/authService'; // Nhớ tạo file này như hướng dẫn trước đó
+import { authService } from '../services/authService';
+
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
+const RATE_LIMIT_LOCKOUT_MS = 5 * 60 * 1000;
+
+const getRateLimitState = () => {
+  try {
+    const raw = localStorage.getItem('login_rate_limit');
+    return raw ? JSON.parse(raw) : { attempts: [], lockedUntil: null };
+  } catch {
+    return { attempts: [], lockedUntil: null };
+  }
+};
+
+const setRateLimitState = (state) => {
+  localStorage.setItem('login_rate_limit', JSON.stringify(state));
+};
 
 const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
   const [showPassword, setShowPassword] = useState(false);
-  
-  // State quản lý form đăng nhập
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [lockoutRemaining, setLockoutRemaining] = useState(0);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    const checkLockout = () => {
+      const state = getRateLimitState();
+      if (state.lockedUntil && Date.now() < state.lockedUntil) {
+        setLockoutRemaining(Math.ceil((state.lockedUntil - Date.now()) / 1000));
+      } else {
+        setLockoutRemaining(0);
+      }
+    };
+    checkLockout();
+    timerRef.current = setInterval(() => {
+      const state = getRateLimitState();
+      if (state.lockedUntil && Date.now() < state.lockedUntil) {
+        setLockoutRemaining(Math.ceil((state.lockedUntil - Date.now()) / 1000));
+      } else {
+        setLockoutRemaining(0);
+        clearInterval(timerRef.current);
+      }
+    }, 1000);
+    return () => clearInterval(timerRef.current);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  // Hàm xử lý Đăng nhập
+  const isLocked = lockoutRemaining > 0;
+
+  const formatLockout = (secs) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return m > 0 ? `${m} phút ${s} giây` : `${s} giây`;
+  };
+
   const handleLogin = async () => {
-    // Ngăn người dùng bấm nếu chưa nhập đủ thông tin
-    if (!email || !password) return;
-    
+    if (!email || !password || isLocked) return;
+
+    const now = Date.now();
+    const state = getRateLimitState();
+    const recentAttempts = state.attempts.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+
+    if (recentAttempts.length >= RATE_LIMIT_MAX) {
+      const lockedUntil = now + RATE_LIMIT_LOCKOUT_MS;
+      setRateLimitState({ attempts: recentAttempts, lockedUntil });
+      setLockoutRemaining(Math.ceil(RATE_LIMIT_LOCKOUT_MS / 1000));
+      setErrorMsg(`Quá nhiều lần thử. Vui lòng đợi ${formatLockout(Math.ceil(RATE_LIMIT_LOCKOUT_MS / 1000))}.`);
+      return;
+    }
+
     setIsLoading(true);
-    setErrorMsg(''); // Xóa lỗi cũ (nếu có) trước khi thử lại
-    
+    setErrorMsg('');
+
     try {
-      // Gọi service giả lập đăng nhập
       await authService.login(email, password);
-      
-      // Nếu đăng nhập thành công, load lại trang để Header cập nhật giao diện
-      window.location.reload(); 
+      setRateLimitState({ attempts: [], lockedUntil: null });
+      window.location.reload();
     } catch (error) {
-      // Nếu lỗi (nhập sai), hiển thị lỗi ra màn hình
-      setErrorMsg(error.message);
+      const updatedAttempts = [...recentAttempts, now];
+      const remaining = RATE_LIMIT_MAX - updatedAttempts.length;
+      setRateLimitState({ attempts: updatedAttempts, lockedUntil: state.lockedUntil });
+      if (remaining <= 0) {
+        const lockedUntil = now + RATE_LIMIT_LOCKOUT_MS;
+        setRateLimitState({ attempts: updatedAttempts, lockedUntil });
+        setLockoutRemaining(Math.ceil(RATE_LIMIT_LOCKOUT_MS / 1000));
+        setErrorMsg(`Quá nhiều lần thử. Tài khoản bị tạm khóa ${formatLockout(Math.ceil(RATE_LIMIT_LOCKOUT_MS / 1000))}.`);
+      } else {
+        setErrorMsg(`${error.message} (còn ${remaining} lần thử)`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -93,20 +157,31 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
             </button>
           </div>
 
+          {/* THÔNG BÁO KHÓA TÀI KHOẢN */}
+          {isLocked && (
+            <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-md px-3 py-2.5">
+              <ShieldAlert size={16} className="text-red-500 mt-0.5 shrink-0" />
+              <p className="text-red-600 text-[13px] font-medium leading-snug">
+                Đăng nhập tạm bị khóa do quá nhiều lần thử sai.<br />
+                Vui lòng thử lại sau <span className="font-bold">{formatLockout(lockoutRemaining)}</span>.
+              </p>
+            </div>
+          )}
+
           {/* HIỂN THỊ THÔNG BÁO LỖI (NẾU ĐĂNG NHẬP SAI) */}
-          {errorMsg && (
+          {errorMsg && !isLocked && (
             <p className="text-red-500 text-[13px] font-medium m-0">{errorMsg}</p>
           )}
 
           {/* Nút Tiếp tục */}
           <button 
             onClick={handleLogin}
-            disabled={!email || !password || isLoading}
+            disabled={!email || !password || isLoading || isLocked}
             className={`w-full font-bold py-2.5 rounded-md text-[15px] transition-colors mt-2 
-              ${(!email || !password || isLoading) ? 'bg-[#e0e0e0] text-[#999] cursor-not-allowed' : 'bg-[#26bc71] text-white cursor-pointer hover:bg-[#23a861]'}
+              ${(!email || !password || isLoading || isLocked) ? 'bg-[#e0e0e0] text-[#999] cursor-not-allowed' : 'bg-[#26bc71] text-white cursor-pointer hover:bg-[#23a861]'}
             `}
           >
-            {isLoading ? 'Đang xử lý...' : 'Tiếp tục'}
+            {isLoading ? 'Đang xử lý...' : isLocked ? `Chờ ${formatLockout(lockoutRemaining)}` : 'Tiếp tục'}
           </button>
 
           {/* Giả lập Cloudflare Captcha */}
