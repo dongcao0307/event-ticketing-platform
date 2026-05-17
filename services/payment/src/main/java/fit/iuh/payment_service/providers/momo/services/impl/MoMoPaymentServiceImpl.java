@@ -36,7 +36,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.HttpServerErrorException;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -67,8 +68,8 @@ public class MoMoPaymentServiceImpl implements MoMoPaymentService {
     private final MoMoIpnMapper moMoIpnMapper;
     private final PaymentEventPublisher paymentEventPublisher;
 
-    private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final fit.iuh.payment_service.providers.momo.clients.MoMoHttpClient moMoHttpClient;
 
     @Override
     @Transactional
@@ -170,20 +171,35 @@ public class MoMoPaymentServiceImpl implements MoMoPaymentService {
         }
 
         PaymentStatus nextStatus = request.getResultCode() != null && request.getResultCode() == 0
-                ? PaymentStatus.COMPLETED
-                : PaymentStatus.FAILED;
+            ? PaymentStatus.COMPLETED
+            : PaymentStatus.FAILED;
 
-        payment.setStatus(nextStatus);
-        paymentRepository.save(payment);
-
-        String providerResponse = isBlank(request.getRawResponse()) ? toJson(request) : request.getRawResponse();
-        Transaction callbackTransaction = moMoTransactionMapper.toTransaction(
+        // Idempotency: if status already set, create transaction record if needed and return
+        if (payment.getStatus() == nextStatus) {
+            String providerResponse = isBlank(request.getRawResponse()) ? toJson(request) : request.getRawResponse();
+            Transaction callbackTransaction = moMoTransactionMapper.toTransaction(
                 UUID.randomUUID().toString(),
                 providerResponse,
                 LocalDateTime.now(),
                 providerTransactionId,
                 nextStatus == PaymentStatus.COMPLETED ? TransactionStatus.SUCCESS : TransactionStatus.FAILED,
                 payment
+            );
+            callbackTransaction = transactionRepository.save(callbackTransaction);
+            return moMoPaymentMapper.toIpnResponse(payment, callbackTransaction, request.getResultCode(), request.getMessage());
+        }
+
+        payment.setStatus(nextStatus);
+        paymentRepository.save(payment);
+
+        String providerResponse = isBlank(request.getRawResponse()) ? toJson(request) : request.getRawResponse();
+        Transaction callbackTransaction = moMoTransactionMapper.toTransaction(
+            UUID.randomUUID().toString(),
+            providerResponse,
+            LocalDateTime.now(),
+            providerTransactionId,
+            nextStatus == PaymentStatus.COMPLETED ? TransactionStatus.SUCCESS : TransactionStatus.FAILED,
+            payment
         );
         callbackTransaction = transactionRepository.save(callbackTransaction);
 
@@ -247,12 +263,12 @@ public class MoMoPaymentServiceImpl implements MoMoPaymentService {
             throw new AppException(ErrorCode.INVALID_POST_REQUEST);
         }
 
+        // Delegate HTTP call to MoMoHttpClient which has Resilience4j retry configured.
         try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-            ResponseEntity<Map> response = restTemplate.postForEntity(moMoProperties.getCreateEndpoint(), entity, Map.class);
-            return response.getBody() == null ? Map.of() : response.getBody();
+            return moMoHttpClient.createPayment(requestBody, moMoProperties.getCreateEndpoint());
+        } catch (ResourceAccessException | HttpServerErrorException ex) {
+            // Let transient exceptions bubble up so they trigger retry behavior.
+            throw ex;
         } catch (Exception ex) {
             throw new AppException(ErrorCode.INVALID_POST_REQUEST);
         }

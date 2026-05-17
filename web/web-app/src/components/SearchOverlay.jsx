@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const trendingSearch = [
   "gai home concert",
@@ -10,34 +11,41 @@ const trendingSearch = [
 const categories = [
   {
     name: "Nhạc sống",
-    image: "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4"
+    image: "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4",
+    queryPath: "category=nhac_song"
   },
   {
     name: "Sân khấu & Nghệ thuật",
-    image: "https://images.unsplash.com/photo-1503095396549-807759245b35"
+    image: "https://images.unsplash.com/photo-1503095396549-807759245b35",
+    queryPath: "category=san_khau"
   },
   {
     name: "Thể thao",
-    image: "https://images.unsplash.com/photo-1517649763962-0c623066013b"
+    image: "https://images.unsplash.com/photo-1517649763962-0c623066013b",
+    queryPath: "category=the_thao"
   },
   {
     name: "Hội thảo & Workshop",
-    image: "https://images.unsplash.com/photo-1551836022-d5d88e9218df"
+    image: "https://images.unsplash.com/photo-1551836022-d5d88e9218df",
+    queryPath: "category=hoi_thao"
   }
 ];
 
 const cities = [
   {
     name: "Tp. Hồ Chí Minh",
-    image: "https://images.unsplash.com/photo-1583416750470-965b2707b355"
+    image: "https://images.unsplash.com/photo-1583416750470-965b2707b355",
+    queryPath: "city=ho_chi_minh"
   },
   {
     name: "Hà Nội",
-    image: "https://images.unsplash.com/photo-1557750255-c76072a7aad1"
+    image: "https://images.unsplash.com/photo-1557750255-c76072a7aad1",
+    queryPath: "city=ha_noi"
   },
   {
     name: "Đà Lạt",
-    image: "https://images.unsplash.com/photo-1604908177522-402aa29d4c20"
+    image: "https://images.unsplash.com/photo-1604908177522-402aa29d4c20",
+    queryPath: "city=da_lat"
   },
   {
     name: "Vị trí khác",
@@ -45,8 +53,8 @@ const cities = [
   }
 ];
 
-export default function SearchOverlay({ onSelectSuggestion }) {
-
+export default function SearchOverlay({ onSelectSuggestion, onClose }) {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("category");
 
   return (
@@ -106,7 +114,10 @@ export default function SearchOverlay({ onSelectSuggestion }) {
 
             <button
               key={cat.name}
-              onClick={() => onSelectSuggestion(cat.name)}
+              onClick={() => {
+                onClose()
+                navigate(`/search?${cat.queryPath}`)
+              }}
               className="relative h-24 rounded-xl overflow-hidden group"
             >
 
@@ -139,7 +150,10 @@ export default function SearchOverlay({ onSelectSuggestion }) {
 
             <button
               key={city.name}
-              onClick={() => onSelectSuggestion(city.name)}
+              onClick={() => {
+                onClose()
+                navigate(`/search?${city.queryPath}`)
+              }}
               className="relative h-24 rounded-xl overflow-hidden group"
             >
 
