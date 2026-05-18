@@ -35,6 +35,8 @@ web-build/
 /target/
 .mvn/
 target/
+services/**/target/
+**/target/
 *.class
 *.jar
 *.war
