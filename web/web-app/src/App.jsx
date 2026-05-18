@@ -13,6 +13,7 @@ import TicketDetailPage from './pages/TicketDetailPage'
 
 // Import trang mới vừa tạo
 import EventManagement from './pages/EventManagement'
+import PaymentCallBack from './pages/PaymentCallBack'
 import UserManagement from './pages/UserManagement'
 import AdminEventDetail from './pages/AdminEventDetail'
 import AdminAnalytics from './pages/AdminAnalytics'
@@ -32,7 +33,7 @@ function App() {
         <Routes>
           {/* ==================== Public Routes ==================== */}
           <Route path="/" element={<Home />} />
-          
+
           {/* Public event detail & booking flow */}
           <Route path="/event/:id" element={<EventDetailPublicPage />} />
           <Route path="/event/:id/seats" element={<SeatSelectionPage />} />
@@ -40,17 +41,18 @@ function App() {
           <Route path="/event/:id/booking" element={<BookingInfoPage />} />
           <Route path="/event/:id/payment" element={<BookingPaymentPage />} />
 
+          <Route path="/payment/call-back" element={<PaymentCallBack />} />
           {/* Organizer */}
           <Route path="/organizer" element={<OrganizerPage />} />
           <Route path="/organizer/my-events" element={<MyEvents />} />
           <Route path="/organizer/event/:id" element={<EventPage />} />
 
-        {/* Organizer */}
-        <Route path="/organizer" element={<OrganizerPage />} />
-        <Route path="/organizer/my-events" element={<MyEvents />} />
-        <Route path="/organizer/event/:id" element={<EventPage />} />
-        <Route path="/organizer/event/create" element={<OrganizerPage />} />
-        <Route path="/organizer/event/edit/:id" element={<OrganizerPage />} />
+          {/* Organizer */}
+          <Route path="/organizer" element={<OrganizerPage />} />
+          <Route path="/organizer/my-events" element={<MyEvents />} />
+          <Route path="/organizer/event/:id" element={<EventPage />} />
+          <Route path="/organizer/event/create" element={<OrganizerPage />} />
+          <Route path="/organizer/event/edit/:id" element={<OrganizerPage />} />
 
           {/* User account */}
           <Route path="/search" element={<SearchPage />} />

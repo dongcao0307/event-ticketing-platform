@@ -132,6 +132,21 @@ public class VnPayPaymentServiceImpl implements VnPayPaymentService {
         }
 
         PaymentStatus nextStatus = "00".equals(request.getResponseCode()) ? PaymentStatus.COMPLETED : PaymentStatus.FAILED;
+        // Idempotency: if payment already in the desired status, skip state change and publishing
+        if (payment.getStatus() == nextStatus) {
+            // create a transaction record only if provider transaction id is new (handled above), otherwise return existing mapping
+            Transaction callbackTransaction = vnPayTransactionMapper.toTransaction(
+                    java.util.UUID.randomUUID().toString(),
+                    request.getRawResponse(),
+                    java.time.LocalDateTime.now(),
+                    request.getTransactionNo(),
+                    nextStatus == PaymentStatus.COMPLETED ? TransactionStatus.SUCCESS : TransactionStatus.FAILED,
+                    payment
+            );
+            callbackTransaction = transactionRepository.save(callbackTransaction);
+            return vnPayPaymentMapper.toIpnResponse(payment, callbackTransaction);
+        }
+
         payment.setStatus(nextStatus);
         paymentRepository.save(payment);
 
@@ -181,6 +196,7 @@ public class VnPayPaymentServiceImpl implements VnPayPaymentService {
                 return gatewayResponse("00", "Confirm Success");
             }
 
+            PaymentStatus previousStatus = payment.getStatus();
             PaymentStatus nextStatus = "00".equals(responseCode) ? PaymentStatus.COMPLETED : PaymentStatus.FAILED;
             payment.setStatus(nextStatus);
             paymentRepository.save(payment);
@@ -195,7 +211,10 @@ public class VnPayPaymentServiceImpl implements VnPayPaymentService {
                     payment
             );
             transactionRepository.save(callbackTransaction);
-            paymentEventPublisher.publishPaymentStatusChanged(vnPayPaymentMapper.toPaymentStatusChangedEvent(payment, LocalDateTime.now()));
+            // Publish only when the provider callback actually changes the payment state.
+            if (previousStatus != nextStatus) {
+                paymentEventPublisher.publishPaymentStatusChanged(vnPayPaymentMapper.toPaymentStatusChangedEvent(payment, LocalDateTime.now()));
+            }
 
             return gatewayResponse("00", "Confirm Success");
         } catch (Exception ex) {
@@ -244,6 +263,9 @@ public class VnPayPaymentServiceImpl implements VnPayPaymentService {
             + "&vnp_SecureHashType=HmacSHA512"
             + "&vnp_SecureHash=" + secureHash;
     }
+
+    // Example wrapper for external calls that may use the HTTP client
+    // (If there are direct RestTemplate calls for VNPay, replace them to use vnPayHttpClient similarly to MoMo)
 
     private String buildTxnRef(Long paymentId) {
         String randomPart = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();

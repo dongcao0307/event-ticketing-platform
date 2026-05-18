@@ -1,6 +1,7 @@
 package fit.iuh.booking_service.messaging;
 
 import fit.iuh.booking_service.dtos.requests.UpdateBookingStatusRequest;
+import fit.iuh.booking_service.dtos.responses.BookingResponse;
 import fit.iuh.booking_service.entities.BookingStatus;
 import fit.iuh.booking_service.services.BookingService;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,12 @@ public class PaymentStatusChangedListener {
         }
 
         try {
+            BookingResponse booking = bookingService.findById(event.getBookingId());
+            if (booking != null && booking.getStatus() == BookingStatus.PAID) {
+                log.info("Booking {} is already PAID; skipping", event.getBookingId());
+                return;
+            }
+
             bookingService.updateBookingStatus(
                     event.getBookingId(),
                     UpdateBookingStatusRequest.builder().status(BookingStatus.PAID).build()

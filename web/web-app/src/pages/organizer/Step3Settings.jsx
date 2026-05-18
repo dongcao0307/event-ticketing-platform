@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Lock, Users, User, Mail } from 'lucide-react';
 
 // Nhận eventData và setEventData từ component cha (OrganizerPage)
@@ -7,10 +7,8 @@ const Step3Settings = ({ eventData, setEventData }) => {
   // 1. TỰ ĐỘNG DỊCH CHUỖI JSON TỪ BACKEND
   let settings = eventData?.settings || {};
   
-  // Nếu settings trống nhưng lại có settingsConfig từ API (khi nhấn Sửa sự kiện cũ)
   if (Object.keys(settings).length === 0 && eventData?.settingsConfig) {
     try {
-      // Ép kiểu chuỗi JSON về lại thành Object
       settings = typeof eventData.settingsConfig === 'string' 
         ? JSON.parse(eventData.settingsConfig) 
         : eventData.settingsConfig;
@@ -25,20 +23,57 @@ const Step3Settings = ({ eventData, setEventData }) => {
   const confirmMsg = settings.confirmMsg !== undefined ? settings.confirmMsg : '';
   const enableQuestionnaire = settings.enableQuestionnaire || false;
 
-  // Cập nhật state ngược lại lên OrganizerPage (Gom vào object settings)
+  // --- [MỚI] STATE QUẢN LÝ LỖI RÀNG BUỘC ---
+  const [errors, setErrors] = useState({});
+
+  // --- [MỚI] HÀM KIỂM TRA LỖI ---
+  const validateField = (field, value) => {
+    let errorMsg = '';
+    switch (field) {
+      case 'customUrl':
+        if (!value || !value.trim()) {
+          errorMsg = 'Vui lòng nhập đường dẫn tùy chỉnh';
+        } else if (value.length > 80) {
+          errorMsg = 'Đường dẫn tối đa 80 ký tự';
+        } else if (!/^[a-zA-Z0-9-]+$/.test(value)) {
+          // Bắt buộc: Không dấu, không khoảng trắng, chỉ chữ, số và gạch ngang
+          errorMsg = 'Đường dẫn chỉ được chứa chữ không dấu, số và dấu gạch ngang (-)';
+        }
+        break;
+      case 'confirmMsg':
+        if (value && value.length > 500) {
+          errorMsg = 'Tin nhắn tối đa 500 ký tự';
+        }
+        break;
+      default:
+        break;
+    }
+    return errorMsg;
+  };
+
+  // --- [MỚI] XỬ LÝ KHI USER CLICK RA NGOÀI Ô NHẬP (BLUR) ---
+  const handleBlur = (field, value) => {
+    const error = validateField(field, value);
+    setErrors(prev => ({ ...prev, [field]: error }));
+  };
+
+  // --- CẬP NHẬT: XÓA LỖI KHI USER ĐANG GÕ ---
   const handleSettingChange = (field, value) => {
     setEventData(prev => ({
       ...prev,
       settings: {
-        ...(prev.settings || settings), // Nhớ lấy dữ liệu settings cũ đã parse
+        ...(prev.settings || settings), 
         [field]: value
       }
     }));
+    
+    // Nếu đang có lỗi ở field này thì xóa đi để user gõ tiếp
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
   };
 
-  // Đường dẫn gốc
   const baseUrl = 'https://ticketbox.vn/';
-  // Tự động lấy ID sự kiện thật (nếu đang Edit) hoặc ID ảo (nếu tạo mới)
   const eventId = eventData?.id || '25598'; 
 
   return (
@@ -59,14 +94,17 @@ const Step3Settings = ({ eventData, setEventData }) => {
               type="text" 
               value={customUrl}
               onChange={(e) => handleSettingChange('customUrl', e.target.value)}
+              onBlur={(e) => handleBlur('customUrl', e.target.value)} // [MỚI]
               placeholder="duaxemorong" 
-              className="w-full bg-white text-black text-sm p-2.5 rounded outline-none pr-16 focus:ring-2 focus:ring-[#00b14f]" 
+              className={`w-full bg-white text-black text-sm p-2.5 rounded outline-none pr-16 transition-all ${errors.customUrl ? 'border border-red-500 ring-1 ring-red-500' : 'focus:ring-2 focus:ring-[#00b14f]'}`} 
             />
             <span className="absolute right-3 top-2.5 text-gray-400 text-sm">
               {customUrl.length} / 80
             </span>
           </div>
         </div>
+        {/* [MỚI] Hiển thị dòng lỗi nếu nhập sai URL */}
+        {errors.customUrl && <p className="text-red-500 text-xs mb-3 md:ml-[160px]">{errors.customUrl}</p>}
 
         <p className="text-sm text-gray-400">
           Đường dẫn sự kiện của bạn là: <a href={`${baseUrl}${customUrl || 'duaxemorong'}-${eventId}`} className="text-[#0084ff] hover:underline" target="_blank" rel="noreferrer">{`${baseUrl}${customUrl || 'duaxemorong'}-${eventId}`}</a>
@@ -121,13 +159,16 @@ const Step3Settings = ({ eventData, setEventData }) => {
           <textarea 
             value={confirmMsg}
             onChange={(e) => handleSettingChange('confirmMsg', e.target.value)}
+            onBlur={(e) => handleBlur('confirmMsg', e.target.value)} // [MỚI]
             placeholder="Cảm ơn bạn đã tham gia sự kiện" 
-            className="w-full bg-white text-black text-sm p-3 rounded outline-none h-[120px] resize-none pr-4 focus:ring-2 focus:ring-[#00b14f]"
+            className={`w-full bg-white text-black text-sm p-3 rounded outline-none h-[120px] resize-none pr-4 transition-all ${errors.confirmMsg ? 'border border-red-500 ring-1 ring-red-500' : 'focus:ring-2 focus:ring-[#00b14f]'}`}
           ></textarea>
           <span className="absolute right-3 bottom-3 text-gray-400 text-sm bg-white pl-2">
             {confirmMsg.length} / 500
           </span>
         </div>
+        {/* [MỚI] Hiển thị dòng lỗi nếu vượt quá 500 ký tự */}
+        {errors.confirmMsg && <p className="text-red-500 text-xs mt-2 ml-6">{errors.confirmMsg}</p>}
       </div>
 
       {/* ===== BLOCK 4: TẠO BẢNG CÂU HỎI ===== */}

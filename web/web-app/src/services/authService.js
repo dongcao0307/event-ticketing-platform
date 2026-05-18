@@ -4,27 +4,10 @@ import { post, put, get, setTokens, clearTokens } from './apiClient';
 export const authService = {
   register: async (userName, email, password, fullName, phone) => {
     const res = await post('/auth/register', { userName, email, password, fullName, phone });
-    const data = res.data || res;
-    const accessToken = data.accessToken || data.token;
-    const refreshToken = data.refreshToken;
-    const user = data.user || data;
-    if (accessToken) {
-      setTokens(accessToken, refreshToken);
-    }
-    if (user && (user.email || user.userName || user.id)) {
-      const userData = {
-        email: user.email || email,
-        name: user.fullName || user.name || fullName || '',
-        phone: user.phoneNumber || user.phone || phone || '',
-        userName: user.userName || userName,
-        gender: user.gender || 'Nam',
-        birthDate: user.birthDate || '',
-        user_avatar: user.avatarUrl || user.user_avatar || '',
-        role: user.role || 'USER',
-      };
-      localStorage.setItem('user_data', JSON.stringify(userData));
-      if (!accessToken) {
-        localStorage.setItem('jwt_token', 'registered');
+    if (res.data) {
+      setTokens(res.data.accessToken, res.data.refreshToken);
+      if (res.data.user) {
+        localStorage.setItem('user_data', JSON.stringify(res.data.user));
       }
     }
     return res;
@@ -32,25 +15,11 @@ export const authService = {
 
   login: async (email, password) => {
     const res = await post('/auth/login', { email, password });
-    const data = res.data || res;
-    const accessToken = data.accessToken || data.token;
-    const refreshToken = data.refreshToken;
-    const user = data.user || data;
-    if (accessToken) {
-      setTokens(accessToken, refreshToken);
-    }
-    if (user && (user.email || user.userName || user.id)) {
-      const userData = {
-        email: user.email || email,
-        name: user.fullName || user.name || '',
-        phone: user.phoneNumber || user.phone || '',
-        userName: user.userName || '',
-        gender: user.gender || 'Nam',
-        birthDate: user.birthDate || '',
-        user_avatar: user.avatarUrl || user.user_avatar || '',
-        role: user.role || 'USER',
-      };
-      localStorage.setItem('user_data', JSON.stringify(userData));
+    if (res.data) {
+      setTokens(res.data.accessToken, res.data.refreshToken);
+      if (res.data.user) {
+        localStorage.setItem('user_data', JSON.stringify(res.data.user));
+      }
     }
     return res;
   },
@@ -58,9 +27,8 @@ export const authService = {
   logout: async () => {
     const refreshToken = localStorage.getItem('refresh_token');
     clearTokens();
-    localStorage.removeItem('login_rate_limit');
     try {
-      if (refreshToken && refreshToken !== 'registered') {
+      if (refreshToken) {
         await post('/auth/logout', { refreshToken });
       }
     } catch (_) {}

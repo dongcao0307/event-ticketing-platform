@@ -14,7 +14,6 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }) => {
   const [userName, setUserName] = useState('');
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -50,7 +49,7 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }) => {
     setSuccessMsg('');
 
     try {
-      await authService.register(userName.trim(), email.trim(), password, fullName.trim() || undefined, phone.trim() || undefined);
+      await authService.register(userName.trim(), email.trim(), password, fullName.trim() || undefined);
       setSuccessMsg('Đăng ký thành công! Đang chuyển hướng...');
       setTimeout(() => {
         window.location.reload();
@@ -117,20 +116,6 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }) => {
                 placeholder="Nhập email của bạn"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full outline-none text-[15px] text-gray-700 placeholder:text-gray-400"
-              />
-            </div>
-          </div>
-
-          {/* Số điện thoại */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">Số điện thoại</label>
-            <div className="flex items-center border border-gray-300 rounded-md px-3 h-11 focus-within:border-[#26bc71] transition-colors">
-              <input
-                type="tel"
-                placeholder="Nhập số điện thoại"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
                 className="w-full outline-none text-[15px] text-gray-700 placeholder:text-gray-400"
               />
             </div>

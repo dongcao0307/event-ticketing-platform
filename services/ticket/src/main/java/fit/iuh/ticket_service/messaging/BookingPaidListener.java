@@ -51,25 +51,52 @@ public class BookingPaidListener {
             }
         }
 
-        if (updatedCount > 0) {
-            ticketRepository.saveAll(tickets);
-            log.info("Updated {} tickets to PAID for booking {}", updatedCount, event.getBookingId());
+        if (updatedCount == 0) {
+            log.info("No ticket status changes required for booking {}; already processed", event.getBookingId());
+            return;
+        }
 
-            Set<Long> performanceIds = tickets.stream()
-                .filter(t -> t.getTicketStatus() == TicketStatus.PAID)
-                .map(Ticket::getPerformanceId)
-                .collect(Collectors.toSet());
+        ticketRepository.saveAll(tickets);
+        log.info("Updated {} tickets to PAID for booking {}", updatedCount, event.getBookingId());
 
-            for (Long performanceId : performanceIds) {
-                String key = TicketRedisKeys.bookedSeatsKey(performanceId);
-                if (Boolean.TRUE.equals(stringRedisTemplate.hasKey(key))) {
-                    List<String> bookedSeats = ticketRepository.findBookedSeatsByPerformanceId(performanceId);
+        Set<Long> performanceIds = tickets.stream()
+            .filter(t -> t.getTicketStatus() == TicketStatus.PAID)
+            .map(Ticket::getPerformanceId)
+            .collect(Collectors.toSet());
+
+        for (Long performanceId : performanceIds) {
+            String key = TicketRedisKeys.bookedSeatsKey(performanceId);
+            if (Boolean.TRUE.equals(stringRedisTemplate.hasKey(key))) {
+                List<String> bookedSeats = ticketRepository.findBookedSeatsByPerformanceId(performanceId);
+                boolean success = false;
+                String payload;
+                try {
+                    payload = objectMapper.writeValueAsString(bookedSeats);
+                } catch (Exception e) {
+                    log.error("Failed to serialize booked seats for performance {}", performanceId, e);
+                    continue;
+                }
+
+                // transient-safe: attempt a few quick retries for Redis update but do not fail the whole listener
+                for (int attempt = 1; attempt <= 3; attempt++) {
                     try {
-                        stringRedisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(bookedSeats), 30, TimeUnit.MINUTES);
-                        log.info("Updated Redis cache for booked seats of performance {}", performanceId);
+                        stringRedisTemplate.opsForValue().set(key, payload, 30, TimeUnit.MINUTES);
+                        log.info("Updated Redis cache for booked seats of performance {} (attempt {})", performanceId, attempt);
+                        success = true;
+                        break;
                     } catch (Exception e) {
-                        log.error("Failed to update Redis cache for booked seats of performance {}", performanceId, e);
+                        log.warn("Attempt {} failed to update Redis cache for performance {}", attempt, performanceId, e);
+                        try {
+                            Thread.sleep(100L * attempt);
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                            break;
+                        }
                     }
+                }
+
+                if (!success) {
+                    log.error("Failed to update Redis cache for booked seats of performance {} after retries", performanceId);
                 }
             }
         }
