@@ -53,14 +53,12 @@ Use the `pnpm-workspace` skill as the source of truth for shared monorepo rules.
 
 **The design subagent is the bottleneck — everything is ordered to get it running ASAP.**
 
-**The database is NOT a prerequisite for the design subagent.** Even when the app clearly needs a DB, do not provision a database, write schema, run migrations, or seed before launching the subagent. The design subagent depends only on the generated API client (OpenAPI → codegen → hooks) — it does not care whether the DB exists yet. All DB work happens AFTER the subagent is spawned, in parallel with its run (see step 5). Calling `createDatabase()` or any DB tool before step 4 directly delays first output for zero benefit.
-
 1. Create the artifact.
 2. Write the OpenAPI spec in `lib/api-spec/openapi.yaml` — include both core CRUD and the safe wow endpoints from Step 2. This is the **critical path** because it gates codegen which gates the design subagent.
 3. Run codegen (`pnpm run --filter @workspace/api-spec codegen`)
 4. Grep the exact generated exports and launch the design subagent (async), following the `design` skill's delegation rules:
     - Run `grep "^export " lib/api-client-react/src/generated/*.ts | grep -E "function use|const use|QueryKey"` and include the full list in the task description so the subagent does not guess names.
-    - Pass the generated client files, the main CSS/theme file, `src/App.tsx`, `package.json`, and `.local/skills/react-vite/references/frontend_general_rules.md` via `relevantFiles` so the subagent can import and use real API hooks without wasting time exploring.
+    - Pass the generated client files, the main CSS/theme file, `src/App.tsx`, `package.json`, and `references/frontend_general_rules.md` via `relevantFiles` so the subagent can import and use real API hooks without wasting time exploring.
     - Pass **all** implementation skills you've read via `relevantSkills` — use the full path from the skills view for each one. Any skill with integration details (auth, storage, payments, etc.) must be forwarded so the subagent builds correctly.
     - Keep the task description SHORT: app purpose (1-2 sentences), page routes with one-line purposes, data types with fields, and the API hooks list.
     - Tell the subagent to use ALL the provided hooks. The product surface has been planned; the subagent should express it beautifully, not invent net-new features.
@@ -72,7 +70,7 @@ Use the `pnpm-workspace` skill as the source of truth for shared monorepo rules.
     - Seed a small amount of example data (1-3 rows per table) so the app isn't empty on first load. Do not over-seed.
     - For seed data images that don't come from a real API, use `generate_image` instead of placeholder services (DiceBear, Boring Avatars, Unsplash, Lorem Picsum, etc.). Real API image URLs (e.g. PokéAPI sprites, TMDB posters) are fine. It's okay not to seed object storage.
     - You can also ask the design subagent to generate images/video as part of its task — it has access to `generate_image`, `generate_video`, and `stock_image`.
-**Note: All DB schema/definition/seeding and backend development work MUST happen only after the design subagent has been spawned. Do not front-load any of it.**
+Note: It's important to do all the DB schema/definitions/seeding and development work only after the design subagent has been spawned for maximal speed.
 6. After your backend development process is done. wait for the design subagent to finish.
    Note: Do not restart the frontend workflow until the design subagent is done otherwise it will show a broken app, you can restart the API one if needed.
 7. Fix any integration issues (restart workflow and refresh logs).
@@ -83,14 +81,10 @@ Use the `pnpm-workspace` skill as the source of truth for shared monorepo rules.
 
 No OpenAPI, no codegen. Launch the design subagent immediately.
 
-If the user is creating a site for a real company, or wants to match an existing company/site, gather context before launching the design subagent: use `extractBranding` for brand tokens, fall back to `imageSearch` via the `image-search` skill when you need a cleaner or missing logo, use `webFetch` on the homepage, about page, or key product pages for real messaging, and use external-URL `screenshot` when the visual feel of the source site matters. Pass the distilled brand and product context into the brief, not raw tool output. When passing brand context, include colors, typography, and images.
-If `extractBranding` and/or `imageSearch` gave you images, download each usable image into the workspace before launching the design subagent. Pass the local file paths via `relevantFiles` and include a `Brand assets` block in the task that labels each file (logo, favicon, OG image, etc.), where it came from, and what it should be used for.
-Never pass image URLs or vague references as the only handoff; if an image is not downloaded to a workspace file and identified in the task, treat it as unavailable.
-
 1. Create the artifact and read the `design` skill
 2. Launch the design subagent (async) immediately — no codegen step needed. Follow the `design` skill's presentation-heavy delegation rules:
-    - Pass the main CSS/theme file, `src/App.tsx`, branding images, and `package.json` via `relevantFiles`.
-    - Provide a vivid brand identity, the pages to build, and any downloaded brand asset labels and local paths.
+    - Pass the main CSS/theme file, `src/App.tsx`, and `package.json` via `relevantFiles`.
+    - Provide a vivid brand identity, the pages to build, and a design direction.
 3. Present the artifact when the subagent finishes.
 4. Call `suggestDeploy()`.
 
@@ -107,4 +101,4 @@ Never pass image URLs or vague references as the only handoff; if an image is no
 
 ## SEO
 
-There is a full SEO implementation guide in `.local/skills/react-vite/references/seo.md`. Read it when building or optimizing pages for search engine visibility. At minimum, ensure every page has a unique title tag, meta description, and Open Graph tags.
+There is a full SEO implementation guide in `references/seo.md`. Read it when building or optimizing pages for search engine visibility. At minimum, ensure every page has a unique title tag, meta description, and Open Graph tags.

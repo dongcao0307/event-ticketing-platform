@@ -1,27 +1,32 @@
 ---
 name: web-search
-description: Search the web, fetch content, extract branding profiles, and capture screenshots from URLs. Use for real-time information, API documentation, current events, design matching, and visual reference.
+description: Search the web and fetch content from URLs. Use for real-time information, API documentation, and current events.
 ---
 
 # Web Search Skill
 
+Search the web and retrieve content from URLs for current information.
+
 ## When to Use
 
-- Real-time information (news, prices, events)
+Use this skill when:
+
+- You need real-time information (news, prices, events)
 - Looking up API documentation or SDK guides
-- Current technical information beyond training data
+- Accessing current technical information beyond training data
 - Verifying facts from authoritative sources
 
 ## When NOT to Use
 
-- Replit-specific features (use the `replit-docs` skill)
-- Searching for real web images or logo files (use the `image-search` skill)
-- Image or video generation (use the `media-generation` skill)
+- Replit-specific features (use the replit-docs skill)
+- Image/media downloads (use media-generation skill)
 - Code search within the project (use grep/glob tools)
 
 ## Available Functions
 
 ### Single web search — webSearch(query)
+
+Search the web for a single query.
 
 **Parameters:**
 
@@ -33,6 +38,7 @@ description: Search the web, fetch content, extract branding profiles, and captu
 
 ```javascript
 const results = await webSearch({ query: "OpenAI API rate limits 2026" });
+console.log(results.searchAnswer);
 for (const page of results.resultPages) {
     console.log(`${page.title}: ${page.url}`);
 }
@@ -52,8 +58,14 @@ Run multiple searches concurrently (max 10).
 
 ```javascript
 const results = await webSearch({
-    queries: ["OpenAI API rate limits 2026", "Anthropic API rate limits 2026"]
+    queries: [
+        "OpenAI API rate limits 2026",
+        "Anthropic API rate limits 2026",
+    ]
 });
+for (const result of results) {
+    console.log(result.searchAnswer);
+}
 ```
 
 ### webFetch(url)
@@ -75,12 +87,10 @@ console.log(content.markdown.slice(0, 1000));
 
 ## Best Practices
 
-1. **Use natural language queries**: write queries as complete questions with context.
-2. **Chain search and fetch**: search first, then fetch specific pages for details.
-3. **Be specific**: include dates, versions, or other specifics in queries.
-4. **Verify with fetch**: don't rely only on search snippets for critical information.
-5. **Use branding for design matching**: when replicating a site's visual style, use `extractBranding` to get exact colors, fonts, and spacing.
-6. **Use screenshot for visual reference**: when you need to see what a site looks like before replicating its design.
+1. **Use natural language queries**: Write queries as complete questions with context
+2. **Chain search and fetch**: Search first, then fetch specific pages for details
+3. **Be specific**: Include dates, versions, or other specifics in queries
+4. **Verify with fetch**: Don't rely only on search snippets for critical information
 
 ## Example Workflow
 
@@ -104,7 +114,7 @@ if (searchResult.resultPages.length > 0) {
 
 ## Copyright
 
-- Respect copyright for media content from websites.
-- You can reference or link to public content.
-- Do not copy media files (images, videos, audio) directly from websites.
-- Use the `media-generation` skill for images and videos instead.
+- Respect copyright for media content from websites
+- You can reference or link to public content
+- Do not copy media files (images, videos, audio) directly from websites
+- Use the media-generation skill for images and videos instead

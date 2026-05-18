@@ -1,14 +1,14 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { Router } from "wouter";
+import { BrowserRouter } from "react-router-dom";
 
 import App from "./App";
 import "./index.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <Router base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <App />
-    </Router>
+    </BrowserRouter>
   </StrictMode>,
 );
