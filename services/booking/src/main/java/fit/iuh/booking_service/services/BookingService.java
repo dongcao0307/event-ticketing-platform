@@ -14,4 +14,12 @@ public interface BookingService {
     BookingResponse updateBookingStatus(Long bookingId, UpdateBookingStatusRequest request);
     BookingResponse findById(Long bookingId);
     List<BookingWithEventResponse> getBookingsByUserId(Long userId);
+
+    // Thêm vào interface BookingService:
+    org.springframework.data.domain.Page<fit.iuh.booking_service.dtos.responses.BookingAdminResponse> searchBookingsByAdmin(
+            String keyword, // SỬA: Long bookingId -> String keyword
+            Long userId,
+            fit.iuh.booking_service.entities.BookingStatus status,
+            org.springframework.data.domain.Pageable pageable
+    );
 }

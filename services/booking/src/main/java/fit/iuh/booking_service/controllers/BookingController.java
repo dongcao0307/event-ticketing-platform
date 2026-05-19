@@ -4,6 +4,7 @@ import fit.iuh.booking_service.dtos.ApiResponse;
 import fit.iuh.booking_service.dtos.requests.AddBookingItemRequest;
 import fit.iuh.booking_service.dtos.requests.CreateBookingRequest;
 import fit.iuh.booking_service.dtos.requests.UpdateBookingStatusRequest;
+import fit.iuh.booking_service.dtos.responses.BookingAdminResponse;
 import fit.iuh.booking_service.dtos.responses.BookingResponse;
 import fit.iuh.booking_service.dtos.responses.BookingWithEventResponse;
 import fit.iuh.booking_service.services.BookingService;
@@ -50,6 +51,23 @@ public class BookingController {
     public ApiResponse<List<BookingWithEventResponse>> getBookingsByUser(@PathVariable Long userId) {
         return ApiResponse.<List<BookingWithEventResponse>>builder()
                 .body(bookingService.getBookingsByUserId(userId))
+                .build();
+    }
+
+    @GetMapping("/admin/search")
+// Đã xóa dòng @PreAuthorize ở đây
+    public ApiResponse<org.springframework.data.domain.Page<BookingAdminResponse>> searchBookingsByAdmin(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) fit.iuh.booking_service.entities.BookingStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+
+        // Đổi BookingResponse -> BookingAdminResponse ở đây
+        return ApiResponse.<org.springframework.data.domain.Page<BookingAdminResponse>>builder()
+                .body(bookingService.searchBookingsByAdmin(keyword, userId, status, pageable))
                 .build();
     }
 }
