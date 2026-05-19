@@ -1,5 +1,6 @@
 package fit.iuh.booking_service.services.impl;
 
+import fit.iuh.booking_service.dtos.BookingAdminProjection;
 import fit.iuh.booking_service.dtos.requests.AddBookingItemRequest;
 import fit.iuh.booking_service.dtos.requests.CreateBookingRequest;
 import fit.iuh.booking_service.dtos.requests.UpdateBookingStatusRequest;
@@ -26,6 +27,8 @@ import jakarta.validation.ValidatorFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -287,5 +290,29 @@ public class BookingServiceImpl implements BookingService {
                 .paidAt(LocalDateTime.now())
                 .items(paidItems)
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<BookingAdminResponse> searchBookingsByAdmin(Long bookingId, Long userId, BookingStatus status, Pageable pageable) {
+        String statusStr = (status != null) ? status.name() : null;
+
+        // 1. Lấy dữ liệu từ Repo dưới dạng Projection
+        Page<BookingAdminProjection> projectionPage = bookingRepository.searchBookingsByAdmin(bookingId, userId, statusStr, pageable);
+
+        // 2. Map từ Projection sang BookingResponse
+        return projectionPage.map(p -> {
+            return BookingAdminResponse.builder()
+                    .id(p.getId())
+                    .customerName(p.getCustomerName())
+                    .customerEmail(p.getCustomerEmail())
+                    .eventName(p.getEventName())
+                    .eventLocation(p.getEventLocation())
+                    .totalAmount(BigDecimal.valueOf(p.getTotalAmount()))
+                    .status(p.getStatus())
+                    .createdAt(p.getCreatedAt())
+                    .totalTickets(p.getTotalTickets() != null ? p.getTotalTickets().intValue() : 0)
+                    .build();
+        });
     }
 }
