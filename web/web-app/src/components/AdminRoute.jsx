@@ -3,8 +3,9 @@ import { authService } from '../services/authService';
 
 const AdminRoute = ({ children }) => {
   const user = authService.getCurrentUser();
+  const isLoggedIn = authService.isLoggedIn();
 
-  if (!user || user.role !== 'ADMIN') {
+  if (!isLoggedIn || !user || user.role !== 'ADMIN') {
     return <Navigate to="/" replace />;
   }
 

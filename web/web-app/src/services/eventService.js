@@ -2,7 +2,7 @@
 import { get, post } from './apiClient';
 
 // ==================== Helper Functions ====================
-const API_BASE_URL = '/api/admin/events';
+const API_BASE_URL = '/admin/events';
 
 const normalizeEvent = (e) => {
   if (!e) return null;
@@ -159,11 +159,9 @@ export const getEventsByCategory = async (categoryEnum) => {
 
 export const getLatestEvents = async () => {
   try {
-    const response = await fetch('http://localhost:8082/events/latest'); 
-    const data = await response.json();
-    const rawEvents = data.result?.data || data.result || [];
-    // 🌟 ĐÃ ĐỒNG BỘ: Ép chạy qua hàm chuẩn hóa để tránh lỗi mất ảnh, mất giá
-    return rawEvents.map(normalizeEvent); 
+    const res = await get('/events/latest');
+    const rawEvents = res.data || [];
+    return rawEvents.map(normalizeEvent);
   } catch (error) {
     console.error("Lỗi lấy sự kiện mới nhất:", error);
     return [];
