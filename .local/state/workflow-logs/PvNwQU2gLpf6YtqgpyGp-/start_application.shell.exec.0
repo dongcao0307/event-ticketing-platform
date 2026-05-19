@@ -1,0 +1,194 @@
+
+> frontend@0.0.0 dev
+> vite
+
+[1G[0K[vite:react-swc] We recommend switching to `@vitejs/plugin-react` for improved performance as no swc plugins are used. More information at https://vite.dev/rolldown
+
+  [32m[1mROLLDOWN-VITE[22m v7.2.5[39m  [2mready in [0m[1m226[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5000[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://172.31.77.34:[1m5000[22m/[39m
+[2m[32m  ➜[39m[22m[2m  press [22m[1mh + enter[22m[2m to show help[22m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m7:57:01 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/account/AccountSettings.jsx, /src/components/Header.jsx, /src/components/OrganizerHeader.jsx, /src/components/RegisterModal.jsx, /src/components/LoginModal.jsx[22m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m7:57:28 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/Home.jsx, /src/pages/account/MyTickets.jsx[22m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m7:57:31 AM[22m [36m[1m[vite][22m[39m [32mvite.config.js changed, restarting server...[39m
+[vite:react-swc] We recommend switching to `@vitejs/plugin-react` for improved performance as no swc plugins are used. More information at https://vite.dev/rolldown
+[2m7:57:31 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m Re-optimizing dependencies because vite config has changed
+[2m7:57:31 AM[22m [36m[1m[vite][22m[39m server restarted.
+[2m7:57:34 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/featured[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m7:57:34 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/trending[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m7:57:34 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/category/WORKSHOP[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m7:57:34 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/category/FESTIVAL[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m7:57:34 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/latest[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m7:57:34 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/search?size=6[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m7:57:34 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/latest[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m7:57:34 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/trending[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m7:57:34 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/featured[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m7:57:34 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/category/FESTIVAL[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m7:57:34 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/category/WORKSHOP[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+[2m7:57:34 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /events/search?size=6[39m
+Error: connect ECONNREFUSED 127.0.0.1:8080
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m7:58:23 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/account/AccountSettings.jsx, /src/components/Header.jsx, /src/components/OrganizerHeader.jsx, /src/components/LoginModal.jsx, /src/components/RegisterModal.jsx[22m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m7:58:51 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/RegisterModal.jsx[22m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J[2m7:59:06 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/SearchPage.jsx[22m

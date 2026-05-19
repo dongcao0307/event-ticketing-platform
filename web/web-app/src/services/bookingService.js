@@ -1,3 +1,6 @@
+import axios from 'axios';
+import { get, request, getAccessToken } from './apiClient';
+
 export const detailedEvents = [
   {
     id: 'featured-1',
@@ -185,13 +188,296 @@ export const relatedEvents = [
   },
 ];
 
-export const getDetailedEventById = async (id) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const event = detailedEvents.find((e) => e.id === id) || null;
-      resolve(event);
-    }, 300);
+const resolveOrganizerId = () => localStorage.getItem('userId') || '1';
+
+const toNumber = (value) => {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : 0;
+};
+
+const formatDateLabel = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
+
+const formatTimeLabel = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+};
+
+const buildTimeRange = (startTime, endTime) => {
+  const startLabel = formatTimeLabel(startTime);
+  const endLabel = formatTimeLabel(endTime);
+  if (!startLabel && !endLabel) return '';
+  if (!endLabel) return startLabel;
+  return `${startLabel} - ${endLabel}`;
+};
+
+const normalizeTicketType = (ticket) => ({
+  id: String(ticket.id),
+  label: ticket.name || ticket.label || '',
+  name: ticket.name || ticket.label || '',
+  price: toNumber(ticket.price),
+  totalQuantity: ticket.totalQuantity,
+  maxTicketsPerUser: ticket.maxTicketsPerUser,
+  performanceId: ticket.performanceId != null ? String(ticket.performanceId) : undefined,
+  description: ticket.description,
+});
+
+const normalizePerformance = (performance) => {
+  const tickets = Array.isArray(performance.tickets)
+    ? performance.tickets.map(normalizeTicketType)
+    : [];
+  return {
+    id: String(performance.id),
+    startTime: performance.startTime,
+    endTime: performance.endTime,
+    label: buildTimeRange(performance.startTime, performance.endTime),
+    date: formatDateLabel(performance.startTime),
+    totalCapacity: performance.totalCapacity,
+    availableCapacity: performance.availableCapacity,
+    status: performance.status,
+    venue: performance.venue,
+    tickets,
+  };
+};
+
+const buildMockPerformances = (mockEvent) => {
+  if (!mockEvent) return [];
+  const baseTickets = Array.isArray(mockEvent.ticketTypes)
+    ? mockEvent.ticketTypes.map(normalizeTicketType)
+    : [];
+  const showtimes = Array.isArray(mockEvent.showtimes) && mockEvent.showtimes.length
+    ? mockEvent.showtimes
+    : [{ id: 'st-1', label: mockEvent.date || '', date: mockEvent.date || '' }];
+  return showtimes.map((showtime, index) => ({
+    id: showtime.id || `perf-${index + 1}`,
+    label: showtime.label || '',
+    date: showtime.date || mockEvent.date || '',
+    startTime: null,
+    endTime: null,
+    status: 'OPEN',
+    venue: mockEvent.location ? { name: mockEvent.location } : null,
+    tickets: baseTickets.length
+      ? baseTickets
+      : (mockEvent.ticketZones || []).map((zone, zoneIndex) => ({
+        id: zone.id || `zone-${zoneIndex}`,
+        label: zone.label || 'Vé',
+        name: zone.label || 'Vé',
+        price: toNumber(zone.price),
+      })),
+  }));
+};
+
+const buildZonesFromSeatMap = (seatMapConfig, tickets) => {
+  if (!seatMapConfig) return [];
+  let parsed = null;
+  try {
+    parsed = JSON.parse(seatMapConfig);
+  } catch {
+    parsed = null;
+  }
+  const zoneLabels = Array.isArray(parsed?.zones) ? parsed.zones : [];
+  if (!zoneLabels.length) return [];
+
+  const colors = ['#f97316', '#3b82f6', '#0ea5e9', '#22c55e', '#a855f7', '#ef4444'];
+  const rowsPerZone = 4;
+  const seatsPerRow = 22;
+  const fallbackPrice = tickets?.[0]?.price || 0;
+  let rowIndex = 0;
+
+  return zoneLabels.map((label, index) => {
+    const rows = Array.from({ length: rowsPerZone }, (_, i) => String.fromCharCode(65 + rowIndex + i));
+    rowIndex += rowsPerZone;
+    const match = tickets?.find((t) => (t.name || t.label || '').toLowerCase().includes(String(label).toLowerCase()));
+    return {
+      id: `zone-${index}`,
+      label,
+      color: colors[index % colors.length],
+      price: match?.price ?? fallbackPrice,
+      rows,
+      seatsPerRow,
+    };
   });
+};
+
+const normalizeDetailedEvent = (eventData, performancesRaw, fallbackEvent) => {
+  if (!eventData && !fallbackEvent) return null;
+
+  const baseEvent = eventData
+    ? {
+        id: String(eventData.id),
+        title: eventData.title,
+        description: eventData.description,
+        image: eventData.imageUrl,
+        imageUrl: eventData.imageUrl,
+        category: eventData.category,
+        location: eventData.location || eventData.city || '',
+        city: eventData.city || '',
+        date: eventData.formattedDate || formatDateLabel(eventData.startTime),
+        startTime: eventData.startTime,
+        endTime: eventData.endTime,
+        minPrice: eventData.minPrice,
+        maxPrice: eventData.maxPrice,
+        priceDisplay: eventData.priceDisplay,
+        totalTickets: eventData.totalTickets,
+        availableTickets: eventData.availableTickets,
+        status: eventData.status,
+        organizerName: eventData.organizerName,
+        organizerLogo: eventData.organizerLogo,
+        isFeatured: eventData.isFeatured,
+        viewCount: eventData.viewCount,
+      }
+    : {
+        id: String(fallbackEvent.id),
+        title: fallbackEvent.title,
+        description: fallbackEvent.description,
+        image: fallbackEvent.image,
+        imageUrl: fallbackEvent.image,
+        category: fallbackEvent.category,
+        location: fallbackEvent.location,
+        address: fallbackEvent.address,
+        date: fallbackEvent.date,
+        priceDisplay: fallbackEvent.price,
+        organizerName: fallbackEvent.organizer,
+      };
+
+  let performances = Array.isArray(performancesRaw) && performancesRaw.length
+    ? performancesRaw.map(normalizePerformance)
+    : buildMockPerformances(fallbackEvent);
+
+  if (!performances.length && eventData && (eventData.startTime || eventData.endTime)) {
+    performances = [
+      {
+        id: 'default',
+        startTime: eventData.startTime,
+        endTime: eventData.endTime,
+        label: buildTimeRange(eventData.startTime, eventData.endTime),
+        date: formatDateLabel(eventData.startTime),
+        totalCapacity: eventData.totalTickets,
+        availableCapacity: eventData.availableTickets,
+        status: eventData.status || 'OPEN',
+        venue: null,
+        tickets: [],
+      },
+    ];
+  }
+
+  const showtimes = performances.map((perf) => ({
+    id: perf.id,
+    label: perf.label || buildTimeRange(perf.startTime, perf.endTime),
+    date: perf.date || formatDateLabel(perf.startTime),
+    startTime: perf.startTime,
+    endTime: perf.endTime,
+  }));
+
+  const ticketTypes = performances.flatMap((perf) =>
+    (perf.tickets || []).map((ticket) => ({
+      ...ticket,
+      performanceId: perf.id,
+    }))
+  );
+
+  const primaryVenue = performances[0]?.venue;
+  const ticketZones = fallbackEvent?.ticketZones
+    || buildZonesFromSeatMap(primaryVenue?.seatMapConfig, performances[0]?.tickets || []);
+
+  const address = baseEvent.address || primaryVenue?.address;
+
+  return {
+    ...baseEvent,
+    address,
+    performances,
+    showtimes,
+    ticketTypes,
+    ticketZones,
+    occupiedSeats: fallbackEvent?.occupiedSeats || [],
+    type: (baseEvent.category || '').toUpperCase() === 'THEATER' ? 'theater' : 'visit',
+  };
+};
+
+export const getDetailedEventById = async (id) => {
+  let eventData = null;
+  let performancesRaw = [];
+
+  try {
+    const res = await get(`/events/${id}`);
+    eventData = res?.data ?? null;
+  } catch (err) {
+    console.warn('[BookingService] Cannot load event detail from gateway:', err.message);
+  }
+
+  try {
+    const perfRes = await request(`/organizer/events/${id}/performances`, {
+      method: 'GET',
+      headers: { 'X-User-Id': resolveOrganizerId() },
+    });
+    performancesRaw = Array.isArray(perfRes) ? perfRes : (perfRes?.data || []);
+  } catch (err) {
+    console.warn('[BookingService] Cannot load performances from gateway:', err.message);
+  }
+
+  if (!eventData) {
+    const fallbackEvent = detailedEvents.find((e) => String(e.id) === String(id)) || null;
+    return normalizeDetailedEvent(null, [], fallbackEvent);
+  }
+
+  return normalizeDetailedEvent(eventData, performancesRaw, null);
+};
+
+const BOOKING_SERVICE_BASE_URL = 'http://localhost:8080/api/bookings';
+const TICKET_SERVICE_BASE_URL = 'http://localhost:8080/api/tickets';
+
+const toStableMockLong = (rawId, prefix) => {
+  const safeId = String(rawId ?? '').trim();
+  const digits = safeId.replace(/\D/g, '');
+
+  if (digits) {
+    const parsed = Number.parseInt(digits, 10);
+    if (Number.isFinite(parsed)) {
+      return prefix + parsed;
+    }
+  }
+
+  let hash = 0;
+  for (let i = 0; i < safeId.length; i += 1) {
+    hash = (hash * 31 + safeId.charCodeAt(i)) % 1_000_000_000;
+  }
+  return prefix + hash;
+};
+
+export const mapTicketZoneIdToLong = (zoneId) => toStableMockLong(zoneId, 5_000_000_000);
+export const mapTicketTypeIdToLong = (ticketTypeId) => toStableMockLong(ticketTypeId, 6_000_000_000);
+
+const unwrapApiResponseBody = (response) => response?.data?.body;
+
+export const serviceCreateBooking = async (payload) => {
+  const response = await axios.post(BOOKING_SERVICE_BASE_URL, payload);
+  return unwrapApiResponseBody(response);
+};
+
+export const serviceAddBookingItems = async (bookingId, payload) => {
+  const response = await axios.post(`${BOOKING_SERVICE_BASE_URL}/${bookingId}/items`, payload);
+  return unwrapApiResponseBody(response);
+};
+
+export const serviceGetBookingById = async (bookingId) => {
+  const response = await axios.get(`${BOOKING_SERVICE_BASE_URL}/${bookingId}`);
+  return unwrapApiResponseBody(response);
+};
+
+export const serviceGetBookingsByUser = async (userId) => {
+  const response = await axios.get(`${BOOKING_SERVICE_BASE_URL}/user/${userId}`);
+  return response?.data?.data || response?.data?.body || response?.data;
+};
+
+export const serviceCreateTickets = async (payload) => {
+  const response = await axios.post(`${TICKET_SERVICE_BASE_URL}/bulk`, payload);
+  return unwrapApiResponseBody(response);
 };
 
 export const submitBooking = async (bookingData) => {
@@ -204,4 +490,29 @@ export const submitBooking = async (bookingData) => {
       });
     }, 1000);
   });
+};
+
+// ====== THÊM 2 HÀM NÀY VÀO CUỐI FILE CỦA HẬU ======
+
+export const serviceSearchBookingsByAdmin = async (page = 0, size = 8, status, keyword) => {
+  const token = getAccessToken();
+  const params = { page, size };
+  
+  if (status) params.status = status;
+  // Bỏ isNaN đi để nhận cả chuỗi văn bản (Tên, Sự kiện)
+  if (keyword && keyword.trim() !== '') params.keyword = keyword.trim();
+
+  const response = await axios.get(`${BOOKING_SERVICE_BASE_URL}/admin/search`, {
+    params,
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return unwrapApiResponseBody(response);
+};
+export const serviceUpdateBookingStatusAdmin = async (bookingId, status) => {
+  const token = getAccessToken(); // Sửa lại dòng này
+  const response = await axios.put(`${BOOKING_SERVICE_BASE_URL}/${bookingId}/status`, 
+    { status },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return unwrapApiResponseBody(response);
 };
