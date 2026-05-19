@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional; // 🌟 Thêm import này để chạy @Modifying native query
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface EventRepository extends JpaRepository<Event, Long> {
@@ -31,6 +32,16 @@ public interface EventRepository extends JpaRepository<Event, Long> {
             @Param("status") EventStatus status,
             Pageable pageable
     );
+
+    @Query("SELECT e FROM Event e LEFT JOIN FETCH e.performances WHERE e.id = :id")
+    Optional<Event> findByIdWithPerformances(@Param("id") Long id);
+
+    @Query("SELECT DISTINCT e FROM Event e " +
+            "LEFT JOIN FETCH e.performances p " +
+            "LEFT JOIN FETCH p.venue " +
+            "WHERE e.id = :id")
+    Optional<Event> findFullEventById(@Param("id") Long id);
+
 
     List<Event> findByIsFeaturedTrueOrderByStartTimeAsc();
     List<Event> findTop10ByOrderByViewCountDesc();
@@ -61,3 +72,4 @@ public interface EventRepository extends JpaRepository<Event, Long> {
             "WHERE e.id = :eventId", nativeQuery = true)
     void syncPriceOnApproval(@Param("eventId") Long eventId);
 }
+

@@ -56,11 +56,18 @@ export const request = async (endpoint, options = {}) => {
   const url = `${BASE_URL}${endpoint}`;
   const token = getAccessToken();
 
+  // 1. Khởi tạo headers cơ bản và đính kèm Bearer Token nếu có
   const headers = {
-    'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers || {}),
   };
+
+  // 2. TỐI ƯU CHO UPLOAD FILE:
+  // Nếu body KHÔNG PHẢI là FormData (truyền file) thì mới ép kiểu 'application/json' mặc định.
+  // Nếu là FormData, để trống Content-Type để trình duyệt tự động thiết lập cùng Multipart Boundary.
+  if (!(options.body instanceof FormData)) {
+    headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+  }
 
   let response = await fetch(url, { ...options, headers });
 
@@ -107,18 +114,39 @@ export const request = async (endpoint, options = {}) => {
   return response.json();
 };
 
-export const get = (endpoint, params) => {
+export const get = (endpoint, params, options = {}) => {
   const url = params ? `${endpoint}?${new URLSearchParams(params)}` : endpoint;
-  return request(url, { method: 'GET' });
+  return request(url, { 
+    ...options, // <--- THÊM DÒNG NÀY ĐỂ GIỮ HEADER X-USER-ID
+    method: 'GET' 
+  });
 };
 
-export const post = (endpoint, body) =>
-  request(endpoint, { method: 'POST', body: JSON.stringify(body) });
+// 3. TỐI ƯU HÀM POST: Nhớ truyền thêm options (để giữ lại các custom headers như X-User-Id)
+export const post = (endpoint, body, options = {}) => {
+  const isFormData = body instanceof FormData;
+  return request(endpoint, { 
+    ...options, // <-- THÊM DÒNG NÀY ĐỂ KHÔNG BỊ RỚT HEADER
+    method: 'POST', 
+    body: isFormData ? body : JSON.stringify(body) 
+  });
+};
 
-export const put = (endpoint, body) =>
-  request(endpoint, { method: 'PUT', body: JSON.stringify(body) });
+// 4. TỐI ƯU HÀM PUT: Tương tự hàm post
+export const put = (endpoint, body, options = {}) => {
+  const isFormData = body instanceof FormData;
+  return request(endpoint, { 
+    ...options, // <-- THÊM DÒNG NÀY
+    method: 'PUT', 
+    body: isFormData ? body : JSON.stringify(body) 
+  });
+};
 
-export const del = (endpoint) =>
-  request(endpoint, { method: 'DELETE' });
+// Thêm options = {} vào đây để truyền header X-User-Id từ service sang
+export const del = (endpoint, options = {}) =>
+  request(endpoint, { 
+    ...options, // <--- ĐỂ GIỮ LẠI HEADER X-USER-ID
+    method: 'DELETE' 
+  });
 
 export { setTokens, clearTokens, getAccessToken, getRefreshToken };
