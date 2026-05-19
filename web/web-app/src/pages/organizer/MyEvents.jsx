@@ -18,6 +18,7 @@ import appImage from '../../assets/hinh-anh-app.png';
 
 // Import service API
 import { organizerEventService } from '../../services/organizerEventService';
+import { authService } from '../../services/authService';
 
 const MyEvents = () => {
   const [activeTab, setActiveTab] = useState('pending');
@@ -47,9 +48,16 @@ const MyEvents = () => {
     }
   };
 
+  // Check authentication on component mount
   useEffect(() => {
+    if (!authService.isLoggedIn()) {
+      // User is not logged in - redirect to home and show login
+      navigate('/');
+      window.dispatchEvent(new CustomEvent('openLoginModal'));
+      return;
+    }
     fetchEvents();
-  }, []);
+  }, [navigate]);
 
   const handleSearchClick = () => {
     fetchEvents();

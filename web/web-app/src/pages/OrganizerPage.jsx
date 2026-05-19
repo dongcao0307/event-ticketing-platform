@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar'; 
 import OrganizerHeader from '../components/OrganizerHeader'; 
-import { organizerEventService } from '../services/organizerEventService'; 
+import { organizerEventService } from '../services/organizerEventService';
+import { authService } from '../services/authService'; 
 
 import Step1EventInfo from './organizer/Step1EventInfo';
 import Step2TimeTicket from './organizer/Step2TimeTicket'; 
@@ -17,6 +18,15 @@ const OrganizerPage = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Check authentication on component mount
+  useEffect(() => {
+    if (!authService.isLoggedIn()) {
+      // User is not logged in - redirect to home and show login
+      navigate('/');
+      window.dispatchEvent(new CustomEvent('openLoginModal'));
+    }
+  }, [navigate]);
 
   const [eventData, setEventData] = useState({
     title: '',

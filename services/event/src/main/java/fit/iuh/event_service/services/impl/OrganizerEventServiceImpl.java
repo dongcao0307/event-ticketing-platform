@@ -12,6 +12,9 @@ import fit.iuh.event_service.repositories.*;
 import fit.iuh.event_service.services.OrganizerEventService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -41,10 +44,14 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
                 .status(EventStatus.DRAFT) // Mặc định là Nháp khi mới tạo
                 .build();
         return eventRepository.save(event);
+        // Note: No cache annotation needed for CREATE - cache is populated on first READ
     }
 
     @Override
     @Transactional // 🚀 Cực kỳ quan trọng: Đảm bảo xóa cũ - thêm mới không bị lỗi kẹt dữ liệu
+    @CachePut(value = "events", key = "#eventId")
+    // Note: @CachePut is placed AFTER save() to update cache with the modified object
+    // This prevents stale data by ensuring the cache is refreshed with the latest database state
     public Event updateEvent(Long organizerId, Long eventId, EventReq req) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Sự kiện không tồn tại"));
@@ -196,6 +203,7 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
     }
 
     @Override
+    @Cacheable(value = "events", key = "#eventId", unless = "#result == null")
     public Event getEventById(Long organizerId, Long eventId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Sự kiện không tồn tại"));
@@ -208,6 +216,9 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
     }
 
     @Override
+    @CacheEvict(value = "events", key = "#eventId", beforeInvocation = false)
+    // beforeInvocation = false: Cache is evicted AFTER deletion succeeds
+    // This ensures the deletion is confirmed before removing from cache
     public void deleteEvent(Long organizerId, Long eventId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Sự kiện không tồn tại"));
