@@ -12,7 +12,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@EnableConfigurationProperties({PaymentRabbitProperties.class, BookingRabbitProperties.class})
+@EnableConfigurationProperties({
+    PaymentRabbitProperties.class,
+    BookingRabbitProperties.class,
+    BookingNotificationRabbitProperties.class
+})
 public class RabbitMqConfig {
 
     @Bean
@@ -66,5 +70,11 @@ public class RabbitMqConfig {
         return BindingBuilder.bind(bookingPaidQueue)
                 .to(bookingExchange)
                 .with(properties.getRoutingKey());
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "booking.notification.messaging", name = "enabled", havingValue = "true")
+    public TopicExchange bookingNotificationExchange(BookingNotificationRabbitProperties properties) {
+        return new TopicExchange(properties.getExchange(), true, false);
     }
 }

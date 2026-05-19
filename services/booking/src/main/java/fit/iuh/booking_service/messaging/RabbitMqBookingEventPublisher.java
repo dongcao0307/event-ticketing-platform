@@ -1,5 +1,6 @@
 package fit.iuh.booking_service.messaging;
 
+import fit.iuh.booking_service.config.BookingNotificationRabbitProperties;
 import fit.iuh.booking_service.config.BookingRabbitProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -12,9 +13,19 @@ import org.springframework.stereotype.Component;
 public class RabbitMqBookingEventPublisher implements BookingEventPublisher {
     private final RabbitTemplate rabbitTemplate;
     private final BookingRabbitProperties properties;
+    private final BookingNotificationRabbitProperties bookingNotificationRabbitProperties;
 
     @Override
     public void publishBookingPaid(BookingPaidEvent event) {
         rabbitTemplate.convertAndSend(properties.getExchange(), properties.getRoutingKey(), event);
+    }
+
+    @Override
+    public void publishBookingNotification(BookingNotificationEvent event) {
+        rabbitTemplate.convertAndSend(
+                bookingNotificationRabbitProperties.getExchange(),
+                bookingNotificationRabbitProperties.getRoutingKey(),
+                event
+        );
     }
 }

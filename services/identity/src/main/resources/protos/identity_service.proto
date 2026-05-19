@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package fit.iuh.identity_service.grpc;
+
+option java_multiple_files = true;
+option java_package = "fit.iuh.identity_service.grpc.generated";
+
+service IdentityGrpcService {
+    rpc GetAccountByUserId(GetAccountByUserIdRequest) returns (GetAccountByUserIdResponse);
+}
+
+message GetAccountByUserIdRequest {
+    int64 user_id = 1;
+}
+
+message GetAccountByUserIdResponse {
+    int64 user_id = 1;
+    string email = 2;
+    string user_name = 3;
+}

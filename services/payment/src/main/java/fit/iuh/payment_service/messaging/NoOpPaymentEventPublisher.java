@@ -10,4 +10,9 @@ public class NoOpPaymentEventPublisher implements PaymentEventPublisher {
     public void publishPaymentStatusChanged(PaymentStatusChangedEvent event) {
         // Stub publisher for now. Messaging flow is prepared but disabled.
     }
+    
+    @Override
+    public void publishPaymentNotification(PaymentNotificationEvent event) {
+        // no-op
+    }
 }

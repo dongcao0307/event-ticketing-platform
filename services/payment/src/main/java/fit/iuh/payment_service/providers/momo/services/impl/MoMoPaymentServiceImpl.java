@@ -203,7 +203,11 @@ public class MoMoPaymentServiceImpl implements MoMoPaymentService {
         );
         callbackTransaction = transactionRepository.save(callbackTransaction);
 
-        paymentEventPublisher.publishPaymentStatusChanged(moMoPaymentMapper.toPaymentStatusChangedEvent(payment, LocalDateTime.now()));
+        LocalDateTime now = LocalDateTime.now();
+        paymentEventPublisher.publishPaymentStatusChanged(moMoPaymentMapper.toPaymentStatusChangedEvent(payment, now));
+        if (nextStatus == PaymentStatus.COMPLETED) {
+            paymentEventPublisher.publishPaymentNotification(moMoPaymentMapper.toPaymentNotificationEvent(payment, now));
+        }
         return moMoPaymentMapper.toIpnResponse(payment, callbackTransaction, request.getResultCode(), request.getMessage());
     }
 

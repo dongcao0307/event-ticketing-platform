@@ -148,6 +148,7 @@ public class BookingServiceImpl implements BookingService {
 
         if (newStatus == BookingStatus.PAID) {
             bookingEventPublisher.publishBookingPaid(toBookingPaidEvent(saved));
+            bookingEventPublisher.publishBookingNotification(toBookingNotificationEvent(saved));
         }
 
         return bookingMapper.toBookingResponse(saved);
@@ -276,12 +277,13 @@ public class BookingServiceImpl implements BookingService {
 
     private BookingPaidEvent toBookingPaidEvent(Booking booking) {
         List<BookingPaidEvent.BookingPaidItem> paidItems = booking.getItems().stream()
-                .map(item -> BookingPaidEvent.BookingPaidItem.builder()
-                        .ticketTypeId(item.getTicketTypeId())
-                        .quantity(item.getQuantity())
-                        .unitPrice(item.getUnitPrice())
-                        .build())
-                .toList();
+            .map(item -> BookingPaidEvent.BookingPaidItem.builder()
+                .ticketTypeId(item.getTicketTypeId())
+                .quantity(item.getQuantity())
+                .unitPrice(item.getUnitPrice())
+                .ticketTypeName(resolveTicketTypeName(item.getTicketTypeId()))
+                .build())
+            .toList();
 
         return BookingPaidEvent.builder()
                 .bookingId(booking.getId())
@@ -289,5 +291,43 @@ public class BookingServiceImpl implements BookingService {
                 .paidAt(LocalDateTime.now())
                 .items(paidItems)
                 .build();
+    }
+
+    private fit.iuh.booking_service.messaging.BookingNotificationEvent toBookingNotificationEvent(Booking booking) {
+        List<fit.iuh.booking_service.messaging.BookingNotificationEvent.BookingNotificationItem> items = booking.getItems().stream()
+            .map(item -> fit.iuh.booking_service.messaging.BookingNotificationEvent.BookingNotificationItem.builder()
+                .ticketTypeId(item.getTicketTypeId())
+                .quantity(item.getQuantity())
+                .ticketTypeName(resolveTicketTypeName(item.getTicketTypeId()))
+                .build())
+            .toList();
+
+        return fit.iuh.booking_service.messaging.BookingNotificationEvent.builder()
+                .bookingId(booking.getId())
+                .userId(booking.getUserId())
+                .occurredAt(LocalDateTime.now())
+                .items(items)
+                .build();
+    }
+
+    private String resolveTicketTypeName(Long ticketTypeId) {
+        if (ticketTypeId == null) {
+            return null;
+        }
+
+        try {
+            GetEventAndPerformanceResponse response = eventGrpcClient.getEventDetailsByTicketTypeId(ticketTypeId);
+            if (response == null) {
+                return null;
+            }
+            return response.getTicketTypesList().stream()
+                    .filter(ticketType -> ticketType.getId() == ticketTypeId)
+                    .map(ticketType -> ticketType.getName())
+                    .findFirst()
+                    .orElse(null);
+        } catch (Exception ex) {
+            log.warn("Failed to resolve ticket type name for {}", ticketTypeId, ex);
+            return null;
+        }
     }
 }

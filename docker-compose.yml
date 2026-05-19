@@ -50,6 +50,7 @@ services:
     volumes:
       - mongodb_data:/data/db
       - mongodb_config:/data/configdb
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js
     networks:
       - ticketbox-net
     healthcheck:
@@ -260,15 +261,34 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      identity-service:
+        condition: service_started
+      booking-service:
+        condition: service_started
     ports:
       - "8090:8090"
     networks:
       - ticketbox-net
     environment:
-      SPRING_RABBITMQ_HOST: rabbitmq
-      SPRING_RABBITMQ_PORT: 5672
-      SPRING_RABBITMQ_USERNAME: guest
-      SPRING_RABBITMQ_PASSWORD: guest
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MONGODB_HOST: mongodb
+      MONGODB_PORT: 27017
+      MONGODB_USERNAME: admin
+      MONGODB_PASSWORD: admin
+      MONGODB_DATABASE: ticketbox
+      MONGODB_AUTHENTICATION_DATABASE: admin
+      IDENTITY_SERVICE_GRPC_HOST: identity-service
+      IDENTITY_SERVICE_GRPC_PORT: 50052
+      BOOKING_SERVICE_BASE_URL: http://booking-service:8083
 
   voucher-service:
     build:

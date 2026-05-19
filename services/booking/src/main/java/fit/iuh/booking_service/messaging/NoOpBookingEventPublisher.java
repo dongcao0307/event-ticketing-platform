@@ -10,4 +10,9 @@ public class NoOpBookingEventPublisher implements BookingEventPublisher {
     public void publishBookingPaid(BookingPaidEvent event) {
         // Intentionally left blank when booking messaging is disabled.
     }
+
+    @Override
+    public void publishBookingNotification(BookingNotificationEvent event) {
+        // Intentionally left blank when booking messaging is disabled.
+    }
 }

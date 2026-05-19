@@ -30,5 +30,6 @@ public class BookingPaidEvent {
         private Long ticketTypeId;
         private Integer quantity;
         private BigDecimal unitPrice;
+        private String ticketTypeName;
     }
 }
