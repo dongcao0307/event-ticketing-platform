@@ -6,6 +6,7 @@ import fit.iuh.booking_service.entities.BookingStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
@@ -23,20 +24,33 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                     "COALESCE(SUM(bi.quantity), 0) as totalTickets " +
                     "FROM bookings b " +
                     "LEFT JOIN users u ON b.user_id = u.id " +
-                    "LEFT JOIN booking_items bi ON b.id = bi.booking_id " + // Cầu nối 1
-                    "LEFT JOIN ticket_types tt ON bi.ticket_type_id = tt.id " + // Cầu nối 2
-                    "LEFT JOIN event_performances ep ON tt.performance_id = ep.id " + // Cầu nối 3
-                    "LEFT JOIN events e ON ep.event_id = e.id " + // Đã đến được Event!
-                    "WHERE (:bookingId IS NULL OR b.id = :bookingId) AND " +
-                    "(:userId IS NULL OR b.user_id = :userId) AND " +
-                    "(:status IS NULL OR b.status = :status) " +
+                    "LEFT JOIN booking_items bi ON b.id = bi.booking_id " +
+                    "LEFT JOIN ticket_types tt ON bi.ticket_type_id = tt.id " +
+                    "LEFT JOIN event_performances ep ON tt.performance_id = ep.id " +
+                    "LEFT JOIN events e ON ep.event_id = e.id " +
+                    "WHERE (:status IS NULL OR b.status = :status) AND " +
+                    "(:keyword IS NULL OR :keyword = '' OR " + // Mấu chốt tìm kiếm đa năng ở đây
+                    "  CAST(b.id AS CHAR) LIKE CONCAT('%', :keyword, '%') OR " +
+                    "  LOWER(u.full_name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                    "  LOWER(e.title) LIKE LOWER(CONCAT('%', :keyword, '%'))" +
+                    ") " +
                     "GROUP BY b.id, u.full_name, e.title, b.total_amount, b.status, b.created_at " +
                     "ORDER BY b.created_at DESC",
-            countQuery = "SELECT count(*) FROM bookings b",
+            countQuery = "SELECT count(DISTINCT b.id) FROM bookings b " +
+                    "LEFT JOIN users u ON b.user_id = u.id " +
+                    "LEFT JOIN booking_items bi ON b.id = bi.booking_id " +
+                    "LEFT JOIN ticket_types tt ON bi.ticket_type_id = tt.id " +
+                    "LEFT JOIN event_performances ep ON tt.performance_id = ep.id " +
+                    "LEFT JOIN events e ON ep.event_id = e.id " +
+                    "WHERE (:status IS NULL OR b.status = :status) AND " +
+                    "(:keyword IS NULL OR :keyword = '' OR " +
+                    "  CAST(b.id AS CHAR) LIKE CONCAT('%', :keyword, '%') OR " +
+                    "  LOWER(u.full_name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                    "  LOWER(e.title) LIKE LOWER(CONCAT('%', :keyword, '%')))",
             nativeQuery = true
     )
     org.springframework.data.domain.Page<fit.iuh.booking_service.dtos.BookingAdminProjection> searchBookingsByAdmin(
-            @org.springframework.data.repository.query.Param("bookingId") Long bookingId,
+            @org.springframework.data.repository.query.Param("keyword") String keyword, // Đã đổi tên và kiểu dữ liệu
             @org.springframework.data.repository.query.Param("userId") Long userId,
             @org.springframework.data.repository.query.Param("status") String status,
             org.springframework.data.domain.Pageable pageable

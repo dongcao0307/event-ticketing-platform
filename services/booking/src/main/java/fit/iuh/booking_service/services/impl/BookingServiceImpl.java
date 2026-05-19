@@ -294,12 +294,11 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<BookingAdminResponse> searchBookingsByAdmin(Long bookingId, Long userId, BookingStatus status, Pageable pageable) {
+    public Page<BookingAdminResponse> searchBookingsByAdmin(String keyword, Long userId, BookingStatus status, Pageable pageable) { // SỬA Ở ĐÂY
         String statusStr = (status != null) ? status.name() : null;
 
         // 1. Lấy dữ liệu từ Repo dưới dạng Projection
-        Page<BookingAdminProjection> projectionPage = bookingRepository.searchBookingsByAdmin(bookingId, userId, statusStr, pageable);
-
+        Page<BookingAdminProjection> projectionPage = bookingRepository.searchBookingsByAdmin(keyword, userId, statusStr, pageable);
         // 2. Map từ Projection sang BookingResponse
         return projectionPage.map(p -> {
             return BookingAdminResponse.builder()

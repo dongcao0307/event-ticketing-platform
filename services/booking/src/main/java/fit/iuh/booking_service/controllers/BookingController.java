@@ -57,7 +57,7 @@ public class BookingController {
     @GetMapping("/admin/search")
 // Đã xóa dòng @PreAuthorize ở đây
     public ApiResponse<org.springframework.data.domain.Page<BookingAdminResponse>> searchBookingsByAdmin(
-            @RequestParam(required = false) Long bookingId,
+            @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long userId,
             @RequestParam(required = false) fit.iuh.booking_service.entities.BookingStatus status,
             @RequestParam(defaultValue = "0") int page,
@@ -67,7 +67,7 @@ public class BookingController {
 
         // Đổi BookingResponse -> BookingAdminResponse ở đây
         return ApiResponse.<org.springframework.data.domain.Page<BookingAdminResponse>>builder()
-                .body(bookingService.searchBookingsByAdmin(bookingId, userId, status, pageable))
+                .body(bookingService.searchBookingsByAdmin(keyword, userId, status, pageable))
                 .build();
     }
 }

@@ -494,12 +494,13 @@ export const submitBooking = async (bookingData) => {
 
 // ====== THÊM 2 HÀM NÀY VÀO CUỐI FILE CỦA HẬU ======
 
-export const serviceSearchBookingsByAdmin = async (page = 0, size = 8, status, bookingId) => {
-  const token = getAccessToken(); // Sửa lại dòng này
+export const serviceSearchBookingsByAdmin = async (page = 0, size = 8, status, keyword) => {
+  const token = getAccessToken();
   const params = { page, size };
   
   if (status) params.status = status;
-  if (bookingId && !isNaN(bookingId)) params.bookingId = bookingId;
+  // Bỏ isNaN đi để nhận cả chuỗi văn bản (Tên, Sự kiện)
+  if (keyword && keyword.trim() !== '') params.keyword = keyword.trim();
 
   const response = await axios.get(`${BOOKING_SERVICE_BASE_URL}/admin/search`, {
     params,
@@ -507,7 +508,6 @@ export const serviceSearchBookingsByAdmin = async (page = 0, size = 8, status, b
   });
   return unwrapApiResponseBody(response);
 };
-
 export const serviceUpdateBookingStatusAdmin = async (bookingId, status) => {
   const token = getAccessToken(); // Sửa lại dòng này
   const response = await axios.put(`${BOOKING_SERVICE_BASE_URL}/${bookingId}/status`, 
