@@ -1,5 +1,6 @@
 package fit.iuh.event_service.models;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import fit.iuh.event_service.models.enums.PerformanceStatus;
@@ -34,9 +35,11 @@ public class EventPerformance {
 
     // --- ĐỊNH DẠNG THỜI GIAN ---
     @Column(name = "start_time")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime startTime;
 
     @Column(name = "end_time")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime endTime;
 
     @Column(name = "total_capacity")
