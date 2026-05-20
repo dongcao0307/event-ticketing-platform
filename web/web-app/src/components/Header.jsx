@@ -38,6 +38,18 @@ const Header = () => {
     };
   }, []);
 
+  // Listen for openLoginModal event from other components
+  useEffect(() => {
+    const handleOpenLoginModal = () => {
+      setIsLoginOpen(true);
+    };
+
+    window.addEventListener('openLoginModal', handleOpenLoginModal);
+    return () => {
+      window.removeEventListener('openLoginModal', handleOpenLoginModal);
+    };
+  }, []);
+
   // Hàm xử lý Đăng xuất
   const handleLogout = async () => {
     await authService.logout();
@@ -54,6 +66,15 @@ const Header = () => {
   const openRegister = () => {
     setIsLoginOpen(false);
     setIsRegisterOpen(true);
+  };
+
+  // Handle create event button - require authentication
+  const handleCreateEventClick = () => {
+    if (!isLoggedIn) {
+      setIsLoginOpen(true);
+      return;
+    }
+    navigate('/organizer');
   };
 
   return (
@@ -110,9 +131,13 @@ const Header = () => {
 
           {/* Cụm Bên Phải */}
           <div className="flex items-center gap-6 text-sm font-medium whitespace-nowrap shrink-0">
-            <Link to="/organizer" className="border border-white/80 rounded-full px-5 py-1.5 hover:bg-white/20 transition-colors">
+            <button 
+              onClick={handleCreateEventClick}
+              className="border border-white/80 rounded-full px-5 py-1.5 hover:bg-white/20 transition-colors cursor-pointer"
+              title={isLoggedIn ? "Tạo sự kiện mới" : "Đăng nhập để tạo sự kiện"}
+            >
               Tạo sự kiện
-            </Link>
+            </button>
 
             <div
               onClick={() => navigate('/my-account/tickets')}

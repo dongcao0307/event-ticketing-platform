@@ -7,6 +7,7 @@ import fit.iuh.event_service.models.enums.EventStatus;
 import fit.iuh.event_service.exception.ResourceNotFoundException;
 import fit.iuh.event_service.repositories.EventRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -51,6 +52,7 @@ public class EventService {
     }
 
     @Transactional
+    @Cacheable(value = "events", key = "#id", unless = "#result == null")
     public EventResponse getEventById(Long id) {
         var event = eventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sự kiện với id: " + id));
