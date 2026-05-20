@@ -1,100 +1,28 @@
 import React, { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 
-const Step4Payment = ({ eventData, setEventData }) => {
-  const paymentInfo = eventData?.paymentInfo || eventData?.organizerPaymentInfo || {};
+const Step4Payment = () => {
+  // State quản lý form (Khởi tạo sẵn data giống trong hình)
+  const [formData, setFormData] = useState({
+    accountName: 'Trần Văn Hậu',
+    accountNumber: '338858196',
+    bankName: 'MBBank',
+    branch: 'Dĩ An',
+    businessType: 'Cá nhân',
+    fullName: 'Trần Văn Hậu',
+    address: '218 đường Lý Thường Kiệt',
+    taxCode: '035467'
+  });
 
-  const accountName = paymentInfo.accountName || paymentInfo.accountOwner || '';
-  const accountNumber = paymentInfo.accountNumber || '';
-  const bankName = paymentInfo.bankName || '';
-  const branch = paymentInfo.branch || paymentInfo.bankBranch || '';
-  const businessType = paymentInfo.businessType || 'Cá nhân';
-  const fullName = paymentInfo.fullName || paymentInfo.accountOwner || ''; 
-  const address = paymentInfo.address || '';
-  const taxCode = paymentInfo.taxCode || '';
-
-  // --- [MỚI] STATE QUẢN LÝ LỖI ---
-  const [errors, setErrors] = useState({});
-
-  // --- [MỚI] DANH SÁCH NGÂN HÀNG & CHI NHÁNH PHỔ BIẾN ---
-  const bankList = [
-    "Vietcombank", "Techcombank", "MBBank", "VietinBank", "ACB", 
-    "VPBank", "BIDV", "Agribank", "Sacombank", "VIB", "TPBank", 
-    "HDBank", "SHB", "SCB", "SeABank", "MSB", "OCB", "Khác..."
-  ];
-
-  const branchList = [
-    "Hà Nội", "TP. Hồ Chí Minh", "Đà Nẵng", "Hải Phòng", "Cần Thơ", 
-    "Bình Dương", "Đồng Nai", "Bà Rịa - Vũng Tàu", "Bắc Ninh", "Thanh Hóa", 
-    "Nghệ An", "Hải Dương", "Quảng Ninh", "Khánh Hòa", "Khác..."
-  ];
-
-  // --- [MỚI] HÀM VALIDATE ---
-  const validateField = (field, value) => {
-    let errorMsg = '';
-    switch (field) {
-      case 'accountName':
-      case 'fullName':
-        if (!value || !value.trim()) errorMsg = 'Vui lòng nhập họ tên';
-        break;
-      case 'accountNumber':
-        if (!value || !value.trim()) errorMsg = 'Vui lòng nhập số tài khoản';
-        else if (!/^\d+$/.test(value)) errorMsg = 'Số tài khoản chỉ được chứa chữ số';
-        break;
-      case 'bankName':
-        if (!value) errorMsg = 'Vui lòng chọn ngân hàng';
-        break;
-      case 'branch':
-        if (!value) errorMsg = 'Vui lòng chọn chi nhánh';
-        break;
-      case 'address':
-        if (!value || !value.trim()) errorMsg = 'Vui lòng nhập địa chỉ';
-        break;
-      case 'taxCode':
-        if (businessType === 'Doanh nghiệp' && (!value || !value.trim())) {
-          errorMsg = 'Doanh nghiệp bắt buộc phải có Mã số thuế';
-        }
-        break;
-      default:
-        break;
-    }
-    return errorMsg;
-  };
-
-  const handleBlur = (field, value) => {
-    const error = validateField(field, value);
-    setErrors(prev => ({ ...prev, [field]: error }));
-  };
-
+  // Hàm update state
   const handleChange = (field, value) => {
-    setEventData(prev => ({
-      ...prev,
-      paymentInfo: {
-        ...(prev.paymentInfo || paymentInfo),
-        [field]: value
-      }
-    }));
-    if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
-  };
-
-  // --- [MỚI] HÀM ĐỒNG BỘ CHỦ TÀI KHOẢN VÀ HỌ TÊN (GÕ 1 ĐƯỢC 2) ---
-  const handleSyncNameChange = (value) => {
-    setEventData(prev => ({
-      ...prev,
-      paymentInfo: {
-        ...(prev.paymentInfo || paymentInfo),
-        accountName: value,
-        fullName: value, 
-        accountOwner: value 
-      }
-    }));
-    // Xóa lỗi của cả 2 ô nếu có
-    if (errors.accountName) setErrors(prev => ({ ...prev, accountName: '' }));
-    if (errors.fullName) setErrors(prev => ({ ...prev, fullName: '' }));
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   return (
     <div className="max-w-[1100px] mx-auto text-gray-200 pb-20">
+      
+      {/* KHỐI BAO QUANH CHUNG */}
       <div className="bg-[#1c1d22] p-8 rounded-lg border border-[#2a2b31] space-y-10">
         
         {/* ========================================== */}
@@ -111,70 +39,56 @@ const Step4Payment = ({ eventData, setEventData }) => {
           <div className="space-y-4 max-w-[900px]">
             {/* Row: Chủ tài khoản */}
             <div className="flex flex-col md:flex-row md:items-center gap-4">
-              <label className="md:w-[180px] text-sm font-bold md:text-right shrink-0"><span className="text-red-500 mr-1">*</span>Chủ tài khoản:</label>
+              <label className="md:w-[180px] text-sm font-bold md:text-right shrink-0">Chủ tài khoản:</label>
               <div className="flex-1 relative">
                 <input 
                   type="text" 
-                  value={accountName}
-                  onChange={(e) => handleSyncNameChange(e.target.value)} // Dùng hàm đồng bộ
-                  onBlur={(e) => handleBlur('accountName', e.target.value)}
-                  placeholder="TRẦN VĂN HẬU" 
-                  className={`w-full bg-white text-black text-sm p-2.5 rounded outline-none pr-16 uppercase transition-all ${errors.accountName ? 'border border-red-500 ring-1 ring-red-500' : 'focus:ring-2 focus:ring-[#00b14f]'}`} 
+                  value={formData.accountName}
+                  onChange={(e) => handleChange('accountName', e.target.value)}
+                  className="w-full bg-white text-black text-sm p-2.5 rounded outline-none pr-16 focus:ring-2 focus:ring-[#00b14f] transition-all" 
                 />
-                <span className="absolute right-3 top-2.5 text-gray-400 text-sm">{(accountName || '').length} / 100</span>
-                {errors.accountName && <p className="text-red-500 text-xs mt-1">{errors.accountName}</p>}
+                <span className="absolute right-3 top-2.5 text-gray-400 text-sm">{formData.accountName.length} / 100</span>
               </div>
             </div>
 
             {/* Row: Số tài khoản */}
             <div className="flex flex-col md:flex-row md:items-center gap-4">
-              <label className="md:w-[180px] text-sm font-bold md:text-right shrink-0"><span className="text-red-500 mr-1">*</span>Số tài khoản:</label>
+              <label className="md:w-[180px] text-sm font-bold md:text-right shrink-0">Số tài khoản:</label>
               <div className="flex-1">
                 <input 
                   type="text" 
-                  value={accountNumber}
+                  value={formData.accountNumber}
                   onChange={(e) => handleChange('accountNumber', e.target.value)}
-                  onBlur={(e) => handleBlur('accountNumber', e.target.value)}
-                  placeholder="338858196" 
-                  className={`w-full bg-white text-black text-sm p-2.5 rounded outline-none transition-all ${errors.accountNumber ? 'border border-red-500 ring-1 ring-red-500' : 'focus:ring-2 focus:ring-[#00b14f]'}`} 
+                  className="w-full bg-white text-black text-sm p-2.5 rounded outline-none focus:ring-2 focus:ring-[#00b14f] transition-all" 
                 />
-                {errors.accountNumber && <p className="text-red-500 text-xs mt-1">{errors.accountNumber}</p>}
               </div>
             </div>
 
-            {/* Row: Tên ngân hàng (Select) */}
+            {/* Row: Tên ngân hàng */}
             <div className="flex flex-col md:flex-row md:items-center gap-4">
-              <label className="md:w-[180px] text-sm font-bold md:text-right shrink-0"><span className="text-red-500 mr-1">*</span>Tên ngân hàng:</label>
+              <label className="md:w-[180px] text-sm font-bold md:text-right shrink-0">Tên ngân hàng:</label>
               <div className="flex-1 relative">
-                <select 
-                  value={bankName}
+                <input 
+                  type="text" 
+                  value={formData.bankName}
                   onChange={(e) => handleChange('bankName', e.target.value)}
-                  onBlur={(e) => handleBlur('bankName', e.target.value)}
-                  className={`w-full appearance-none bg-white text-black text-sm p-2.5 rounded outline-none cursor-pointer transition-all ${errors.bankName ? 'border border-red-500 ring-1 ring-red-500' : 'focus:ring-2 focus:ring-[#00b14f]'}`}
-                >
-                  <option value="">-- Chọn Ngân hàng --</option>
-                  {bankList.map(bank => <option key={bank} value={bank}>{bank}</option>)}
-                </select>
-                <ChevronDown className="absolute right-3 top-2.5 text-gray-500 pointer-events-none" size={18} />
-                {errors.bankName && <p className="text-red-500 text-xs mt-1">{errors.bankName}</p>}
+                  className="w-full bg-white text-black text-sm p-2.5 rounded outline-none pr-16 focus:ring-2 focus:ring-[#00b14f] transition-all" 
+                />
+                <span className="absolute right-3 top-2.5 text-gray-400 text-sm">{formData.bankName.length} / 100</span>
               </div>
             </div>
 
-            {/* Row: Chi nhánh (Select) */}
+            {/* Row: Chi nhánh */}
             <div className="flex flex-col md:flex-row md:items-center gap-4">
-              <label className="md:w-[180px] text-sm font-bold md:text-right shrink-0"><span className="text-red-500 mr-1">*</span>Chi nhánh (Tỉnh/Thành):</label>
+              <label className="md:w-[180px] text-sm font-bold md:text-right shrink-0">Chi nhánh:</label>
               <div className="flex-1 relative">
-                <select 
-                  value={branch}
+                <input 
+                  type="text" 
+                  value={formData.branch}
                   onChange={(e) => handleChange('branch', e.target.value)}
-                  onBlur={(e) => handleBlur('branch', e.target.value)}
-                  className={`w-full appearance-none bg-white text-black text-sm p-2.5 rounded outline-none cursor-pointer transition-all ${errors.branch ? 'border border-red-500 ring-1 ring-red-500' : 'focus:ring-2 focus:ring-[#00b14f]'}`}
-                >
-                  <option value="">-- Chọn Chi nhánh --</option>
-                  {branchList.map(br => <option key={br} value={br}>{br}</option>)}
-                </select>
-                <ChevronDown className="absolute right-3 top-2.5 text-gray-500 pointer-events-none" size={18} />
-                {errors.branch && <p className="text-red-500 text-xs mt-1">{errors.branch}</p>}
+                  className="w-full bg-white text-black text-sm p-2.5 rounded outline-none pr-16 focus:ring-2 focus:ring-[#00b14f] transition-all" 
+                />
+                <span className="absolute right-3 top-2.5 text-gray-400 text-sm">{formData.branch.length} / 100</span>
               </div>
             </div>
           </div>
@@ -192,14 +106,8 @@ const Step4Payment = ({ eventData, setEventData }) => {
               <label className="md:w-[180px] text-sm font-bold md:text-right shrink-0">Loại hình kinh doanh:</label>
               <div className="flex-1 relative">
                 <select 
-                  value={businessType}
-                  onChange={(e) => {
-                    handleChange('businessType', e.target.value);
-                    // Clear lỗi taxCode nếu chuyển lại thành Cá nhân
-                    if (e.target.value === 'Cá nhân' && errors.taxCode) {
-                      setErrors(prev => ({...prev, taxCode: ''}));
-                    }
-                  }}
+                  value={formData.businessType}
+                  onChange={(e) => handleChange('businessType', e.target.value)}
                   className="w-full appearance-none bg-white text-black text-sm p-2.5 rounded outline-none cursor-pointer focus:ring-2 focus:ring-[#00b14f]"
                 >
                   <option value="Cá nhân">Cá nhân</option>
@@ -211,54 +119,42 @@ const Step4Payment = ({ eventData, setEventData }) => {
 
             {/* Row: Họ tên */}
             <div className="flex flex-col md:flex-row md:items-center gap-4">
-              <label className="md:w-[180px] text-sm font-bold md:text-right shrink-0"><span className="text-red-500 mr-1">*</span>Họ tên:</label>
+              <label className="md:w-[180px] text-sm font-bold md:text-right shrink-0">Họ tên:</label>
               <div className="flex-1 relative">
                 <input 
                   type="text" 
-                  value={fullName}
-                  onChange={(e) => handleSyncNameChange(e.target.value)} // Dùng hàm đồng bộ
-                  onBlur={(e) => handleBlur('fullName', e.target.value)}
-                  placeholder="Trần Văn Hậu" 
-                  className={`w-full bg-white text-black text-sm p-2.5 rounded outline-none pr-16 uppercase transition-all ${errors.fullName ? 'border border-red-500 ring-1 ring-red-500' : 'focus:ring-2 focus:ring-[#00b14f]'}`} 
+                  value={formData.fullName}
+                  onChange={(e) => handleChange('fullName', e.target.value)}
+                  className="w-full bg-white text-black text-sm p-2.5 rounded outline-none pr-16 focus:ring-2 focus:ring-[#00b14f] transition-all" 
                 />
-                <span className="absolute right-3 top-2.5 text-gray-400 text-sm">{(fullName || '').length} / 100</span>
-                {errors.fullName && <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>}
+                <span className="absolute right-3 top-2.5 text-gray-400 text-sm">{formData.fullName.length} / 100</span>
               </div>
             </div>
 
             {/* Row: Địa chỉ */}
             <div className="flex flex-col md:flex-row md:items-center gap-4">
-              <label className="md:w-[180px] text-sm font-bold md:text-right shrink-0"><span className="text-red-500 mr-1">*</span>Địa chỉ:</label>
+              <label className="md:w-[180px] text-sm font-bold md:text-right shrink-0">Địa chỉ:</label>
               <div className="flex-1 relative">
                 <input 
                   type="text" 
-                  value={address}
+                  value={formData.address}
                   onChange={(e) => handleChange('address', e.target.value)}
-                  onBlur={(e) => handleBlur('address', e.target.value)}
-                  placeholder="218 đường Lý Thường Kiệt" 
-                  className={`w-full bg-white text-black text-sm p-2.5 rounded outline-none pr-16 transition-all ${errors.address ? 'border border-red-500 ring-1 ring-red-500' : 'focus:ring-2 focus:ring-[#00b14f]'}`} 
+                  className="w-full bg-white text-black text-sm p-2.5 rounded outline-none pr-16 focus:ring-2 focus:ring-[#00b14f] transition-all" 
                 />
-                <span className="absolute right-3 top-2.5 text-gray-400 text-sm">{(address || '').length} / 100</span>
-                {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
+                <span className="absolute right-3 top-2.5 text-gray-400 text-sm">{formData.address.length} / 100</span>
               </div>
             </div>
 
-            {/* Row: Mã số thuế */}
+            {/* Row: Mã số thuế (Đang active viền xanh) */}
             <div className="flex flex-col md:flex-row md:items-center gap-4">
-              <label className="md:w-[180px] text-sm font-bold md:text-right shrink-0">
-                {businessType === 'Doanh nghiệp' && <span className="text-red-500 mr-1">*</span>}
-                Mã số thuế:
-              </label>
+              <label className="md:w-[180px] text-sm font-bold md:text-right shrink-0">Mã số thuế:</label>
               <div className="flex-1">
                 <input 
                   type="text" 
-                  value={taxCode}
+                  value={formData.taxCode}
                   onChange={(e) => handleChange('taxCode', e.target.value)}
-                  onBlur={(e) => handleBlur('taxCode', e.target.value)}
-                  placeholder="035467..." 
-                  className={`w-full bg-white text-black text-sm p-2.5 rounded outline-none transition-all ${errors.taxCode ? 'border border-red-500 ring-1 ring-red-500' : 'focus:ring-2 focus:ring-[#00b14f]'}`} 
+                  className="w-full bg-white text-black text-sm p-2.5 rounded outline-none border-2 border-[#00b14f] focus:ring-2 focus:ring-[#00b14f]" 
                 />
-                {errors.taxCode && <p className="text-red-500 text-xs mt-1">{errors.taxCode}</p>}
               </div>
             </div>
           </div>

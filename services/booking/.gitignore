@@ -1,6 +1,5 @@
 HELP.md
-# Build outputs
-/target/
+target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
@@ -26,12 +25,9 @@ HELP.md
 /dist/
 /nbdist/
 /.nb-gradle/
-/build/
+build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
 ### VS Code ###
 .vscode/
-
-# Local-only Redis docker artifacts (per request)
-src/main/resources/redis/Dockerfile

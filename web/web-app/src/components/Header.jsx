@@ -10,19 +10,27 @@ const Header = () => {
   const navigate = useNavigate();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
-  const [user, setUser] = useState(() => authService.getCurrentUser());
+
+  // MỚI & ĐÃ SỬA: Lấy dữ liệu từ localStorage ngay lúc khởi tạo State 
+  // (Dùng arrow function để chỉ chạy 1 lần duy nhất khi component mount)
+  const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('jwt_token'));
+  const [userEmail, setUserEmail] = useState(() => localStorage.getItem('user_email') || '');
+
+  // State quản lý việc mở/đóng menu Tài khoản
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // State quản lý tìm kiếm
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('jwt_token'));
-  const isAdmin = user?.role === 'ADMIN';
-
+  // Dùng useRef để xử lý click ra ngoài thì đóng menu
   const dropdownRef = useRef(null);
   const searchRef = useRef(null);
 
+  // ĐÃ SỬA: Chỉ giữ lại logic bắt sự kiện click ra ngoài trong useEffect
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // Nếu click vào một điểm trên màn hình KHÔNG nằm trong dropdownRef thì đóng menu
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
       }
@@ -32,30 +40,20 @@ const Header = () => {
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+    document.addEventListener("mousedown", handleClickOutside);
 
-  // Listen for openLoginModal event from other components
-  useEffect(() => {
-    const handleOpenLoginModal = () => {
-      setIsLoginOpen(true);
-    };
-
-    window.addEventListener('openLoginModal', handleOpenLoginModal);
+    // Cleanup function để gỡ sự kiện khi component unmount
     return () => {
-      window.removeEventListener('openLoginModal', handleOpenLoginModal);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
+  }, []); // Cảnh báo cascading renders sẽ biến mất vì không còn setState đồng bộ ở đây nữa
 
   // Hàm xử lý Đăng xuất
-  const handleLogout = async () => {
-    await authService.logout();
-    setIsLoggedIn(false);
-    setUser(null);
-    setIsDropdownOpen(false);
+  const handleLogout = () => {
+    authService.logout(); // Xóa dữ liệu trong localStorage
+    setIsLoggedIn(false); // Cập nhật state để Header đổi giao diện ngay lập tức
+    setUserEmail('');
+    setIsDropdownOpen(false); // Đóng menu thả xuống
   };
 
   const openLogin = () => {
@@ -66,15 +64,6 @@ const Header = () => {
   const openRegister = () => {
     setIsLoginOpen(false);
     setIsRegisterOpen(true);
-  };
-
-  // Handle create event button - require authentication
-  const handleCreateEventClick = () => {
-    if (!isLoggedIn) {
-      setIsLoginOpen(true);
-      return;
-    }
-    navigate('/organizer');
   };
 
   return (
@@ -107,10 +96,7 @@ const Header = () => {
               <div className="h-5 w-[1px] bg-gray-200"></div>
               <button
                 type="button"
-                onClick={() => {
-                  setIsSearchOpen(false)
-                  navigate(`/search?find=${searchQuery}`)
-                }}
+                onClick={() => setIsSearchOpen((prev) => !prev)}
                 className="px-5 text-[#555] hover:text-[#26bc71] text-sm font-medium transition-colors whitespace-nowrap cursor-pointer"
               >
                 Tìm kiếm
@@ -131,13 +117,9 @@ const Header = () => {
 
           {/* Cụm Bên Phải */}
           <div className="flex items-center gap-6 text-sm font-medium whitespace-nowrap shrink-0">
-            <button 
-              onClick={handleCreateEventClick}
-              className="border border-white/80 rounded-full px-5 py-1.5 hover:bg-white/20 transition-colors cursor-pointer"
-              title={isLoggedIn ? "Tạo sự kiện mới" : "Đăng nhập để tạo sự kiện"}
-            >
+            <Link to="/organizer" className="border border-white/80 rounded-full px-5 py-1.5 hover:bg-white/20 transition-colors">
               Tạo sự kiện
-            </button>
+            </Link>
 
             <div
               onClick={() => navigate('/my-account/tickets')}
@@ -179,12 +161,10 @@ const Header = () => {
             )}
 
             {/* Cục Admin */}
-            {isAdmin && (
-              <Link to="/admin" className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity">
-                <User size={18} />
-                <span>Admin</span>
-              </Link>
-            )}
+            <Link to="/admin" className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity">
+              <User size={18} />
+              <span>Admin</span>
+            </Link>
 
             {/* Nút chọn Quốc gia */}
             <div className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity">

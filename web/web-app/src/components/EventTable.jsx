@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, Check, X, Lock } from 'lucide-react';
+import { Eye, Check, X } from 'lucide-react';
 
 const typeBadge = (type) =>
   type === 'Offline' ? (
@@ -26,7 +26,7 @@ const statusBadge = (status) => {
   );
 };
 
-const EventTable = ({ events, onView, onApprove, onReject, onLock }) => (
+const EventTable = ({ events, onView, onApprove, onReject }) => (
   <div className="bg-[#222] rounded-xl border border-white/5 overflow-hidden">
     <table className="w-full text-left text-sm">
       <thead>
@@ -56,7 +56,6 @@ const EventTable = ({ events, onView, onApprove, onReject, onLock }) => (
                 <Eye    size={16} onClick={() => onView?.(event)}    className="hover:text-white cursor-pointer transition-colors" />
                 <Check  size={16} onClick={() => onApprove?.(event)} className="hover:text-[#26bc71] cursor-pointer transition-colors" />
                 <X      size={16} onClick={() => onReject?.(event)}  className="hover:text-red-500 cursor-pointer transition-colors" />
-                <Lock   size={16} onClick={() => onLock?.(event)}    className="hover:text-orange-400 cursor-pointer transition-colors" />
               </div>
             </td>
           </tr>

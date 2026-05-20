@@ -1,15 +1,13 @@
 import React from 'react';
 
 const categories = [
-  { label: 'Tất cả', color: 'from-[#00b14f] to-[#007d36]', image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=800&q=60' },
   { label: 'Nhạc sống', color: 'from-[#7f45ff] to-[#3c55ff]', image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=60' },
   { label: 'Sân khấu & Nghệ thuật', color: 'from-[#ff4d5a] to-[#ffb347]', image: 'https://images.unsplash.com/photo-1524985069026-dd778a71c7b4?auto=format&fit=crop&w=800&q=60' },
-  { label: 'Hài kịch', color: 'from-[#ec4899] to-[#f43f5e]', image: 'https://images.unsplash.com/photo-1516280440614-37939bbacd6a?auto=format&fit=crop&w=800&q=60' },
   { label: 'Thể thao', color: 'from-[#26bc71] to-[#1b9b4a]', image: 'https://images.unsplash.com/photo-1521412644187-c49fa049e84d?auto=format&fit=crop&w=800&q=60' },
   { label: 'Hội thảo & Workshop', color: 'from-[#2093ff] to-[#1d65ff]', image: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=800&q=60' },
   { label: 'Tham quan & Trải nghiệm', color: 'from-[#ff7a00] to-[#ff2d2d]', image: 'https://images.unsplash.com/photo-1485217988980-11786ced9454?auto=format&fit=crop&w=800&q=60' },
-  { label: 'Triển lãm', color: 'from-[#06b6d4] to-[#3b82f6]', image: 'https://images.unsplash.com/photo-1531058020387-3be344559be6?auto=format&fit=crop&w=800&q=60' },
-  { label: 'Khác', color: 'from-[#6b7280] to-[#4b5563]', image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=800&q=60' },
+  { label: 'Vé bán lại', color: 'from-[#1f2937] to-[#4b5563]', image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=60' },
+  { label: 'Blog', color: 'from-[#6b21a8] to-[#a855f7]', image: 'https://images.unsplash.com/photo-1509021436665-8f07dbf5bf1d?auto=format&fit=crop&w=800&q=60' },
 ];
 
 const CategoryTabs = ({ activeCategory, onSelect }) => {
