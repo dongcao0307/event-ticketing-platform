@@ -80,7 +80,8 @@ public class AuthService {
         );
 
         Account account = accountRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new ApiException("Tài khoản không tồn tại", HttpStatus.NOT_FOUND));
+                .orElseGet(() -> accountRepository.findByUserName(request.getEmail())
+                        .orElseThrow(() -> new ApiException("Tài khoản không tồn tại", HttpStatus.NOT_FOUND)));
 
         refreshTokenRepository.revokeAllByAccountUserName(account.getUsername());
 

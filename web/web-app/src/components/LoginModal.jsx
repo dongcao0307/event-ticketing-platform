@@ -131,7 +131,7 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
           <div className="flex items-center border border-gray-300 rounded-md px-3 h-11 focus-within:border-[#26bc71] focus-within:ring-1 focus-within:ring-[#26bc71] transition-all bg-white">
             <input 
               type="text" 
-              placeholder="Nhập email hoặc số điện thoại" 
+              placeholder="Nhập email hoặc tên đăng nhập" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="flex-1 w-full outline-none text-[15px] text-gray-700 placeholder:text-gray-400 bg-transparent"

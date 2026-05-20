@@ -13,8 +13,8 @@ export const authService = {
     return res;
   },
 
-  login: async (email, password) => {
-    const res = await post('/auth/login', { email, password });
+  login: async (identifier, password) => {
+    const res = await post('/auth/login', { email: identifier, password });
     if (res.data) {
       setTokens(res.data.accessToken, res.data.refreshToken);
       if (res.data.user) {

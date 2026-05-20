@@ -38,6 +38,7 @@ const AccountSettings = () => {
 
   const [userData, setUserData] = useState(initialData);
   const [avatar, setAvatar] = useState(userData.user_avatar || "");
+  const [loading, setLoading] = useState(true);
 
   const handleChange = (field, value) => {
     setUserData({
@@ -83,6 +84,34 @@ const AccountSettings = () => {
     };
     reader.readAsDataURL(file);
   };
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const response = await authService.getProfile();
+        if (response.data) {
+          const profile = normalizeUser(response.data);
+          setUserData(profile);
+          setAvatar(profile.user_avatar || "");
+          localStorage.setItem(USER_DATA_KEY, JSON.stringify(profile));
+        }
+      } catch (error) {
+        console.warn('Không thể lấy thông tin người dùng:', error.message || error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[240px]">
+        <div className="text-gray-400">Đang tải thông tin tài khoản...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex justify-center">
