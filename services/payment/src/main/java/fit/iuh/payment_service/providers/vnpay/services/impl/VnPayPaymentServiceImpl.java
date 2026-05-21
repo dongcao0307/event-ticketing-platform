@@ -213,7 +213,11 @@ public class VnPayPaymentServiceImpl implements VnPayPaymentService {
             transactionRepository.save(callbackTransaction);
             // Publish only when the provider callback actually changes the payment state.
             if (previousStatus != nextStatus) {
-                paymentEventPublisher.publishPaymentStatusChanged(vnPayPaymentMapper.toPaymentStatusChangedEvent(payment, LocalDateTime.now()));
+                LocalDateTime now = LocalDateTime.now();
+                paymentEventPublisher.publishPaymentStatusChanged(vnPayPaymentMapper.toPaymentStatusChangedEvent(payment, now));
+                if (nextStatus == PaymentStatus.COMPLETED) {
+                    paymentEventPublisher.publishPaymentNotification(vnPayPaymentMapper.toPaymentNotificationEvent(payment, now));
+                }
             }
 
             return gatewayResponse("00", "Confirm Success");

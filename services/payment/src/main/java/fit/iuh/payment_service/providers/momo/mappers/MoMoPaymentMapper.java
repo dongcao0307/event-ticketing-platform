@@ -5,6 +5,7 @@ import fit.iuh.payment_service.entities.Payment;
 import fit.iuh.payment_service.entities.PaymentMethod;
 import fit.iuh.payment_service.entities.PaymentStatus;
 import fit.iuh.payment_service.entities.Transaction;
+import fit.iuh.payment_service.messaging.PaymentNotificationEvent;
 import fit.iuh.payment_service.messaging.PaymentStatusChangedEvent;
 import fit.iuh.payment_service.providers.momo.dtos.requests.MoMoCreatePaymentRequest;
 import fit.iuh.payment_service.providers.momo.dtos.responses.MoMoCreatePaymentResponse;
@@ -63,4 +64,10 @@ public interface MoMoPaymentMapper {
     @Mapping(target = "status", source = "payment.status")
     @Mapping(target = "occurredAt", source = "occurredAt")
     PaymentStatusChangedEvent toPaymentStatusChangedEvent(Payment payment, LocalDateTime occurredAt);
+
+    @Mapping(target = "paymentId", source = "payment.id")
+    @Mapping(target = "orderId", source = "payment.orderId")
+    @Mapping(target = "amount", source = "payment.amount")
+    @Mapping(target = "occurredAt", source = "occurredAt")
+    PaymentNotificationEvent toPaymentNotificationEvent(Payment payment, LocalDateTime occurredAt);
 }

@@ -74,6 +74,7 @@ public class RedisConfig {
     @Bean
     public Jackson2JsonRedisSerializer<Object> jacksonRedisSerializer() {
         ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
         // Enable type information to handle polymorphism
         objectMapper.activateDefaultTyping(
                 objectMapper.getPolymorphicTypeValidator(),

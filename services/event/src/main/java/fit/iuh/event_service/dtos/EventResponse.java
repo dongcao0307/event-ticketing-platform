@@ -10,6 +10,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -23,7 +25,9 @@ public class EventResponse {
     private String category;
     private String location;
     private String city;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime startTime;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime endTime;
     private String formattedDate;
     private BigDecimal minPrice;
