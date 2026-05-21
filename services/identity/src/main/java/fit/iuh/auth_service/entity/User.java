@@ -2,6 +2,9 @@ package fit.iuh.auth_service.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.Instant;
 
 @Entity
 @Table(name = "users")
@@ -30,4 +33,8 @@ public class User {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_user_name", nullable = false, unique = true)
     private Account account;
+
+    @CreationTimestamp
+    @Column(name = "created_date", updatable = false)
+    private Instant createdDate;
 }

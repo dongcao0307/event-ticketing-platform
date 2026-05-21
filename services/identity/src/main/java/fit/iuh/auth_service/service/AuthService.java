@@ -5,6 +5,7 @@ import fit.iuh.auth_service.dto.request.RegisterRequest;
 import fit.iuh.auth_service.dto.request.UpdateProfileRequest;
 import fit.iuh.auth_service.dto.response.AuthResponse;
 import fit.iuh.auth_service.dto.response.UserProfileResponse;
+import fit.iuh.auth_service.dto.response.UserResponse;
 import fit.iuh.auth_service.entity.Account;
 import fit.iuh.auth_service.entity.RefreshToken;
 import fit.iuh.auth_service.entity.User;
@@ -17,9 +18,14 @@ import fit.iuh.auth_service.repository.UserRepository;
 import fit.iuh.auth_service.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -75,9 +81,18 @@ public class AuthService {
 
     @Transactional
     public AuthResponse login(LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-        );
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+            );
+        } catch (AuthenticationException e) {
+            Account account = accountRepository.findByEmail(request.getEmail()).orElse(null);
+            if (account != null && account.getStatus() == AccountStatus.LOCKED) {
+                throw new ApiException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên để biết thêm chi tiết.", HttpStatus.LOCKED);
+            }
+            throw new ApiException("Email hoặc mật khẩu không chính xác", HttpStatus.UNAUTHORIZED);
+        }
+
 
         Account account = accountRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ApiException("Tài khoản không tồn tại", HttpStatus.NOT_FOUND));
@@ -157,6 +172,38 @@ public class AuthService {
         return toProfileResponse(account, user);
     }
 
+    public Page<UserResponse> getAllUsers(int page, int size, String keyword, AccountStatus status) {
+        Pageable pageable = PageRequest.of(page, size);
+        Specification<Account> spec = Specification.where(null);
+
+        if (keyword != null && !keyword.isEmpty()) {
+            spec = spec.and((root, query, cb) ->
+                    cb.or(
+                            cb.like(root.get("userName"), "%" + keyword + "%"),
+                            cb.like(root.get("email"), "%" + keyword + "%"),
+                            cb.like(root.get("user").get("fullName"), "%" + keyword + "%")
+                    )
+            );
+        }
+
+        if (status != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), status));
+        }
+
+        return accountRepository.findAll(spec, pageable).map(this::toUserResponse);
+    }
+
+    @Transactional
+    public void updateUserStatus(String username, AccountStatus status, String adminUsername) {
+        if (username.equals(adminUsername)) {
+            throw new ApiException("Admin không thể tự khóa tài khoản của chính mình", HttpStatus.BAD_REQUEST);
+        }
+        Account account = accountRepository.findById(username)
+                .orElseThrow(() -> new ApiException("Tài khoản không tồn tại", HttpStatus.NOT_FOUND));
+        account.setStatus(status);
+        accountRepository.save(account);
+    }
+
     private RefreshToken createRefreshToken(Account account) {
         RefreshToken refreshToken = RefreshToken.builder()
                 .token(UUID.randomUUID().toString())
@@ -189,5 +236,18 @@ public class AuthService {
                 .city(user != null ? user.getCity() : null)
                 .avatarUrl(user != null ? user.getAvatarUrl() : null)
                 .build();
+    }
+
+    private UserResponse toUserResponse(Account account) {
+        User user = account.getUser();
+        return new UserResponse(
+                account.getUsername(),
+                account.getEmail(),
+                user != null ? user.getFullName() : null,
+                account.getPhone(),
+                account.getRole(),
+                account.getStatus(),
+                user != null ? user.getCreatedDate() : null
+        );
     }
 }
