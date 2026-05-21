@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
-import axios from "axios";
+import axios from "axios"; // Vẫn giữ lại để gọi API Tỉnh/Thành
+import { post } from "../../services/apiClient";// BỔ SUNG IMPORT NÀY (Hậu chỉnh lại đường dẫn cho đúng thư mục nhé)
 import {
   ImageIcon,
   Bold,
@@ -174,14 +175,13 @@ const Step1EventInfo = ({ eventData, setEventData }) => {
       formData.append("file", file);
 
       try {
-        const response = await axios.post(
-          "/api/organizer/files/upload",
-          formData,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          },
-        );
-        handleChange(fieldName, response.data.url);
+        // ĐÃ SỬA: Gọi qua hàm post của apiClient để tự động nhét JWT Token vào Header
+        const response = await post("/organizer/files/upload", formData);
+        
+        // Lưu ý: apiClient trả thẳng cục JSON (không bọc trong .data như axios)
+        // Nên lấy url theo cấu trúc chuẩn của Backend trả về
+        const imageUrl = response.data?.url || response.url || response.data;
+        handleChange(fieldName, imageUrl);
       } catch (error) {
         console.error(`Lỗi upload ảnh cho ${fieldName}:`, error);
         alert("Quá trình tải ảnh lên máy chủ thất bại. Vui lòng thử lại!");
