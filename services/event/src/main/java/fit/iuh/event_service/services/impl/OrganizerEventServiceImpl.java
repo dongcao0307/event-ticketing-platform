@@ -10,7 +10,7 @@ import fit.iuh.event_service.models.enums.EventStatus;
 import fit.iuh.event_service.models.enums.PerformanceStatus;
 import fit.iuh.event_service.repositories.*;
 import fit.iuh.event_service.services.OrganizerEventService;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
@@ -203,12 +203,12 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
     }
 
     @Override
-    @Cacheable(value = "events", key = "#eventId", unless = "#result == null")
+    @Transactional(readOnly = true) // Cực kỳ quan trọng để giữ Session sống cho đến khi xong việc
     public Event getEventById(Long organizerId, Long eventId) {
-        Event event = eventRepository.findById(eventId)
+        // Dùng hàm findFullEventById vừa tạo
+        Event event = eventRepository.findFullEventById(eventId)
                 .orElseThrow(() -> new RuntimeException("Sự kiện không tồn tại"));
 
-        // Bảo mật: Chỉ cho phép người tạo xem chi tiết (trong ngữ cảnh quản lý)
         if (!event.getOrganizerId().equals(organizerId)) {
             throw new RuntimeException("Bạn không có quyền xem sự kiện này");
         }
@@ -380,20 +380,12 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
 
     @Override
     public List<EventSummaryResponse> getEventsByOrganizerId(Long organizerId, String keyword) {
-        List<Event> events;
-
-        // 1. KIỂM TRA TỪ KHÓA TÌM KIẾM
-        if (keyword != null && !keyword.trim().isEmpty()) {
-            // Nếu người dùng có gõ tìm kiếm -> Dùng hàm lọc theo tên
-            events = eventRepository.findByOrganizerIdAndTitleContainingIgnoreCase(organizerId, keyword);
-        } else {
-            // Nếu để trống ô tìm kiếm -> Lấy tất cả sự kiện của Organizer này
-            events = eventRepository.findByOrganizerId(organizerId);
-        }
+        List<Event> events = (keyword != null && !keyword.trim().isEmpty())
+                ? eventRepository.findByOrganizerIdAndTitleContainingIgnoreCase(organizerId, keyword)
+                : eventRepository.findByOrganizerId(organizerId);
 
         List<EventSummaryResponse> responses = new ArrayList<>();
 
-        // 2. MAP DỮ LIỆU TỪ ENTITY SANG DTO
         for (Event event : events) {
             EventSummaryResponse res = new EventSummaryResponse();
             res.setId(event.getId());
@@ -401,22 +393,23 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
             res.setThumbnailUrl(event.getThumbnailUrl());
             res.setCreatedAt(event.getCreatedAt());
             res.setStatus(event.getStatus());
-
             res.setOrganizerName(event.getOrganizerName());
             res.setOrganizerLogo(event.getOrganizerLogo());
             res.setOrganizerInfo(event.getOrganizerInfo());
 
-            // Tìm địa điểm thông qua Suất diễn đầu tiên
-            List<EventPerformance> performances = performanceRepository.findByEventId(event.getId());
-            if (!performances.isEmpty() && performances.get(0).getVenue() != null) {
-                Venue v = performances.get(0).getVenue();
-                res.setVenueName(v.getName());
-
-                // Ghép address và city lại để hiển thị đầy đủ
-                // Kết quả: "Số 12, Phường Phúc Xá, Quận Ba Đình, Thành phố Hà Nội"
-                String fullAddr = v.getAddress() + ", " + v.getCity();
-                res.setFullAddress(fullAddr);
-            } else {
+            // Đảm bảo dữ liệu được lấy an toàn
+            try {
+                // Nếu Event đã có performances (do fetch ở repo), dùng luôn, không cần gọi repo nữa
+                List<EventPerformance> performances = event.getPerformances();
+                if (performances != null && !performances.isEmpty() && performances.get(0).getVenue() != null) {
+                    Venue v = performances.get(0).getVenue();
+                    res.setVenueName(v.getName());
+                    res.setFullAddress((v.getAddress() != null ? v.getAddress() : "") + ", " + (v.getCity() != null ? v.getCity() : ""));
+                } else {
+                    res.setVenueName("Chưa xác định");
+                    res.setFullAddress("Đang cập nhật địa chỉ");
+                }
+            } catch (Exception e) {
                 res.setVenueName("Chưa xác định");
                 res.setFullAddress("Đang cập nhật địa chỉ");
             }

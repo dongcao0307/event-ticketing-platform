@@ -1,7 +1,12 @@
 package fit.iuh.event_service.models;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import fit.iuh.event_service.models.enums.PerformanceStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -32,10 +37,16 @@ public class EventPerformance {
     @JoinColumn(name = "venue_id")
     private Venue venue;
 
-    // --- ĐỊNH DẠNG THỜI GIAN ---
+    // --- ĐỊNH DẠNG THỜI GIAN (ĐÃ ỐP BÙA JSON) ---
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     @Column(name = "start_time")
     private LocalDateTime startTime;
 
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     @Column(name = "end_time")
     private LocalDateTime endTime;
 

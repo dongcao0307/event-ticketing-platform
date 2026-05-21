@@ -1,18 +1,16 @@
-import axios from 'axios';
+// src/services/organizerEventService.js
+// Đã chuyển đổi sang dùng apiClient tập trung để tự động xử lý JWT Token & Auto-Refresh
 
-// Đổi port cho khớp với backend của bạn
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+import { get, post, put, del } from './apiClient';
 
-// Hàm lấy User ID của Organizer. 
-// Tạm thời mình để mặc định là '1' nếu chưa có login, bạn sửa lại key trong localStorage cho đúng dự án nhé.
+// Hàm lấy User ID của Organizer từ localStorage
 const getOrganizerId = () => {
     return localStorage.getItem('userId') || '1'; 
 };
 
-// Cấu hình header bắt buộc theo Controller (@RequestHeader("X-User-Id"))
-const getAuthHeaders = () => {
+// Cấu hình các header đặc thù bắt buộc theo Business Logic của Backend ngoài Bearer Token
+const getCustomHeaders = () => {
     return {
-        'Content-Type': 'application/json',
         'X-User-Id': getOrganizerId()
     };
 };
@@ -25,11 +23,10 @@ export const organizerEventService = {
     // 0. Tạo toàn bộ sự kiện (Gom cả Bước 1, 2, 3, 4)
     createFullEvent: async (fullEventData) => {
         try {
-            // Chú ý: Đường dẫn là /organizer/events/full
-            const response = await axios.post(`${API_URL}/organizer/events/full`, fullEventData, {
-                headers: getAuthHeaders()
+            // Dùng hàm post tập trung từ apiClient, truyền custom headers vào options
+            return await post('/organizer/events/full', fullEventData, {
+                headers: getCustomHeaders()
             });
-            return response.data;
         } catch (error) {
             console.error('Lỗi khi tạo toàn bộ sự kiện:', error);
             throw error;
@@ -43,10 +40,9 @@ export const organizerEventService = {
     // 1. Tạo sự kiện (POST /organizer/events)
     createEvent: async (eventData) => {
         try {
-            const response = await axios.post(`${API_URL}/organizer/events`, eventData, {
-                headers: getAuthHeaders()
+            return await post('/organizer/events', eventData, {
+                headers: getCustomHeaders()
             });
-            return response.data;
         } catch (error) {
             console.error('Lỗi khi tạo sự kiện:', error);
             throw error;
@@ -56,10 +52,9 @@ export const organizerEventService = {
     // 2. Cập nhật sự kiện (PUT /organizer/events/{eventId})
     updateEvent: async (eventId, eventData) => {
         try {
-            const response = await axios.put(`${API_URL}/organizer/events/${eventId}`, eventData, {
-                headers: getAuthHeaders()
+            return await put(`/organizer/events/${eventId}`, eventData, {
+                headers: getCustomHeaders()
             });
-            return response.data;
         } catch (error) {
             console.error(`Lỗi khi cập nhật sự kiện ${eventId}:`, error);
             throw error;
@@ -69,11 +64,10 @@ export const organizerEventService = {
     // 3. Tìm kiếm / Xem danh sách sự kiện của mình (GET /organizer/events)
     getMyEvents: async (keyword = '') => {
         try {
-            const response = await axios.get(`${API_URL}/organizer/events`, {
-                headers: getAuthHeaders(),
-                params: keyword ? { keyword } : {}
+            // Hàm get từ apiClient tự động xử lý chuyển đổi params thành query string
+            return await get('/organizer/events', keyword ? { keyword } : undefined, {
+                headers: getCustomHeaders()
             });
-            return response.data;
         } catch (error) {
             console.error('Lỗi khi lấy danh sách sự kiện:', error);
             return []; // Trả về mảng rỗng để không lỗi UI
@@ -83,10 +77,9 @@ export const organizerEventService = {
     // 4. Tạo suất diễn cho sự kiện (POST /organizer/events/{eventId}/performances)
     createPerformance: async (eventId, performanceData) => {
         try {
-            const response = await axios.post(`${API_URL}/organizer/events/${eventId}/performances`, performanceData, {
-                headers: getAuthHeaders()
+            return await post(`/organizer/events/${eventId}/performances`, performanceData, {
+                headers: getCustomHeaders()
             });
-            return response.data;
         } catch (error) {
             console.error(`Lỗi khi tạo suất diễn cho sự kiện ${eventId}:`, error);
             throw error;
@@ -96,10 +89,9 @@ export const organizerEventService = {
     // 5. Xem chi tiết 1 sự kiện (GET /organizer/events/{eventId})
     getEventById: async (eventId) => {
         try {
-            const response = await axios.get(`${API_URL}/organizer/events/${eventId}`, { 
-                headers: getAuthHeaders() 
+            return await get(`/organizer/events/${eventId}`, undefined, { 
+                headers: getCustomHeaders() 
             });
-            return response.data;
         } catch (error) {
             console.error(`Lỗi khi lấy chi tiết sự kiện ${eventId}:`, error);
             throw error;
@@ -109,10 +101,10 @@ export const organizerEventService = {
     // 6. Xóa sự kiện (DELETE /organizer/events/{eventId})
     deleteEvent: async (eventId) => {
         try {
-            const response = await axios.delete(`${API_URL}/organizer/events/${eventId}`, { 
-                headers: getAuthHeaders() 
+            // Cần gọi thông qua hàm request() tổng vì del() mặc định không nhận tham số options cấu hình header
+            return await del(`/organizer/events/${eventId}`, { 
+                headers: getCustomHeaders() 
             });
-            return response.data;
         } catch (error) {
             console.error(`Lỗi khi xóa sự kiện ${eventId}:`, error);
             throw error;
@@ -122,13 +114,12 @@ export const organizerEventService = {
     // 7. Lấy danh sách suất diễn của 1 sự kiện (GET /organizer/events/{eventId}/performances)
     getPerformancesByEventId: async (eventId) => {
         try {
-            const response = await axios.get(`${API_URL}/organizer/events/${eventId}/performances`, { 
-                headers: getAuthHeaders() 
+            return await get(`/organizer/events/${eventId}/performances`, undefined, { 
+                headers: getCustomHeaders() 
             });
-            return response.data;
         } catch (error) {
             console.error(`Lỗi khi lấy danh sách suất diễn của sự kiện ${eventId}:`, error);
-            return []; // Trả về mảng rỗng để giao diện (ví dụ: bảng danh sách) không bị sập
+            return []; // Trả về mảng rỗng để giao diện không bị sập
         }
     }
 };
