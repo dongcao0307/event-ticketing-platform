@@ -14,6 +14,7 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }) => {
   const [userName, setUserName] = useState('');
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -39,6 +40,16 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }) => {
       setErrorMsg('Vui lòng nhập email!');
       return;
     }
+    if (!phone.trim()) {
+      setErrorMsg('Vui lòng nhập số điện thoại!');
+      return;
+    }
+    // Validate phone number (simple check - at least 10 digits)
+    const phoneDigitsOnly = phone.replace(/\D/g, '');
+    if (phoneDigitsOnly.length < 10) {
+      setErrorMsg('Số điện thoại không hợp lệ (tối thiểu 10 chữ số)!');
+      return;
+    }
     if (password !== confirmPassword) {
       setErrorMsg('Mật khẩu nhập lại không khớp!');
       return;
@@ -49,7 +60,7 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }) => {
     setSuccessMsg('');
 
     try {
-      await authService.register(userName.trim(), email.trim(), password, fullName.trim() || undefined);
+      await authService.register(userName.trim(), email.trim(), password, fullName.trim() || undefined, phone.trim());
       setSuccessMsg('Đăng ký thành công! Đang chuyển hướng...');
       setTimeout(() => {
         window.location.reload();
@@ -121,6 +132,22 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }) => {
             </div>
           </div>
 
+          {/* Số điện thoại */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">Số điện thoại *</label>
+            <div className="flex items-center border border-gray-300 rounded-md px-3 h-11 focus-within:border-[#26bc71] transition-colors">
+              <input
+                type="tel"
+                placeholder="Ví dụ: 0912345678"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 15))}
+                className="w-full outline-none text-[15px] text-gray-700 placeholder:text-gray-400"
+              />
+            </div>
+          </div>
+
+
+
           {/* Mật khẩu */}
           <div>
             <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">Mật khẩu *</label>
@@ -183,9 +210,9 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }) => {
 
           <button
             onClick={handleRegister}
-            disabled={!isPasswordValid || !email || !userName || !confirmPassword || isLoading}
+            disabled={!isPasswordValid || !email || !userName || !phone || !confirmPassword || isLoading}
             className={`w-full font-bold py-3 rounded-md text-[15px] transition-colors ${
-              isPasswordValid && email && userName && confirmPassword && !isLoading
+              isPasswordValid && email && userName && phone && confirmPassword && !isLoading
                 ? 'bg-[#26bc71] text-white cursor-pointer hover:bg-[#23a861]'
                 : 'bg-[#e0e0e0] text-[#999] cursor-not-allowed'
             }`}
