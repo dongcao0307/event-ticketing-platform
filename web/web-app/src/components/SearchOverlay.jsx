@@ -58,129 +58,147 @@ export default function SearchOverlay({ onSelectSuggestion, onClose }) {
   const [activeTab, setActiveTab] = useState("category");
 
   return (
-
-    <div className="absolute top-full left-0 right-0 mt-2 bg-slate-100 rounded-2xl shadow-2xl p-6 max-h-[80vh] overflow-y-auto z-50">
-
-      {/* Trending */}
-      <div className="space-y-3">
-
+    <div
+      className="tb-search-overlay"
+      style={{
+        position: 'absolute',
+        top: 'calc(100% + 8px)',
+        left: 0,
+        right: 0,
+        padding: '20px',
+        maxHeight: '80vh',
+        overflowY: 'auto',
+        zIndex: 200,
+      }}
+    >
+      {/* Trending searches */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+        <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
+          Xu hướng tìm kiếm
+        </p>
         {trendingSearch.map((item) => (
           <button
             key={item}
             onClick={() => onSelectSuggestion(item)}
-            className="flex items-center gap-2 text-gray-600 hover:text-black text-sm"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-secondary)',
+              fontSize: '13px',
+              cursor: 'pointer',
+              fontFamily: 'Inter, sans-serif',
+              textAlign: 'left',
+              padding: '2px 0',
+              transition: 'color 0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--brand-green)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}
           >
             ↗ {item}
           </button>
         ))}
-
       </div>
-
 
       {/* Tabs */}
-      <div className="flex gap-6 border-b mt-6">
-
-        <button
-          onClick={() => setActiveTab("category")}
-          className={`pb-2 text-sm font-medium
-            ${activeTab === "category"
-              ? "border-b-2 border-green-500 text-black"
-              : "text-gray-500"
-            }`}
-        >
-          Khám phá theo Thể loại
-        </button>
-
-        <button
-          onClick={() => setActiveTab("city")}
-          className={`pb-2 text-sm font-medium
-            ${activeTab === "city"
-              ? "border-b-2 border-green-500 text-black"
-              : "text-gray-500"
-            }`}
-        >
-          Khám phá theo Thành phố
-        </button>
-
+      <div style={{ display: 'flex', gap: '20px', borderBottom: '1px solid var(--border-subtle)', marginBottom: '16px' }}>
+        {['category', 'city'].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            style={{
+              paddingBottom: '8px',
+              fontSize: '13px',
+              fontWeight: 600,
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === tab ? '2px solid var(--brand-green)' : '2px solid transparent',
+              color: activeTab === tab ? 'var(--brand-green)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              fontFamily: 'Inter, sans-serif',
+              transition: 'all 0.2s',
+            }}
+          >
+            {tab === 'category' ? 'Khám phá theo Thể loại' : 'Khám phá theo Thành phố'}
+          </button>
+        ))}
       </div>
 
-
-      {/* Category */}
-      {activeTab === "category" && (
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5">
-
+      {/* Category grid */}
+      {activeTab === 'category' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
           {categories.map((cat) => (
-
             <button
               key={cat.name}
-              onClick={() => {
-                onClose()
-                navigate(`/search?${cat.queryPath}`)
+              onClick={() => { onClose(); navigate(`/search?${cat.queryPath}`); }}
+              style={{
+                position: 'relative',
+                height: '80px',
+                borderRadius: '10px',
+                overflow: 'hidden',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
               }}
-              className="relative h-24 rounded-xl overflow-hidden group"
             >
-
-              <img
-                src={cat.image}
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition"
+              <img src={cat.image} alt={cat.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.3s' }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
               />
-
-              <div className="absolute inset-0 bg-black/30" />
-
-              <span className="absolute bottom-2 left-3 text-white text-sm font-medium">
+              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
+              <span style={{ position: 'absolute', bottom: '8px', left: '10px', color: 'white', fontSize: '12px', fontWeight: 600 }}>
                 {cat.name}
               </span>
-
             </button>
-
           ))}
-
         </div>
-
       )}
 
-
-      {/* Cities */}
-      {activeTab === "city" && (
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5">
-
+      {/* City grid */}
+      {activeTab === 'city' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
           {cities.map((city) => (
-
             <button
               key={city.name}
-              onClick={() => {
-                onClose()
-                navigate(`/search?${city.queryPath}`)
+              onClick={() => { onClose(); navigate(`/search?${city.queryPath}`); }}
+              style={{
+                position: 'relative',
+                height: '80px',
+                borderRadius: '10px',
+                overflow: 'hidden',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
               }}
-              className="relative h-24 rounded-xl overflow-hidden group"
             >
-
-              <img
-                src={city.image}
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition"
+              <img src={city.image} alt={city.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.3s' }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
               />
-
-              <div className="absolute inset-0 bg-black/30" />
-
-              <span className="absolute bottom-2 left-3 text-white text-sm font-medium">
+              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
+              <span style={{ position: 'absolute', bottom: '8px', left: '10px', color: 'white', fontSize: '12px', fontWeight: 600 }}>
                 {city.name}
               </span>
-
             </button>
-
           ))}
-
         </div>
-
       )}
 
-
-      {/* Recommended */}
-      <div className="mt-8 rounded-xl border border-dashed border-gray-300 bg-white/60 p-5 text-center text-gray-500">
-        <h3 className="font-semibold mb-2 text-gray-800">Gợi ý từ database</h3>
-        <p className="text-sm">Phần gợi ý này chỉ hiển thị dữ liệu thật từ API khi có sự kiện được publish.</p>
+      {/* Info note */}
+      <div style={{
+        marginTop: '16px',
+        borderRadius: '10px',
+        border: '1px dashed var(--border-medium)',
+        background: 'var(--bg-elevated)',
+        padding: '14px 18px',
+        textAlign: 'center',
+      }}>
+        <h3 style={{ fontWeight: 600, marginBottom: '4px', color: 'var(--text-secondary)', fontSize: '13px' }}>Gợi ý từ database</h3>
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
+          Phần gợi ý này chỉ hiển thị dữ liệu thật từ API khi có sự kiện được publish.
+        </p>
       </div>
 
     </div>

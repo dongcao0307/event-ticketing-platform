@@ -3,114 +3,141 @@ import { Phone, Mail, MapPin, Facebook, Instagram, Linkedin, Link2 } from 'lucid
 
 const Footer = () => {
   return (
-    <footer className="w-full font-sans text-[13px] leading-relaxed">
-      {/* --- PHẦN TRÊN: Thông tin & Liên kết (Nền Xám Xanh) --- */}
-      <div className="bg-[#383d47] text-[#9ca3af] py-12 px-4 md:px-10">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10">
-          
-          {/* CỘT 1: Thông tin liên hệ */}
+    <footer style={{ width: '100%', fontFamily: 'Inter, sans-serif', fontSize: '13px', lineHeight: 1.7 }}>
+
+      {/* ─── TOP SECTION ─── */}
+      <div className="tb-footer-top" style={{ padding: '48px 20px' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '40px' }}>
+
+          {/* Column 1: Contact info */}
           <div>
-            <div className="mb-10">
-              <h4 className="text-white font-bold mb-4">Hotline</h4>
-              <div className="flex items-center gap-2 mb-1">
-                <Phone size={14} />
+            <div style={{ marginBottom: '32px' }}>
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: 700, marginBottom: '10px', fontSize: '13px' }}>Hotline</h4>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                <Phone size={13} />
                 <span>Thứ 2 - Chủ Nhật (8:00 - 23:00)</span>
               </div>
-              <div className="text-[#26bc71] font-bold text-lg mb-6">1900.6408</div>
+              <div style={{ color: 'var(--brand-green)', fontWeight: 700, fontSize: '17px', marginBottom: '20px' }}>1900.6408</div>
 
-              <h4 className="text-white font-bold mb-4">Email</h4>
-              <div className="flex items-center gap-2 mb-6">
-                <Mail size={14} />
-                <a href="mailto:support@ticketbox.vn" className="hover:text-white transition">
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: 700, marginBottom: '8px', fontSize: '13px' }}>Email</h4>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', marginBottom: '20px' }}>
+                <Mail size={13} />
+                <a href="mailto:support@ticketbox.vn" style={{ color: 'var(--text-muted)', textDecoration: 'none', transition: 'color 0.2s' }}
+                  onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+                  onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+                >
                   support@ticketbox.vn
                 </a>
               </div>
 
-              <h4 className="text-white font-bold mb-4">Văn phòng chính</h4>
-              <div className="flex gap-2">
-                <MapPin size={14} className="shrink-0 mt-1" />
-                <span>Tầng 12, Tòa nhà Viettel, 285 Cách Mạng Tháng Tám, Phường<br/>12, Quận 10, TP. Hồ Chí Minh</span>
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: 700, marginBottom: '8px', fontSize: '13px' }}>Văn phòng chính</h4>
+              <div style={{ display: 'flex', gap: '6px', color: 'var(--text-muted)' }}>
+                <MapPin size={13} style={{ flexShrink: 0, marginTop: '3px' }} />
+                <span>Tầng 12, Tòa nhà Viettel, 285 Cách Mạng Tháng Tám, Phường 12, Quận 10, TP. Hồ Chí Minh</span>
               </div>
             </div>
 
-            {/* App Box 1 */}
+            {/* App downloads */}
             <div>
-              <h4 className="text-white font-bold mb-4">Ứng dụng Ticketbox</h4>
-              <div className="flex flex-col gap-3 w-36">
-                <button className="flex items-center gap-2 bg-black border border-gray-600 rounded px-3 py-1.5 hover:border-gray-400 transition">
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Google Play" className="h-6" />
-                </button>
-                <button className="flex items-center gap-2 bg-black border border-gray-600 rounded px-3 py-1.5 hover:border-gray-400 transition">
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" alt="App Store" className="h-6" />
-                </button>
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: 700, marginBottom: '10px', fontSize: '13px' }}>Ứng dụng Ticketbox</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '144px' }}>
+                {['Google_Play_Store_badge_EN', 'Download_on_the_App_Store_Badge'].map((badge, i) => (
+                  <button key={i} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: '#111',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: '6px',
+                    padding: '6px 10px',
+                    cursor: 'pointer',
+                    transition: 'border-color 0.2s',
+                  }}
+                    onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--border-medium)'}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-subtle)'}
+                  >
+                    <img
+                      src={`https://upload.wikimedia.org/wikipedia/commons/${i === 0 ? '7/78/Google_Play_Store_badge_EN.svg' : '3/3c/Download_on_the_App_Store_Badge.svg'}`}
+                      alt={i === 0 ? 'Google Play' : 'App Store'}
+                      style={{ height: '22px' }}
+                    />
+                  </button>
+                ))}
               </div>
             </div>
           </div>
 
-          {/* CỘT 2: Dành cho Khách hàng & Ban tổ chức */}
+          {/* Column 2: For customers & organizers */}
           <div>
-            <div className="mb-10">
-              <h4 className="text-white font-bold mb-4">Dành cho Khách hàng</h4>
-              <a href="#" className="block hover:text-white transition mb-6">Điều khoản sử dụng cho khách hàng</a>
-
-              <h4 className="text-white font-bold mb-4">Dành cho Ban Tổ chức</h4>
-              <a href="#" className="block hover:text-white transition">Điều khoản sử dụng cho ban tổ chức</a>
+            <div style={{ marginBottom: '28px' }}>
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: 700, marginBottom: '10px', fontSize: '13px' }}>Dành cho Khách hàng</h4>
+              <FooterLink href="#">Điều khoản sử dụng cho khách hàng</FooterLink>
+            </div>
+            <div style={{ marginBottom: '28px' }}>
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: 700, marginBottom: '10px', fontSize: '13px' }}>Dành cho Ban Tổ chức</h4>
+              <FooterLink href="#">Điều khoản sử dụng cho ban tổ chức</FooterLink>
             </div>
 
-            {/* App Box 2 */}
-            <div className="mt-[112px]"> {/* Đẩy phần này xuống ngang hàng với app box bên kia */}
-              <h4 className="text-white font-bold mb-4">Ứng dụng check-in cho Ban Tổ chức</h4>
-              <div className="flex flex-col gap-3 w-36">
-                <button className="flex items-center gap-2 bg-black border border-gray-600 rounded px-3 py-1.5 hover:border-gray-400 transition">
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Google Play" className="h-6" />
-                </button>
-                <button className="flex items-center gap-2 bg-black border border-gray-600 rounded px-3 py-1.5 hover:border-gray-400 transition">
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" alt="App Store" className="h-6" />
-                </button>
+            <div style={{ marginTop: '40px' }}>
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: 700, marginBottom: '10px', fontSize: '13px' }}>Ứng dụng check-in cho Ban Tổ chức</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '144px' }}>
+                {[0, 1].map((i) => (
+                  <button key={i} style={{
+                    display: 'flex', alignItems: 'center', gap: '6px', background: '#111',
+                    border: '1px solid var(--border-subtle)', borderRadius: '6px', padding: '6px 10px', cursor: 'pointer',
+                    transition: 'border-color 0.2s',
+                  }}
+                    onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--border-medium)'}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-subtle)'}
+                  >
+                    <img
+                      src={`https://upload.wikimedia.org/wikipedia/commons/${i === 0 ? '7/78/Google_Play_Store_badge_EN.svg' : '3/3c/Download_on_the_App_Store_Badge.svg'}`}
+                      alt={i === 0 ? 'Google Play' : 'App Store'}
+                      style={{ height: '22px' }}
+                    />
+                  </button>
+                ))}
               </div>
             </div>
           </div>
 
-          {/* CỘT 3: Về công ty & Mạng xã hội */}
+          {/* Column 3: Company & Social */}
           <div>
-            <div className="mb-10">
-              <h4 className="text-white font-bold mb-4">Về công ty chúng tôi</h4>
-              <ul className="flex flex-col gap-3">
-                <li><a href="#" className="hover:text-white transition">Quy chế hoạt động</a></li>
-                <li><a href="#" className="hover:text-white transition">Chính sách bảo mật thông tin</a></li>
-                <li><a href="#" className="hover:text-white transition">Cơ chế giải quyết tranh chấp/ khiếu nại</a></li>
-                <li><a href="#" className="hover:text-white transition">Chính sách bảo mật thanh toán</a></li>
-                <li><a href="#" className="hover:text-white transition">Chính sách đổi trả và kiểm hàng</a></li>
-                <li><a href="#" className="hover:text-white transition">Điều kiện vận chuyển và giao nhận</a></li>
-                <li><a href="#" className="hover:text-white transition">Phương thức thanh toán</a></li>
+            <div style={{ marginBottom: '28px' }}>
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: 700, marginBottom: '10px', fontSize: '13px' }}>Về công ty chúng tôi</h4>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {[
+                  'Quy chế hoạt động',
+                  'Chính sách bảo mật thông tin',
+                  'Cơ chế giải quyết tranh chấp/ khiếu nại',
+                  'Chính sách bảo mật thanh toán',
+                  'Chính sách đổi trả và kiểm hàng',
+                  'Điều kiện vận chuyển và giao nhận',
+                  'Phương thức thanh toán',
+                ].map((label) => (
+                  <li key={label}><FooterLink href="#">{label}</FooterLink></li>
+                ))}
               </ul>
             </div>
 
-            <div className="mt-8">
-              <h4 className="text-white font-bold mb-4">Follow us</h4>
-              <div className="flex items-center gap-2 mb-8 text-white">
-                <a href="#" className="w-8 h-8 rounded-full bg-[#1877F2] flex items-center justify-center hover:opacity-80 transition">
-                  <Facebook size={16} fill="white" stroke="none" />
-                </a>
-                <a href="#" className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] flex items-center justify-center hover:opacity-80 transition">
-                  <Instagram size={16} />
-                </a>
-                <a href="#" className="w-8 h-8 rounded-full bg-black flex items-center justify-center hover:opacity-80 transition border border-gray-600">
-                  {/* Icon tiktok tạm dùng icon Link */}
-                  <span className="font-bold text-white text-[10px]">TikTok</span> 
-                </a>
-                <a href="#" className="w-8 h-8 rounded-full bg-[#333] flex items-center justify-center hover:opacity-80 transition">
-                  <Link2 size={16} />
-                </a>
-                <a href="#" className="w-8 h-8 rounded-full bg-[#0A66C2] flex items-center justify-center hover:opacity-80 transition">
-                  <Linkedin size={16} fill="white" stroke="none" />
-                </a>
+            <div style={{ marginBottom: '24px' }}>
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: 700, marginBottom: '10px', fontSize: '13px' }}>Follow us</h4>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <SocialBtn bg="#1877F2"><Facebook size={15} fill="white" stroke="none" /></SocialBtn>
+                <SocialBtn bg="linear-gradient(135deg, #f9ce34, #ee2a7b, #6228d7)"><Instagram size={15} /></SocialBtn>
+                <SocialBtn bg="#000" border>
+                  <span style={{ fontSize: '9px', fontWeight: 800, color: 'white' }}>TikTok</span>
+                </SocialBtn>
+                <SocialBtn bg="#333"><Link2 size={15} /></SocialBtn>
+                <SocialBtn bg="#0A66C2"><Linkedin size={15} fill="white" stroke="none" /></SocialBtn>
               </div>
+            </div>
 
-              <h4 className="text-white font-bold mb-4">Ngôn ngữ</h4>
-              <div className="flex gap-2">
-                <img src="https://flagcdn.com/w40/vn.png" alt="VN" className="w-8 h-5 object-cover cursor-pointer hover:opacity-80" />
-                <img src="https://flagcdn.com/w40/gb.png" alt="UK" className="w-8 h-5 object-cover cursor-pointer hover:opacity-80" />
+            <div>
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: 700, marginBottom: '8px', fontSize: '13px' }}>Ngôn ngữ</h4>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <img src="https://flagcdn.com/w40/vn.png" alt="VN" style={{ width: '32px', height: '22px', objectFit: 'cover', cursor: 'pointer', borderRadius: '3px', opacity: 0.9 }} />
+                <img src="https://flagcdn.com/w40/gb.png" alt="UK" style={{ width: '32px', height: '22px', objectFit: 'cover', cursor: 'pointer', borderRadius: '3px', opacity: 0.6 }} />
               </div>
             </div>
           </div>
@@ -118,48 +145,79 @@ const Footer = () => {
         </div>
       </div>
 
-      {/* --- PHẦN DƯỚI: Bản quyền & Thông tin pháp lý (Nền Đen) --- */}
-      <div className="bg-[#1e1e1e] py-8 px-4 md:px-10 text-[#888]">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start gap-8">
-          
-          {/* Cột trái */}
+      {/* ─── BOTTOM SECTION ─── */}
+      <div className="tb-footer-bottom" style={{ padding: '28px 20px' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '24px' }}>
+
           <div>
-            <div className="flex items-baseline gap-1 mb-2">
-              <h2 className="text-white text-2xl font-bold tracking-tighter">ticketbox</h2>
-              <span className="text-xs italic">by</span>
-              <span className="text-white font-bold text-sm">VNPAY</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '6px' }}>
+              <h2 style={{ color: 'white', fontSize: '22px', fontWeight: 900, letterSpacing: '-1px', margin: 0 }}>ticketbox</h2>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic' }}>by</span>
+              <span style={{ color: 'white', fontWeight: 700, fontSize: '13px' }}>VNPAY</span>
             </div>
-            <p className="mb-1">Nền tảng quản lý và phân phối vé sự kiện hàng đầu Việt Nam</p>
-            <p>© 2017</p>
+            <p style={{ color: 'var(--text-muted)', margin: '0 0 2px' }}>Nền tảng quản lý và phân phối vé sự kiện hàng đầu Việt Nam</p>
+            <p style={{ color: 'var(--text-muted)', margin: 0 }}>© 2017</p>
           </div>
 
-          {/* Cột giữa */}
-          <div className="md:max-w-sm">
-            <p className="mb-1">Công ty TNHH Ticketbox</p>
-            <p className="mb-1">Đại diện theo pháp luật: Phạm Thị Hương</p>
-            <p>Giấy chứng nhận đăng ký doanh nghiệp số: 0313605444, cấp lần đầu ngày 07/01/2016 bởi Sở Kế Hoạch và Đầu Tư TP. Hồ Chí Minh</p>
+          <div style={{ maxWidth: '380px' }}>
+            <p style={{ color: 'var(--text-muted)', margin: '0 0 4px' }}>Công ty TNHH Ticketbox</p>
+            <p style={{ color: 'var(--text-muted)', margin: '0 0 4px' }}>Đại diện theo pháp luật: Phạm Thị Hương</p>
+            <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '12px' }}>
+              Giấy chứng nhận đăng ký doanh nghiệp số: 0313605444, cấp lần đầu ngày 07/01/2016 bởi Sở Kế Hoạch và Đầu Tư TP. Hồ Chí Minh
+            </p>
           </div>
 
-          {/* Cột phải: Logo Bộ Công Thương */}
-          <div className="shrink-0 mt-4 md:mt-0">
-            {/* Cấp sẵn kích thước cố định để chống giật/nháy layout */}
-            <div className="w-[130px] h-[48px]"> 
-              <img 
-                src="https://frontend.tikicdn.com/_desktop-next/static/img/footer/bo-cong-thuong-2.png" 
-                alt="Đã đăng ký Bộ Công Thương" 
-                className="w-full h-full object-contain cursor-pointer"
-                onError={(e) => {
-                  e.currentTarget.onerror = null; // Chặn đứng vòng lặp vô hạn
-                  e.currentTarget.src = "https://theme.hstatic.net/1000026602/1001190518/14/logo-bct.png";
-                }}
+          <div style={{ flexShrink: 0 }}>
+            <div style={{ width: '130px', height: '48px' }}>
+              <img
+                src="https://frontend.tikicdn.com/_desktop-next/static/img/footer/bo-cong-thuong-2.png"
+                alt="Đã đăng ký Bộ Công Thương"
+                style={{ width: '100%', height: '100%', objectFit: 'contain', cursor: 'pointer', filter: 'brightness(0.85)' }}
+                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://theme.hstatic.net/1000026602/1001190518/14/logo-bct.png'; }}
               />
             </div>
           </div>
 
         </div>
       </div>
+
     </footer>
   );
 };
 
 export default Footer;
+
+// ─── Small helper components ─────────────────────────────────
+const FooterLink = ({ href, children }) => (
+  <a
+    href={href}
+    style={{ color: 'var(--text-muted)', textDecoration: 'none', display: 'block', transition: 'color 0.2s' }}
+    onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+    onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+  >
+    {children}
+  </a>
+);
+
+const SocialBtn = ({ bg, border, children }) => (
+  <a
+    href="#"
+    style={{
+      width: '32px',
+      height: '32px',
+      borderRadius: '50%',
+      background: bg,
+      border: border ? '1px solid var(--border-medium)' : 'none',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: 'white',
+      textDecoration: 'none',
+      transition: 'opacity 0.2s, transform 0.2s',
+    }}
+    onMouseEnter={e => { e.currentTarget.style.opacity = '0.75'; e.currentTarget.style.transform = 'scale(1.1)'; }}
+    onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'scale(1)'; }}
+  >
+    {children}
+  </a>
+);

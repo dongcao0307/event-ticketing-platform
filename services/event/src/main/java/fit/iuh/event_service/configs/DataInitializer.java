@@ -6,6 +6,7 @@ import fit.iuh.event_service.models.enums.EventStatus;
 import fit.iuh.event_service.repositories.EventRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 @Configuration
 @RequiredArgsConstructor
 @Slf4j
+@ConditionalOnProperty(name = "app.init-data.enabled", havingValue = "true", matchIfMissing = false)
 public class DataInitializer {
 
     private final EventRepository eventRepository;

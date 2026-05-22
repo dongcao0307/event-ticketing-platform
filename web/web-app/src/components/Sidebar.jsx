@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
-import { Star } from 'lucide-react';
+import { NavLink, Link } from 'react-router-dom';
+import { Star, ArrowLeft, Home } from 'lucide-react';
 
 const Sidebar = () => {
   const [isLangOpen, setIsLangOpen] = useState(false);
@@ -24,6 +24,38 @@ const Sidebar = () => {
           Organizer Center
         </h1>
       </div>
+
+      {/* NÚT VỀ TRANG CHỦ */}
+      <div className="px-4 mb-2">
+        <Link
+          to="/"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '10px 14px',
+            borderRadius: '12px',
+            background: 'rgba(38,188,113,0.1)',
+            border: '1px solid rgba(38,188,113,0.25)',
+            textDecoration: 'none',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = 'rgba(38,188,113,0.2)';
+            e.currentTarget.style.borderColor = 'rgba(38,188,113,0.55)';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'rgba(38,188,113,0.1)';
+            e.currentTarget.style.borderColor = 'rgba(38,188,113,0.25)';
+          }}
+        >
+          <ArrowLeft size={15} style={{ color: '#26bc71', flexShrink: 0 }} />
+          <span style={{ color: '#26bc71', fontSize: '13px', fontWeight: 600, flex: 1 }}>Về trang chủ</span>
+          <Home size={13} style={{ color: '#26bc71', opacity: 0.6 }} />
+        </Link>
+      </div>
+
+      <div className="mx-5 mb-3 border-t border-white/5" />
 
       {/* PHẦN 2: Menu List */}
       <nav className="flex-1 px-4 flex flex-col gap-2 overflow-y-auto">

@@ -8,51 +8,46 @@ const EventTabsSection = ({ weekendEvents = [], monthEvents = [] }) => {
   const events = activeTab === "weekend" ? weekendEvents : monthEvents;
 
   return (
-    <section className="max-w-7xl mx-auto px-4 py-10">
-
-      {/* HEADER */}
-      <div className="flex items-center justify-between">
-
-        {/* TABS */}
-        <div className="flex gap-6">
+    <section className="tb-section">
+      {/* Header with Tabs */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', gap: '24px' }}>
           <button
             onClick={() => setActiveTab("weekend")}
-            className={`font-semibold pb-2 border-b-2 transition ${
-              activeTab === "weekend"
-                ? "border-[#26bc71] text-[#26bc71]"
-                : "border-transparent text-gray-500"
-            }`}
+            className={`tb-tab-btn ${activeTab === "weekend" ? "active" : ""}`}
           >
-            Cuối tuần này
+            🗓️ Cuối tuần này
           </button>
-
           <button
             onClick={() => setActiveTab("month")}
-            className={`font-semibold pb-2 border-b-2 transition ${
-              activeTab === "month"
-                ? "border-[#26bc71] text-[#26bc71]"
-                : "border-transparent text-gray-500"
-            }`}
+            className={`tb-tab-btn ${activeTab === "month" ? "active" : ""}`}
           >
-            Tháng này
+            📅 Tháng này
           </button>
         </div>
 
-        <a
-          href="#"
-          className="flex items-center gap-1 font-medium text-[#26bc71] hover:underline"
-        >
-          Xem thêm <ChevronRight size={18} />
+        <a href="#" className="tb-see-more">
+          Xem thêm <ChevronRight size={15} />
         </a>
       </div>
 
-      {/* EVENTS */}
-      <div className="mt-6 flex gap-4 overflow-x-auto pb-2 hide-scrollbar">
-        {events.map((event) => (
-          <EventCard key={event.id} {...event} />
-        ))}
+      {/* Events */}
+      <div
+        style={{ display: 'flex', gap: '14px', overflowX: 'auto', paddingBottom: '8px' }}
+        className="hide-scrollbar"
+      >
+        {events.length > 0 ? (
+          events.map((event) => (
+            <EventCard key={event.id} {...event} />
+          ))
+        ) : (
+          <div className="tb-empty-state">
+            <div style={{ fontSize: '36px' }}>📅</div>
+            <p className="tb-empty-state-title">Chưa có sự kiện nào</p>
+            <p className="tb-empty-state-desc">Hiện chưa có sự kiện trong khoảng thời gian này.</p>
+          </div>
+        )}
       </div>
-
     </section>
   );
 };

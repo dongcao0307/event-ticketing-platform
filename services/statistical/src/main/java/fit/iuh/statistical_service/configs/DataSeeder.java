@@ -5,6 +5,7 @@ import fit.iuh.statistical_service.models.DailyEventSales;
 import fit.iuh.statistical_service.repositories.CustomerMetricRepository;
 import fit.iuh.statistical_service.repositories.DailyEventSalesRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -14,6 +15,7 @@ import java.util.Random;
 
 @Component
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "app.init-data.enabled", havingValue = "true", matchIfMissing = false)
 public class DataSeeder implements CommandLineRunner {
 
     private final DailyEventSalesRepository dailyRepository;

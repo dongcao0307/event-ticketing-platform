@@ -18,79 +18,98 @@ const ResaleCarousel = ({ events = [] }) => {
 
   const prev = () => {
     setIndex((prev) =>
-      prev === 0 ? events.length - VISIBLE_ITEMS : prev - 1
+      prev === 0 ? Math.max(0, events.length - VISIBLE_ITEMS) : prev - 1
     );
   };
 
   useEffect(() => {
+    if (events.length === 0) return;
     const timer = setInterval(next, 4000);
     return () => clearInterval(timer);
   }, [events]);
 
   return (
-    <section className="max-w-7xl mx-auto px-4 py-10">
-      <div className="flex gap-6">
+    <section className="tb-section">
+      <div style={{ display: 'flex', gap: '20px', alignItems: 'stretch' }}>
 
         {/* LEFT BANNER */}
-        <div className="relative w-[320px] min-w-[320px] rounded-3xl overflow-hidden bg-[#7ddc9a] p-6 flex flex-col justify-between">
-
+        <div className="tb-resale-banner" style={{ position: 'relative', overflow: 'hidden' }}>
           <img
             src={greenCloud}
-            className="absolute bottom-0 left-0 w-full"
+            style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', zIndex: 0, opacity: 0.6 }}
+            alt=""
+            aria-hidden="true"
           />
 
-          <div className="relative z-10">
-            <h2 className="text-3xl font-black leading-tight">
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <h2 style={{ fontSize: '26px', fontWeight: 900, color: '#fff', lineHeight: 1.2, margin: 0 }}>
               Resale <br /> Ticket
             </h2>
-
-            <div className="mt-2 inline-block bg-yellow-300 px-3 py-1 rounded-full text-sm font-bold">
+            <div style={{
+              marginTop: '10px',
+              display: 'inline-block',
+              background: '#fde047',
+              padding: '4px 12px',
+              borderRadius: '20px',
+              fontSize: '12px',
+              fontWeight: 800,
+              color: '#1a1a1a',
+            }}>
               VÉ BÁN LẠI
             </div>
           </div>
 
-          <div className="relative z-10 flex justify-center">
-            <img
-              src={dogResale}
-              className="w-36"
-            />
+          <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'center' }}>
+            <img src={dogResale} style={{ width: '120px' }} alt="Resale mascot" />
           </div>
 
-          <div className="relative z-10 text-white font-semibold cursor-pointer">
+          <div style={{ position: 'relative', zIndex: 1, color: 'rgba(255,255,255,0.9)', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>
             Xem thêm →
           </div>
         </div>
 
         {/* RIGHT CAROUSEL */}
-        <div className="flex-1 relative overflow-hidden">
+        <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+          {/* Arrow buttons */}
+          <div className="tb-resale-carousel-arrows">
+            <button
+              onClick={prev}
+              style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 10 }}
+              aria-label="Previous"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button
+              onClick={next}
+              style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 10 }}
+              aria-label="Next"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
 
-          {/* arrows */}
-          <button
-            onClick={prev}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow rounded-full p-2"
-          >
-            <ChevronLeft />
-          </button>
-
-          <button
-            onClick={next}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow rounded-full p-2"
-          >
-            <ChevronRight />
-          </button>
-
-          {/* carousel track */}
+          {/* Carousel track */}
           <div
-            className="flex transition-transform duration-500"
             style={{
-              transform: `translateX(-${index * 272}px)`
+              display: 'flex',
+              transition: 'transform 0.5s ease',
+              transform: `translateX(-${index * 234}px)`,
+              gap: '14px',
+              padding: '0 36px',
             }}
           >
-            {events.map((event) => (
-              <div key={event.id} className="mr-4">
-                <EventCard {...event} />
+            {events.length > 0 ? (
+              events.map((event) => (
+                <div key={event.id} style={{ flexShrink: 0 }}>
+                  <EventCard {...event} />
+                </div>
+              ))
+            ) : (
+              <div className="tb-empty-state" style={{ minWidth: '300px' }}>
+                <div style={{ fontSize: '36px' }}>🎫</div>
+                <p className="tb-empty-state-title">Chưa có vé bán lại</p>
               </div>
-            ))}
+            )}
           </div>
         </div>
 

@@ -26,31 +26,21 @@ const Header = () => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
       }
-
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setIsSearchOpen(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   // Listen for openLoginModal event from other components
   useEffect(() => {
-    const handleOpenLoginModal = () => {
-      setIsLoginOpen(true);
-    };
-
+    const handleOpenLoginModal = () => setIsLoginOpen(true);
     window.addEventListener('openLoginModal', handleOpenLoginModal);
-    return () => {
-      window.removeEventListener('openLoginModal', handleOpenLoginModal);
-    };
+    return () => window.removeEventListener('openLoginModal', handleOpenLoginModal);
   }, []);
 
-  // Hàm xử lý Đăng xuất
   const handleLogout = async () => {
     await authService.logout();
     setIsLoggedIn(false);
@@ -58,43 +48,45 @@ const Header = () => {
     setIsDropdownOpen(false);
   };
 
-  const openLogin = () => {
-    setIsRegisterOpen(false);
-    setIsLoginOpen(true);
-  };
+  const openLogin = () => { setIsRegisterOpen(false); setIsLoginOpen(true); };
+  const openRegister = () => { setIsLoginOpen(false); setIsRegisterOpen(true); };
 
-  const openRegister = () => {
-    setIsLoginOpen(false);
-    setIsRegisterOpen(true);
-  };
-
-  // Handle create event button - require authentication
   const handleCreateEventClick = () => {
-    if (!isLoggedIn) {
-      setIsLoginOpen(true);
-      return;
-    }
+    if (!isLoggedIn) { setIsLoginOpen(true); return; }
     navigate('/organizer');
   };
 
   return (
     <>
-      <header className="bg-[#26bc71] py-3 px-4 flex items-center justify-between sticky top-0 z-50 font-sans text-white">
-        <div className="flex items-center justify-between max-w-7xl mx-auto w-full gap-4">
+      {/* ================================================================
+          HEADER - Green gradient background, Ticketbox style
+          ================================================================ */}
+      <header className="tb-header" style={{ padding: '10px 16px' }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          maxWidth: '1280px',
+          margin: '0 auto',
+          width: '100%',
+          gap: '16px',
+        }}>
 
-          {/* Cụm Bên Trái: Logo */}
-          <div className="flex items-center shrink-0">
-            <Link to="/" className="flex items-center gap-1 cursor-pointer">
-              <span className="text-2xl font-bold tracking-tighter">ticketbox</span>
-              <span className="text-lg">🌸</span>
+          {/* Logo */}
+          <div style={{ flexShrink: 0 }}>
+            <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none' }}>
+              <span style={{ fontSize: '22px', fontWeight: 900, color: 'white', letterSpacing: '-1px', fontFamily: 'Inter, sans-serif' }}>
+                ticketbox
+              </span>
+              <span style={{ fontSize: '16px' }}>🌸</span>
             </Link>
           </div>
 
-          {/* Cụm Giữa: Thanh tìm kiếm */}
-          <div className="flex-1 max-w-2xl mx-4 relative" ref={searchRef}>
-            <div className="relative flex items-center bg-white rounded-md overflow-hidden h-10 shadow-sm">
-              <div className="pl-3 text-gray-400">
-                <Search size={18} />
+          {/* Search bar */}
+          <div style={{ flex: 1, maxWidth: '520px', position: 'relative' }} ref={searchRef}>
+            <div className="tb-search-bar" style={{ display: 'flex', alignItems: 'center', height: '38px' }}>
+              <div style={{ paddingLeft: '14px', color: '#9ca3af', display: 'flex', alignItems: 'center' }}>
+                <Search size={16} />
               </div>
               <input
                 type="text"
@@ -102,16 +94,32 @@ const Header = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setIsSearchOpen(true)}
                 placeholder="Bạn tìm gì hôm nay?"
-                className="w-full bg-transparent py-2 px-3 text-gray-700 outline-none text-sm"
+                style={{
+                  flex: 1,
+                  background: 'transparent',
+                  border: 'none',
+                  outline: 'none',
+                  padding: '0 10px',
+                  fontSize: '13px',
+                  color: '#374151',
+                  fontFamily: 'Inter, sans-serif',
+                }}
               />
-              <div className="h-5 w-[1px] bg-gray-200"></div>
+              <div style={{ width: '1px', height: '18px', background: '#e5e7eb' }} />
               <button
                 type="button"
-                onClick={() => {
-                  setIsSearchOpen(false)
-                  navigate(`/search?find=${searchQuery}`)
+                onClick={() => { setIsSearchOpen(false); navigate(`/search?find=${searchQuery}`); }}
+                style={{
+                  padding: '0 16px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: '#26bc71',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  fontFamily: 'Inter, sans-serif',
                 }}
-                className="px-5 text-[#555] hover:text-[#26bc71] text-sm font-medium transition-colors whitespace-nowrap cursor-pointer"
               >
                 Tìm kiếm
               </button>
@@ -120,104 +128,140 @@ const Header = () => {
             {isSearchOpen && (
               <SearchOverlay
                 query={searchQuery}
-                onSelectSuggestion={(value) => {
-                  setSearchQuery(value);
-                  setIsSearchOpen(false);
-                }}
+                onSelectSuggestion={(value) => { setSearchQuery(value); setIsSearchOpen(false); }}
                 onClose={() => setIsSearchOpen(false)}
               />
             )}
           </div>
 
-          {/* Cụm Bên Phải */}
-          <div className="flex items-center gap-6 text-sm font-medium whitespace-nowrap shrink-0">
-            <button 
+          {/* Right actions */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '18px',
+            fontSize: '13px',
+            fontWeight: 500,
+            color: 'white',
+            flexShrink: 0,
+          }}>
+            <button
               onClick={handleCreateEventClick}
-              className="border border-white/80 rounded-full px-5 py-1.5 hover:bg-white/20 transition-colors cursor-pointer"
-              title={isLoggedIn ? "Tạo sự kiện mới" : "Đăng nhập để tạo sự kiện"}
+              className="tb-header-btn"
+              title={isLoggedIn ? 'Tạo sự kiện mới' : 'Đăng nhập để tạo sự kiện'}
             >
               Tạo sự kiện
             </button>
 
             <div
               onClick={() => navigate('/my-account/tickets')}
-              className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
-              <Ticket size={18} />
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', opacity: 0.9, transition: 'opacity 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+              onMouseLeave={e => e.currentTarget.style.opacity = '0.9'}
+            >
+              <Ticket size={16} />
               <span>Vé của tôi</span>
             </div>
 
-            {/* === KIỂM TRA ĐĂNG NHẬP ĐỂ ĐỔI GIAO DIỆN === */}
             {!isLoggedIn ? (
               <button
                 onClick={() => setIsLoginOpen(true)}
-                className="cursor-pointer hover:opacity-80 transition-opacity font-medium outline-none"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'white',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '13px',
+                  fontFamily: 'Inter, sans-serif',
+                  opacity: 0.9,
+                  transition: 'opacity 0.2s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                onMouseLeave={e => e.currentTarget.style.opacity = '0.9'}
               >
                 Đăng nhập | Đăng ký
               </button>
             ) : (
-              // CỤM MENU TÀI KHOẢN KHI ĐÃ ĐĂNG NHẬP
-              <div className="relative" ref={dropdownRef}>
+              <div style={{ position: 'relative' }} ref={dropdownRef}>
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity outline-none"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: 'none',
+                    border: 'none',
+                    color: 'white',
+                    cursor: 'pointer',
+                    fontFamily: 'Inter, sans-serif',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                  }}
                 >
-                  {/* Avatar hình chú chó */}
-                  <div className="w-7 h-7 bg-white rounded-full flex items-center justify-center overflow-hidden border border-white/40">
+                  <div style={{
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                    border: '1.5px solid rgba(255,255,255,0.5)',
+                  }}>
                     <img
                       src="https://cdn-icons-png.flaticon.com/512/616/616554.png"
                       alt="Avatar"
-                      className="w-5 h-5 object-contain opacity-80"
+                      style={{ width: '20px', height: '20px', objectFit: 'contain', opacity: 0.85 }}
                     />
                   </div>
-                  <span className="font-medium">Tài khoản</span>
-                  <ChevronDown size={14} className={`transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                  <span>Tài khoản</span>
+                  <ChevronDown size={13} style={{ transition: 'transform 0.2s', transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
                 </button>
 
-                {/* MENU XỔ XUỐNG */}
                 <DropDownMenu isDropdownOpen={isDropdownOpen} handleLogout={handleLogout} onClose={() => setIsDropdownOpen(false)} />
               </div>
             )}
 
-            {/* Cục Admin */}
             {isAdmin && (
-              <Link to="/admin" className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity">
-                <User size={18} />
+              <Link to="/admin" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'white', textDecoration: 'none', opacity: 0.9 }}>
+                <User size={16} />
                 <span>Admin</span>
               </Link>
             )}
 
-            {/* Nút chọn Quốc gia */}
-            <div className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity">
-              <div className="w-5 h-5 rounded-full bg-[#da251d] flex items-center justify-center text-yellow-300 text-[10px] shadow-sm">
-                ★
-              </div>
-              <ChevronDown size={14} />
+            {/* Vietnam flag */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', opacity: 0.9 }}>
+              <div style={{
+                width: '20px',
+                height: '20px',
+                borderRadius: '50%',
+                background: '#da251d',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '10px',
+                color: '#fde047',
+              }}>★</div>
+              <ChevronDown size={13} />
             </div>
           </div>
 
         </div>
       </header>
 
-      {/* Gọi Modal Đăng Nhập & Đăng Ký */}
       <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} onSwitchToRegister={openRegister} />
       <RegisterModal isOpen={isRegisterOpen} onClose={() => setIsRegisterOpen(false)} onSwitchToLogin={openLogin} />
     </>
   );
-}
+};
 
 export default Header;
 
+// ===================================================================
 const accountMenuItems = [
-  {
-    icon: User,
-    label: "Tài khoản của tôi",
-    to: "/my-account",
-  },
-  {
-    icon: Ticket,
-    label: "Vé của tôi",
-    to: "/my-account/tickets",
-  },
+  { icon: User, label: 'Tài khoản của tôi', to: '/my-account' },
+  { icon: Ticket, label: 'Vé của tôi', to: '/my-account/tickets' },
 ];
 
 const DropDownMenu = ({ isDropdownOpen, handleLogout, onClose }) => {
@@ -228,63 +272,86 @@ const DropDownMenu = ({ isDropdownOpen, handleLogout, onClose }) => {
   if (!isDropdownOpen) return null;
 
   return (
-    <div className="absolute right-0 top-full mt-3 w-64 bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-
-      {/* USER INFO */}
-      <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
-        <p className="text-xs text-gray-400">Tài khoản hiện tại</p>
-        <p className="text-sm font-bold text-gray-800 truncate">{user?.email || 'User'}</p>
-        <p className="text-xs text-gray-500 mt-1">{roleLabel}</p>
+    <div
+      className="tb-dropdown"
+      style={{
+        position: 'absolute',
+        right: 0,
+        top: 'calc(100% + 10px)',
+        width: '240px',
+        overflow: 'hidden',
+        zIndex: 200,
+      }}
+    >
+      {/* User info */}
+      <div style={{
+        padding: '12px 16px',
+        borderBottom: '1px solid var(--border-subtle)',
+        background: 'var(--bg-elevated)',
+      }}>
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>Tài khoản hiện tại</p>
+        <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', margin: '2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {user?.email || 'User'}
+        </p>
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>{roleLabel}</p>
       </div>
 
-      {/* MENU */}
-      <div className="py-2">
-
+      {/* Menu items */}
+      <div style={{ padding: '6px' }}>
         {accountMenuItems.map((item, index) => {
           const Icon = item.icon;
-
           return (
             <NavLink
               key={index}
               to={item.to}
               onClick={onClose}
-              className={({ isActive }) =>
-                `w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded transition ${isActive ? 'bg-[#26bc71] text-black' : 'text-gray-700 hover:bg-gray-50'
-                }`
-              }
+              className={({ isActive }) => `tb-dropdown-item ${isActive ? 'active' : ''}`}
             >
-              <Icon size={18} className="text-gray-500" />
+              <Icon size={15} style={{ opacity: 0.7 }} />
               <span>{item.label}</span>
             </NavLink>
           );
         })}
 
-        {/* ADMIN MENU - Hiển thị nếu là ADMIN */}
         {userRole === 'ADMIN' && (
           <>
-            <div className="mx-2 my-2 border-t border-gray-100"></div>
+            <div style={{ margin: '4px 6px', borderTop: '1px solid var(--border-subtle)' }} />
             <NavLink
               to="/admin"
               onClick={onClose}
-              className={({ isActive }) =>
-                `w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded transition ${isActive ? 'bg-[#26bc71] text-black' : 'text-gray-700 hover:bg-gray-50'
-                }`
-              }
+              className={({ isActive }) => `tb-dropdown-item ${isActive ? 'active' : ''}`}
             >
-              <User size={18} className="text-gray-500" />
+              <User size={15} style={{ opacity: 0.7 }} />
               <span>🔧 Bảng điều khiển Admin</span>
             </NavLink>
           </>
         )}
       </div>
 
-      {/* LOGOUT */}
-      <div className="p-1.5 border-t border-gray-100">
+      {/* Logout */}
+      <div style={{ padding: '4px 6px 6px', borderTop: '1px solid var(--border-subtle)' }}>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 10px',
+            fontSize: '13px',
+            fontWeight: 500,
+            color: '#ef4444',
+            background: 'none',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontFamily: 'Inter, sans-serif',
+            transition: 'background 0.15s ease',
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'none'}
         >
-          <LogOut size={16} />
+          <LogOut size={15} />
           <span>Đăng xuất</span>
         </button>
       </div>

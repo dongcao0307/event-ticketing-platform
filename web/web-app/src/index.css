@@ -1,31 +1,66 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ===================================================================
+   TICKETBOX DARK THEME - DESIGN SYSTEM
+   =================================================================== */
+
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --brand-green: #26bc71;
+  --brand-green-dark: #1fa05f;
+  --brand-green-light: #32d583;
+  --brand-green-glow: rgba(38, 188, 113, 0.4);
+
+  --bg-primary: #121212;
+  --bg-secondary: #1a1a1a;
+  --bg-card: #1e1e1e;
+  --bg-card-hover: #252525;
+  --bg-elevated: #2a2a2a;
+  --bg-nav: #1c1c1c;
+
+  --text-primary: #f0f0f0;
+  --text-secondary: #a0a0a0;
+  --text-muted: #6b7280;
+  --text-on-brand: #ffffff;
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-medium: rgba(255, 255, 255, 0.15);
+
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ===================================================================
+   BASE RESET
+   =================================================================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
-  display: flex;
-  place-items: initial;
   min-width: 320px;
   min-height: 100vh;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 #root {
   width: 100%;
 }
 
-/* Hide scrollbar for horizontal scrollers */
+/* ===================================================================
+   SCROLLBAR UTILITIES
+   =================================================================== */
 .hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -33,4 +68,636 @@ body {
 
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* Custom thin scrollbar for content areas */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-elevated);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-green);
+}
+
+/* ===================================================================
+   HEADER STYLES
+   =================================================================== */
+.tb-header {
+  background: linear-gradient(135deg, #1a6b3c 0%, #26bc71 50%, #1a8a4a 100%);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.tb-search-bar {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 25px;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+}
+
+.tb-search-bar:focus-within {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.4);
+}
+
+.tb-header-btn {
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+  border-radius: 20px;
+  padding: 6px 16px;
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  background: transparent;
+}
+
+.tb-header-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: white;
+}
+
+/* ===================================================================
+   HERO SECTION
+   =================================================================== */
+.tb-hero-section {
+  background: linear-gradient(180deg, #0d1f17 0%, #121212 100%);
+  padding: 24px 0 32px;
+}
+
+.tb-hero-slide {
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+  transition: transform 0.3s ease;
+}
+
+.tb-hero-slide:hover {
+  transform: scale(1.005);
+}
+
+/* ===================================================================
+   CATEGORY TABS - ICON CIRCLES
+   =================================================================== */
+.tb-category-section {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 16px 0;
+}
+
+.tb-category-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  min-width: 80px;
+  transition: transform 0.2s ease;
+}
+
+.tb-category-item:hover {
+  transform: translateY(-3px);
+}
+
+.tb-category-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid transparent;
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.tb-category-circle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  transition: all 0.25s ease;
+}
+
+.tb-category-item:hover .tb-category-circle {
+  border-color: var(--brand-green);
+  box-shadow: 0 0 14px var(--brand-green-glow);
+}
+
+.tb-category-item.active .tb-category-circle {
+  border-color: var(--brand-green);
+  box-shadow: 0 0 18px var(--brand-green-glow), 0 0 6px var(--brand-green);
+}
+
+.tb-category-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.3;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.tb-category-item:hover .tb-category-label,
+.tb-category-item.active .tb-category-label {
+  color: var(--brand-green);
+}
+
+/* ===================================================================
+   MAIN CONTENT AREA
+   =================================================================== */
+.tb-main-content {
+  background: var(--bg-primary);
+  min-height: 600px;
+}
+
+/* ===================================================================
+   SECTION HEADER
+   =================================================================== */
+.tb-section {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 20px;
+}
+
+.tb-section-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.3px;
+}
+
+.tb-see-more {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand-green);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: opacity 0.2s ease;
+}
+
+.tb-see-more:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+/* ===================================================================
+   EVENT CARDS - DARK FLAT DESIGN
+   =================================================================== */
+.tb-event-card {
+  width: 220px;
+  min-width: 220px;
+  background: var(--bg-card);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.tb-event-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  border-color: var(--border-medium);
+  background: var(--bg-card-hover);
+}
+
+.tb-event-img-wrapper {
+  position: relative;
+  height: 140px;
+  background: var(--bg-elevated);
+  overflow: hidden;
+}
+
+.tb-event-img-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.tb-event-card:hover .tb-event-img-wrapper img {
+  transform: scale(1.06);
+}
+
+.tb-event-badge {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  background: var(--brand-green);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 10px;
+  letter-spacing: 0.3px;
+}
+
+.tb-event-body {
+  padding: 12px;
+}
+
+.tb-event-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.tb-event-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.tb-event-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.tb-event-meta-item svg {
+  flex-shrink: 0;
+  color: var(--brand-green);
+  opacity: 0.7;
+}
+
+.tb-event-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.tb-event-price {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--brand-green);
+}
+
+.tb-buy-btn {
+  background: transparent;
+  border: 1.5px solid var(--brand-green);
+  color: var(--brand-green);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.tb-buy-btn:hover {
+  background: var(--brand-green);
+  color: white;
+  box-shadow: 0 0 10px var(--brand-green-glow);
+}
+
+/* ===================================================================
+   EMPTY STATE
+   =================================================================== */
+.tb-empty-state {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px dashed var(--border-medium);
+  background: var(--bg-card);
+  padding: 40px 24px;
+  text-align: center;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.tb-empty-state-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.tb-empty-state-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  max-width: 400px;
+}
+
+/* ===================================================================
+   AD BANNER STRIPS
+   =================================================================== */
+.tb-ad-banner {
+  max-width: 1280px;
+  margin: 0 auto 8px;
+  padding: 0 20px;
+}
+
+.tb-ad-inner {
+  border-radius: 14px;
+  overflow: hidden;
+  padding: 20px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.tb-ad-inner:hover {
+  transform: scale(1.005);
+}
+
+.tb-ad-green {
+  background: linear-gradient(135deg, #1a5c38 0%, #26bc71 60%, #1fa05f 100%);
+}
+
+.tb-ad-orange {
+  background: linear-gradient(135deg, #b34a00 0%, #f59e0b 40%, #ef4444 100%);
+}
+
+.tb-ad-purple {
+  background: linear-gradient(135deg, #312e81 0%, #7c3aed 60%, #a855f7 100%);
+}
+
+.tb-ad-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: white;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  line-height: 1.3;
+}
+
+.tb-ad-subtitle {
+  font-size: 13px;
+  color: rgba(255,255,255,0.85);
+  margin-top: 4px;
+}
+
+.tb-ad-badge {
+  background: rgba(255,255,255,0.2);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.35);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+/* ===================================================================
+   TABS (Weekend / Month)
+   =================================================================== */
+.tb-tab-btn {
+  font-size: 15px;
+  font-weight: 600;
+  padding-bottom: 8px;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tb-tab-btn.active {
+  color: var(--brand-green);
+  border-bottom-color: var(--brand-green);
+}
+
+.tb-tab-btn:hover:not(.active) {
+  color: var(--text-secondary);
+}
+
+/* ===================================================================
+   RESALE SECTION
+   =================================================================== */
+.tb-resale-banner {
+  width: 280px;
+  min-width: 280px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(160deg, #3dcf80 0%, #1a8f50 100%);
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+}
+
+.tb-resale-carousel-arrows button {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-medium);
+  color: var(--text-primary);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tb-resale-carousel-arrows button:hover {
+  background: var(--brand-green);
+  border-color: var(--brand-green);
+  color: white;
+}
+
+/* ===================================================================
+   CITIES SECTION
+   =================================================================== */
+.tb-city-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tb-city-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+
+.tb-city-card img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.tb-city-card:hover img {
+  transform: scale(1.08);
+}
+
+.tb-city-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.15) 50%, transparent 100%);
+}
+
+.tb-city-name {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  color: white;
+  font-size: 17px;
+  font-weight: 700;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+}
+
+/* ===================================================================
+   DROPDOWN MENU (Dark)
+   =================================================================== */
+.tb-dropdown {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+}
+
+.tb-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: all 0.15s ease;
+  text-decoration: none;
+  border-radius: 6px;
+  margin: 2px 4px;
+}
+
+.tb-dropdown-item:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.tb-dropdown-item.active {
+  background: var(--brand-green);
+  color: white;
+}
+
+/* ===================================================================
+   FOOTER OVERRIDES
+   =================================================================== */
+.tb-footer-top {
+  background: #1a1a1a;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.tb-footer-bottom {
+  background: #0f0f0f;
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* ===================================================================
+   LOADING STATE
+   =================================================================== */
+.tb-loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-primary);
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tb-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-subtle);
+  border-top-color: var(--brand-green);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ===================================================================
+   ANIMATIONS & TRANSITIONS
+   =================================================================== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tb-fade-in-up {
+  animation: fadeInUp 0.4s ease forwards;
+}
+
+/* ===================================================================
+   SEARCH OVERLAY (Dark)
+   =================================================================== */
+.tb-search-overlay {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+
+/* ===================================================================
+   RESPONSIVE UTILITIES
+   =================================================================== */
+@media (max-width: 768px) {
+  .tb-event-card {
+    width: 180px;
+    min-width: 180px;
+  }
+
+  .tb-event-img-wrapper {
+    height: 120px;
+  }
+
+  .tb-section {
+    padding: 20px 12px;
+  }
+
+  .tb-ad-title {
+    font-size: 15px;
+  }
 }
