@@ -29,7 +29,7 @@ public class IdentityGrpcServiceImpl extends IdentityGrpcServiceGrpc.IdentityGrp
                     .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
 
             String email = user.getAccount() != null ? user.getAccount().getEmail() : "";
-            String userName = user.getAccount() != null ? user.getAccount().getUsername() : "";
+            String userName = user.getAccount() != null ? user.getAccount().getUserName() : "";
 
             GetAccountByUserIdResponse response = GetAccountByUserIdResponse.newBuilder()
                     .setUserId(user.getId())

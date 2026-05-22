@@ -22,8 +22,7 @@ public class ApplicationConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         return username -> accountRepository.findByEmail(username)
-                .orElseGet(() -> accountRepository.findById(username)
-                        .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy tài khoản: " + username)));
+            .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy tài khoản: " + username));
     }
 
     @Bean

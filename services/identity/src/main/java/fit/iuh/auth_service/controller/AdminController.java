@@ -3,7 +3,7 @@ package fit.iuh.auth_service.controller;
 import fit.iuh.auth_service.dto.response.ApiResponse;
 import fit.iuh.auth_service.dto.response.UserResponse;
 import fit.iuh.auth_service.entity.enums.AccountStatus;
-import fit.iuh.auth_service.services.AuthService;
+import fit.iuh.auth_service.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +19,17 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
 
     private final AuthService authService;
+
+    @GetMapping("/detail/{username}")
+    public ResponseEntity<ApiResponse<UserResponse>> getUserDetail(@PathVariable String username) {
+        UserResponse user = authService.getUserDetail(username);
+        ApiResponse<UserResponse> response = ApiResponse.<UserResponse>builder()
+                .success(true)
+                .message("Lấy chi tiết người dùng thành công")
+                .data(user)
+                .build();
+        return ResponseEntity.ok(response);
+    }
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<UserResponse>>> getAllUsers(

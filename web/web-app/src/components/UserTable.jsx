@@ -1,7 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mail, MoreVertical, Eye, Edit3, Lock, Unlock, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Mail, MoreVertical, Eye, Lock, Unlock, ChevronDown, ChevronUp } from 'lucide-react';
 
 const AVATAR_COLORS = ['#0d9488','#059669','#047857','#0e7490','#065f46','#0f766e'];
+
+const getAvatarColor = (value) => {
+  const text = String(value ?? '');
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    hash = (hash * 31 + text.charCodeAt(i)) | 0;
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+};
 
 const ActionMenu = ({ user, onAction, onClose }) => {
   const ref = useRef(null);
@@ -17,13 +26,10 @@ const ActionMenu = ({ user, onAction, onClose }) => {
       className="absolute right-10 top-0 z-50 w-48 bg-[#2a2a2a] border border-white/10 rounded-xl shadow-2xl py-1"
     >
       <button onClick={() => onAction('view', user)}   className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-300 hover:bg-white/5 transition-colors"><Eye size={14} /> Xem chi tiết</button>
-      <button onClick={() => onAction('edit', user)}   className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-300 hover:bg-white/5 transition-colors"><Edit3 size={14} /> Chỉnh sửa</button>
       <button onClick={() => onAction('toggle', user)} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-300 hover:bg-white/5 transition-colors">
         {user.status === 'Hoạt động' ? <Lock size={14} /> : <Unlock size={14} />}
         {user.status === 'Hoạt động' ? 'Khóa tài khoản' : 'Mở khóa'}
       </button>
-      <div className="border-t border-white/5 my-1" />
-      <button onClick={() => onAction('delete', user)} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors"><Trash2 size={14} /> Xóa tài khoản</button>
     </div>
   );
 };
@@ -68,7 +74,7 @@ const UserTable = ({ users, selectedIds, onSelectAll, onSelectOne, onAction, sor
                 <div className="flex items-center gap-3">
                   <div
                     className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
-                    style={{ backgroundColor: AVATAR_COLORS[user.id % AVATAR_COLORS.length] }}
+                    style={{ backgroundColor: user.avatarColor || getAvatarColor(user.id) }}
                   >
                     {user.initials}
                   </div>

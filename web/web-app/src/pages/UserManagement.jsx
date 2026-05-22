@@ -1,113 +1,136 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Search, Download } from 'lucide-react';
 import AdminSidebar from '../components/AdminSidebar';
 import UserTable from '../components/UserTable';
 import UserDetailModal from '../components/UserDetailModal';
+import { adminUserService } from '../services/adminUserService';
 
-/* ─── Mock data generation ─────────────────────────────────────── */
-const generatePhone = (seed) => {
-  const prefixes = ['032', '033', '034', '035', '062', '070', '076', '077', '078', '079',
-                    '081', '082', '083', '090', '091', '093', '096', '097', '098'];
-  const prefix = prefixes[seed % prefixes.length];
-  const tail = String((seed * 7919 + 12345) % 10000000).padStart(7, '0');
-  return prefix + tail;
-};
-
-const formatDate = (date) =>
-  `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
-
-// 8 blocked indices (0-based) → 92 active out of 100
-const BLOCKED_INDICES = new Set([11, 24, 35, 47, 58, 69, 80, 93]);
-
-// Shuffled display numbers (1-100, unique)
-const NUMS = [
-  98, 59, 55, 38,  3, 43, 34, 77, 23, 25,
-  67, 12, 89, 45, 72,  5, 91, 18, 63,  7,
-  41, 86, 29, 54, 17, 70, 33, 48, 64,  9,
-  52, 81, 26, 15, 73, 40, 92,  6, 57, 22,
-  76, 31, 44, 68, 11, 85, 37, 60, 27, 82,
-  19, 71, 46, 13, 90, 35, 58, 24, 79, 42,
-   8, 65, 30, 87, 20, 53, 16, 74, 39, 96,
-  28, 83, 14, 66, 36, 61, 50, 80, 21, 78,
-  47, 10, 88, 32, 69,  4, 93,  2, 75, 49,
-  84,  1, 95, 51, 62, 99, 97, 56, 100, 71,
-];
-
-const BASE_DATE = new Date('2026-01-21');
-
-const USER_LIST = Array.from({ length: 100 }, (_, i) => {
-  const num = NUMS[i] ?? i + 1;
-  const created = new Date(BASE_DATE);
-  created.setDate(created.getDate() - Math.round((i * 195) / 99));
-
-  return {
-    id: i + 1,
-    name: `Người dùng ${num}`,
-    email: `user${num}@example.com`,
-    phone: generatePhone(num),
-    created: formatDate(created),
-    createdTs: created.getTime(),
-    status: BLOCKED_INDICES.has(i) ? 'Bị khóa' : 'Hoạt động',
-    initials: 'ND',
-  };
-});
-
-/* ─── Constants ────────────────────────────────────────────────── */
 const STATUS_FILTERS = ['Tất cả', 'Đang hoạt động', 'Bị khóa'];
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
-/* ─── Component ────────────────────────────────────────────────── */
+const formatDate = (value) => {
+  if (!value) return 'Chưa cập nhật';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Chưa cập nhật';
+  return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+};
+
+const getAvatarColor = (value) => {
+  const colors = ['#0d9488', '#059669', '#047857', '#0e7490', '#065f46', '#0f766e'];
+  const text = String(value ?? '');
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    hash = (hash * 31 + text.charCodeAt(i)) | 0;
+  }
+  return colors[Math.abs(hash) % colors.length];
+};
+
+const getStatusLabel = (status) => {
+  if (status === 'LOCKED' || status === 'BANNED') return 'Bị khóa';
+  return 'Hoạt động';
+};
+
+const getBackendStatus = (filter) => {
+  if (filter === 'Bị khóa') return 'LOCKED';
+  if (filter === 'Đang hoạt động') return 'ACTIVE';
+  return undefined;
+};
+
+const buildInitials = (fullName, userName) => {
+  const source = (fullName || userName || 'U').trim();
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  return source.slice(0, 2).toUpperCase();
+};
+
+const mapUser = (item) => ({
+  id: item.userName,
+  userName: item.userName,
+  name: item.fullName || item.userName,
+  email: item.email,
+  phone: item.phone || '',
+  created: formatDate(item.createdDate),
+  createdTs: item.createdDate ? new Date(item.createdDate).getTime() : 0,
+  status: getStatusLabel(item.status),
+  role: item.role,
+  initials: buildInitials(item.fullName, item.userName),
+  avatarColor: getAvatarColor(item.userName),
+});
+
 const UserManagement = () => {
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('Đang hoạt động');
+  const [statusFilter, setStatusFilter] = useState('Tất cả');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [sortOrder, setSortOrder] = useState('desc');
   const [selectedIds, setSelectedIds] = useState(new Set());
-  const [users, setUsers] = useState(USER_LIST);
-  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
 
-  const selectedUser = useMemo(
-    () => users.find((u) => u.id === selectedUserId) ?? null,
-    [users, selectedUserId]
+  const loadUsers = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await adminUserService.listUsers({
+        page: currentPage - 1,
+        size: pageSize,
+        keyword: search.trim() || undefined,
+        status: getBackendStatus(statusFilter),
+      });
+      const pageData = res?.data?.data;
+      const content = pageData?.content || [];
+      setUsers(content.map(mapUser));
+      setTotalPages(pageData?.totalPages || 1);
+      setTotalElements(pageData?.totalElements || content.length);
+    } catch (err) {
+      setError(err.message || 'Không thể tải danh sách người dùng');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadUsers();
+  }, [currentPage, pageSize, search, statusFilter]);
+
+  const safePage = Math.min(currentPage, totalPages);
+  const paginated = useMemo(
+    () => [...users].sort((a, b) => (sortOrder === 'desc' ? b.createdTs - a.createdTs : a.createdTs - b.createdTs)),
+    [users, sortOrder]
   );
 
-  /* Filtered + sorted list */
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    let result = users.filter((u) => {
-      const matchSearch =
-        !q ||
-        u.name.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q) ||
-        u.phone.includes(q);
-      const matchStatus =
-        statusFilter === 'Tất cả' ||
-        (statusFilter === 'Đang hoạt động' ? u.status === 'Hoạt động' : u.status === 'Bị khóa');
-      return matchSearch && matchStatus;
-    });
-    result = [...result].sort((a, b) =>
-      sortOrder === 'desc' ? b.createdTs - a.createdTs : a.createdTs - b.createdTs
-    );
-    return result;
-  }, [users, search, statusFilter, sortOrder]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const safePage = Math.min(currentPage, totalPages);
-  const paginated = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
-
-  /* Handlers */
   const resetPage = () => setCurrentPage(1);
 
-  const handleSearch = (e) => { setSearch(e.target.value); resetPage(); };
-  const handleFilterChange = (f) => { setStatusFilter(f); setSelectedIds(new Set()); resetPage(); };
-  const handleSortToggle = () => setSortOrder((o) => (o === 'desc' ? 'asc' : 'desc'));
-  const handlePageSizeChange = (e) => { setPageSize(Number(e.target.value)); resetPage(); };
+  const handleSearch = (e) => {
+    setSearch(e.target.value);
+    resetPage();
+  };
+
+  const handleFilterChange = (filter) => {
+    setStatusFilter(filter);
+    setSelectedIds(new Set());
+    resetPage();
+  };
+
+  const handleSortToggle = () => setSortOrder((order) => (order === 'desc' ? 'asc' : 'desc'));
+
+  const handlePageSizeChange = (e) => {
+    setPageSize(Number(e.target.value));
+    resetPage();
+  };
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   const handleSelectAll = (checked) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      paginated.forEach((u) => (checked ? next.add(u.id) : next.delete(u.id)));
+      paginated.forEach((user) => (checked ? next.add(user.id) : next.delete(user.id)));
       return next;
     });
   };
@@ -115,33 +138,41 @@ const UserManagement = () => {
   const handleSelectOne = (id, checked) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      checked ? next.add(id) : next.delete(id);
+      if (checked) next.add(id);
+      else next.delete(id);
       return next;
     });
   };
 
-  const handleAction = (action, user) => {
+  const handleAction = async (action, user) => {
     if (action === 'view') {
-      setSelectedUserId(user.id);
-    } else if (action === 'toggle') {
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.id === user.id
-            ? { ...u, status: u.status === 'Hoạt động' ? 'Bị khóa' : 'Hoạt động' }
-            : u
-        )
-      );
-    } else if (action === 'delete') {
-      setUsers((prev) => prev.filter((u) => u.id !== user.id));
-      setSelectedIds((prev) => { const n = new Set(prev); n.delete(user.id); return n; });
-      if (selectedUserId === user.id) setSelectedUserId(null);
+      try {
+        const res = await adminUserService.getUserDetail(user.userName);
+        const detail = mapUser(res?.data?.data || user);
+        setSelectedUser({ ...detail, city: res?.data?.data?.city || '' });
+      } catch (_) {
+        setSelectedUser(user);
+      }
+      return;
+    }
+
+    if (action === 'toggle') {
+      const nextStatus = user.status === 'Hoạt động' ? 'LOCKED' : 'ACTIVE';
+      await adminUserService.updateUserStatus(user.userName, nextStatus);
+      await loadUsers();
+      if (selectedUser?.userName === user.userName) {
+        const refreshed = await adminUserService.getUserDetail(user.userName);
+        const detail = mapUser(refreshed?.data?.data || user);
+        setSelectedUser({ ...detail, city: refreshed?.data?.data?.city || '' });
+      }
+      return;
     }
   };
 
   const handleExportCSV = () => {
-    const header = 'Tên,Email,Điện thoại,Ngày tạo,Trạng thái';
-    const rows = filtered.map(
-      (u) => `"${u.name}","${u.email}","${u.phone}","${u.created}","${u.status}"`
+    const header = 'Tên,Username,Email,Điện thoại,Ngày tạo,Trạng thái';
+    const rows = paginated.map((user) =>
+      `"${user.name}","${user.userName}","${user.email}","${user.phone}","${user.created}","${user.status}"`
     );
     const csv = [header, ...rows].join('\n');
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
@@ -153,9 +184,9 @@ const UserManagement = () => {
     URL.revokeObjectURL(url);
   };
 
-  const filterBtnClass = (f) => {
-    if (statusFilter !== f) return 'bg-[#222] text-gray-500 hover:bg-[#2a2a2a] hover:text-white';
-    if (f === 'Bị khóa') return 'bg-red-500/80 text-white';
+  const filterBtnClass = (filter) => {
+    if (statusFilter !== filter) return 'bg-[#222] text-gray-500 hover:bg-[#2a2a2a] hover:text-white';
+    if (filter === 'Bị khóa') return 'bg-red-500/80 text-white';
     return 'bg-[#26bc71] text-white';
   };
 
@@ -164,7 +195,6 @@ const UserManagement = () => {
       <AdminSidebar />
 
       <main className="flex-1 p-12 overflow-y-auto">
-        {/* Header */}
         <div className="flex justify-between items-end mb-12">
           <div>
             <h2 className="text-3xl font-bold">Danh sách người dùng</h2>
@@ -176,26 +206,30 @@ const UserManagement = () => {
               type="text"
               value={search}
               onChange={handleSearch}
-              placeholder="Tìm kiếm theo tên, email, số điện thoại..."
+              placeholder="Tìm kiếm theo tên, username, email, số điện thoại..."
               className="bg-[#222] border border-white/5 rounded px-10 py-2.5 outline-none focus:border-[#26bc71] w-96 text-white placeholder-gray-500"
             />
           </div>
         </div>
 
-        {/* Filter tabs */}
         <div className="flex gap-2 mb-8">
-          {STATUS_FILTERS.map((f) => (
+          {STATUS_FILTERS.map((filter) => (
             <button
-              key={f}
-              onClick={() => handleFilterChange(f)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${filterBtnClass(f)}`}
+              key={filter}
+              onClick={() => handleFilterChange(filter)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${filterBtnClass(filter)}`}
             >
-              {f}
+              {filter}
             </button>
           ))}
         </div>
 
-        {/* Table */}
+        {error && (
+          <div className="mb-6 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+            {error}
+          </div>
+        )}
+
         <UserTable
           users={paginated}
           selectedIds={selectedIds}
@@ -206,7 +240,6 @@ const UserManagement = () => {
           onSortToggle={handleSortToggle}
         />
 
-        {/* Bottom bar */}
         <div className="flex flex-wrap items-center justify-between gap-4 mt-8 pt-6 border-t border-white/5">
           <div className="flex items-center gap-2 text-sm text-gray-500">
             Hiển thị
@@ -215,8 +248,8 @@ const UserManagement = () => {
               onChange={handlePageSizeChange}
               className="bg-[#222] border border-white/5 rounded px-2 py-1 text-gray-300 text-sm outline-none focus:border-[#26bc71] cursor-pointer"
             >
-              {PAGE_SIZE_OPTIONS.map((n) => (
-                <option key={n} value={n}>{n}</option>
+              {PAGE_SIZE_OPTIONS.map((option) => (
+                <option key={option} value={option}>{option}</option>
               ))}
             </select>
             người dùng mỗi trang
@@ -224,23 +257,20 @@ const UserManagement = () => {
 
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-500">
-              Trang{' '}
-              <span className="text-white font-medium">{safePage}</span>
-              {' '}của{' '}
-              <span className="text-white font-medium">{totalPages}</span>
-              {' '}
-              <span className="text-gray-600">({filtered.length} kết quả)</span>
+              Trang <span className="text-white font-medium">{safePage}</span>
+              {' '}của <span className="text-white font-medium">{totalPages}</span>
+              {' '}<span className="text-gray-600">({filtered.length} kết quả)</span>
             </span>
             <div className="flex items-center gap-1">
               <button
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
                 disabled={safePage === 1}
                 className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
                 ‹
               </button>
               <button
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
                 disabled={safePage === totalPages}
                 className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
@@ -257,12 +287,19 @@ const UserManagement = () => {
             Xuất CSV
           </button>
         </div>
+
+        {loading && <div className="mt-6 text-sm text-gray-500">Đang tải dữ liệu người dùng...</div>}
+        {!loading && (
+          <div className="mt-2 text-xs text-gray-600">
+            Tổng số kết quả: {totalElements}
+          </div>
+        )}
       </main>
 
       {selectedUser && (
         <UserDetailModal
           user={selectedUser}
-          onClose={() => setSelectedUserId(null)}
+          onClose={() => setSelectedUser(null)}
           onAction={handleAction}
         />
       )}

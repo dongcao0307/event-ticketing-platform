@@ -16,6 +16,7 @@ import fit.iuh.auth_service.repository.AccountRepository;
 import fit.iuh.auth_service.repository.RefreshTokenRepository;
 import fit.iuh.auth_service.repository.UserRepository;
 import fit.iuh.auth_service.security.JwtService;
+import jakarta.persistence.criteria.Join;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -25,12 +26,15 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.Instant;
+import java.util.Date;
 import java.util.UUID;
 
 @Service
@@ -48,45 +52,41 @@ public class AuthService {
     private long refreshTokenExpiration;
 
     @Transactional
-    public AuthResponse register(RegisterRequest request) {
-        if (accountRepository.existsByEmail(request.getEmail())) {
-            throw new ApiException("Email đã được sử dụng", HttpStatus.CONFLICT);
+    public AuthResponse register(RegisterRequest registerRequest) {
+        if (accountRepository.existsByUserName(registerRequest.getUserName())) {
+            throw new RuntimeException("Username is already taken!");
         }
-        if (accountRepository.existsByUserName(request.getUserName())) {
-            throw new ApiException("Tên đăng nhập đã tồn tại", HttpStatus.CONFLICT);
+        if(accountRepository.existsByEmail(registerRequest.getEmail())){
+            throw new RuntimeException("Email is already taken!");
         }
 
-        Account account = Account.builder()
-                .userName(request.getUserName())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .phone(request.getPhone())
-                .status(AccountStatus.ACTIVE)
-                .role(Role.USER)
-                .build();
-        accountRepository.save(account);
+        User user = new User();
+        user.setFullName(registerRequest.getFullName());
+        user.setPhoneNumber(registerRequest.getPhone());
+        user.setCreatedDate(Instant.now());
 
-        User user = User.builder()
-                .fullName(request.getFullName() != null ? request.getFullName() : request.getUserName())
-                .phoneNumber(request.getPhone())
-                .account(account)
-                .build();
-        userRepository.save(user);
+        Account account = new Account();
+        account.setUserName(registerRequest.getUserName());
+        account.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
+        account.setEmail(registerRequest.getEmail());
+        account.setRole(Role.USER);
+        account.setStatus(AccountStatus.ACTIVE);
+        account.setUser(user);
+        user.setAccount(account);
 
+        account = accountRepository.save(account);
         String accessToken = jwtService.generateAccessToken(account);
         RefreshToken refreshToken = createRefreshToken(account);
-
         return buildAuthResponse(account, user, accessToken, refreshToken.getToken());
     }
 
-    @Transactional
-    public AuthResponse login(LoginRequest request) {
+    public AuthResponse login(LoginRequest loginRequest) {
         try {
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                    new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
             );
         } catch (AuthenticationException e) {
-            Account account = accountRepository.findByEmail(request.getEmail()).orElse(null);
+            Account account = accountRepository.findByEmail(loginRequest.getEmail()).orElse(null);
             if (account != null && account.getStatus() == AccountStatus.LOCKED) {
                 throw new ApiException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên để biết thêm chi tiết.", HttpStatus.LOCKED);
             }
@@ -94,17 +94,21 @@ public class AuthService {
         }
 
 
-        Account account = accountRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new ApiException("Tài khoản không tồn tại", HttpStatus.NOT_FOUND));
+        Authentication authentication = authenticationManager.authenticate(
+        new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        refreshTokenRepository.revokeAllByAccountUserName(account.getUsername());
+    Account account = accountRepository.findByEmail(loginRequest.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        String accessToken = jwtService.generateAccessToken(account);
-        RefreshToken refreshToken = createRefreshToken(account);
+        if (account.getStatus() == AccountStatus.LOCKED || account.getStatus() == AccountStatus.BANNED) {
+            throw new RuntimeException("Account is " + account.getStatus());
+        }
 
-        User user = userRepository.findByAccount_UserName(account.getUsername()).orElse(null);
-
-        return buildAuthResponse(account, user, accessToken, refreshToken.getToken());
+    String jwt = jwtService.generateAccessToken(account);
+    RefreshToken refreshToken = createRefreshToken(account);
+    User user = userRepository.findByAccount_Email(account.getEmail()).orElse(null);
+    return buildAuthResponse(account, user, jwt, refreshToken.getToken());
     }
 
     @Transactional
@@ -142,17 +146,17 @@ public class AuthService {
     }
 
     public UserProfileResponse getProfile(String userName) {
-        Account account = accountRepository.findById(userName)
+        Account account = accountRepository.findByEmail(userName)
                 .orElseThrow(() -> new ApiException("Tài khoản không tồn tại", HttpStatus.NOT_FOUND));
-        User user = userRepository.findByAccount_UserName(userName).orElse(null);
+        User user = userRepository.findByAccount_Email(userName).orElse(null);
         return toProfileResponse(account, user);
     }
 
     @Transactional
     public UserProfileResponse updateProfile(String userName, UpdateProfileRequest request) {
-        Account account = accountRepository.findById(userName)
+        Account account = accountRepository.findByEmail(userName)
                 .orElseThrow(() -> new ApiException("Tài khoản không tồn tại", HttpStatus.NOT_FOUND));
-        User user = userRepository.findByAccount_UserName(userName).orElse(null);
+        User user = userRepository.findByAccount_Email(userName).orElse(null);
 
         if (user == null) {
             user = User.builder().account(account).build();
@@ -177,13 +181,14 @@ public class AuthService {
         Specification<Account> spec = Specification.where(null);
 
         if (keyword != null && !keyword.isEmpty()) {
-            spec = spec.and((root, query, cb) ->
-                    cb.or(
-                            cb.like(root.get("userName"), "%" + keyword + "%"),
-                            cb.like(root.get("email"), "%" + keyword + "%"),
-                            cb.like(root.get("user").get("fullName"), "%" + keyword + "%")
-                    )
-            );
+            spec = spec.and((root, query, cb) -> {
+                Join<Account, User> userJoin = root.join("user");
+                return cb.or(
+                        cb.like(root.get("userName"), "%" + keyword + "%"),
+                        cb.like(root.get("email"), "%" + keyword + "%"),
+                        cb.like(userJoin.get("fullName"), "%" + keyword + "%")
+                );
+            });
         }
 
         if (status != null) {
@@ -193,14 +198,29 @@ public class AuthService {
         return accountRepository.findAll(spec, pageable).map(this::toUserResponse);
     }
 
+    @Transactional(readOnly = true)
+    public UserResponse getUserDetail(String username) {
+        Account account = accountRepository.findByUserName(username)
+                .orElseThrow(() -> new ApiException("Tài khoản không tồn tại", HttpStatus.NOT_FOUND));
+        return toUserResponse(account);
+    }
+
     @Transactional
     public void updateUserStatus(String username, AccountStatus status, String adminUsername) {
-        if (username.equals(adminUsername)) {
+        Account account = accountRepository.findByUserName(username)
+                .orElseThrow(() -> new ApiException("Tài khoản không tồn tại", HttpStatus.NOT_FOUND));
+        if (account.getEmail().equals(adminUsername)) {
             throw new ApiException("Admin không thể tự khóa tài khoản của chính mình", HttpStatus.BAD_REQUEST);
         }
-        Account account = accountRepository.findById(username)
-                .orElseThrow(() -> new ApiException("Tài khoản không tồn tại", HttpStatus.NOT_FOUND));
         account.setStatus(status);
+        accountRepository.save(account);
+    }
+
+    @Transactional
+    public void changeAccountStatus(String username, AccountStatus newStatus) {
+        Account account = accountRepository.findByUserName(username)
+                .orElseThrow(() -> new RuntimeException("User not found with username: " + username));
+        account.setStatus(newStatus);
         accountRepository.save(account);
     }
 
@@ -226,7 +246,7 @@ public class AuthService {
 
     private UserProfileResponse toProfileResponse(Account account, User user) {
         return UserProfileResponse.builder()
-                .userName(account.getUsername())
+                .userName(account.getUserName())
                 .email(account.getEmail())
                 .role(account.getRole().name())
                 .status(account.getStatus().name())
@@ -241,10 +261,10 @@ public class AuthService {
     private UserResponse toUserResponse(Account account) {
         User user = account.getUser();
         return new UserResponse(
-                account.getUsername(),
+                account.getUserName(),
                 account.getEmail(),
                 user != null ? user.getFullName() : null,
-                account.getPhone(),
+                user != null ? user.getPhoneNumber() : null,
                 account.getRole(),
                 account.getStatus(),
                 user != null ? user.getCreatedDate() : null

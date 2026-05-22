@@ -14,9 +14,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return accountRepository.findByEmail(username)
-                .orElseGet(() ->
-                        accountRepository.findById(username)
-                                .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy tài khoản: " + username))
-                );
+            .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy tài khoản: " + username));
     }
 }
