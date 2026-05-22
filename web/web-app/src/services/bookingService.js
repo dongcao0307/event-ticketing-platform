@@ -427,8 +427,8 @@ export const getDetailedEventById = async (id) => {
   return normalizeDetailedEvent(eventData, performancesRaw, null);
 };
 
-const BOOKING_SERVICE_BASE_URL = 'http://localhost:8080/api/bookings';
-const TICKET_SERVICE_BASE_URL = 'http://localhost:8080/api/tickets';
+const BOOKING_SERVICE_BASE_URL = '/api/bookings';
+const TICKET_SERVICE_BASE_URL = '/api/tickets';
 
 const toStableMockLong = (rawId, prefix) => {
   const safeId = String(rawId ?? '').trim();

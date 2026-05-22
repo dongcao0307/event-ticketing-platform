@@ -94,7 +94,10 @@ services:
       - payment-service
       - ticket-service
     ports:
+      - "8443:443"
       - "8080:80"
+    volumes:
+      - ./gateway/certs:/etc/nginx/certs:ro
     networks:
       - ticketbox-net
     restart: on-failure
