@@ -81,7 +81,7 @@ const UserManagement = () => {
         keyword: search.trim() || undefined,
         status: getBackendStatus(statusFilter),
       });
-      const pageData = res?.data?.data;
+      const pageData = res?.data || res;
       const content = pageData?.content || [];
       setUsers(content.map(mapUser));
       setTotalPages(pageData?.totalPages || 1);
@@ -148,8 +148,9 @@ const UserManagement = () => {
     if (action === 'view') {
       try {
         const res = await adminUserService.getUserDetail(user.userName);
-        const detail = mapUser(res?.data?.data || user);
-        setSelectedUser({ ...detail, city: res?.data?.data?.city || '' });
+        const detailData = res?.data || res;
+        const detail = mapUser(detailData || user);
+        setSelectedUser({ ...detail, city: detailData?.city || '' });
       } catch (_) {
         setSelectedUser(user);
       }
@@ -162,8 +163,9 @@ const UserManagement = () => {
       await loadUsers();
       if (selectedUser?.userName === user.userName) {
         const refreshed = await adminUserService.getUserDetail(user.userName);
-        const detail = mapUser(refreshed?.data?.data || user);
-        setSelectedUser({ ...detail, city: refreshed?.data?.data?.city || '' });
+        const refreshedData = refreshed?.data || refreshed;
+        const detail = mapUser(refreshedData || user);
+        setSelectedUser({ ...detail, city: refreshedData?.city || '' });
       }
       return;
     }
@@ -259,7 +261,7 @@ const UserManagement = () => {
             <span className="text-sm text-gray-500">
               Trang <span className="text-white font-medium">{safePage}</span>
               {' '}của <span className="text-white font-medium">{totalPages}</span>
-              {' '}<span className="text-gray-600">({filtered.length} kết quả)</span>
+              {' '}<span className="text-gray-600">({totalElements} kết quả)</span>
             </span>
             <div className="flex items-center gap-1">
               <button

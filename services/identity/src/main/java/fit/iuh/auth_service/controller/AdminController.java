@@ -31,7 +31,7 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping
+    @GetMapping({"", "/"})
     public ResponseEntity<ApiResponse<Page<UserResponse>>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
