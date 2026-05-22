@@ -52,11 +52,14 @@ public class EventService {
     }
 
     @Transactional
-    @Cacheable(value = "events", key = "#id", unless = "#result == null")
+    // @Cacheable(value = "events", key = "#id") // TẠM TẮT CÁI NÀY ĐI
     public EventResponse getEventById(Long id) {
-        var event = eventRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sự kiện với id: " + id));
+        var event = eventRepository.findFullEventById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy..."));
+
+        // GỌI HÀM NÀY SAU KHI ĐÃ LẤY ĐƯỢC EVENT (để tránh lỗi transaction)
         eventRepository.incrementViewCount(id);
+
         return EventResponse.fromEntity(event);
     }
 
