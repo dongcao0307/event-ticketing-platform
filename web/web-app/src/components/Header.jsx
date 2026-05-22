@@ -221,10 +221,21 @@ const accountMenuItems = [
 ];
 
 const DropDownMenu = ({ isDropdownOpen, handleLogout, onClose }) => {
+  const user = authService.getCurrentUser();
+  const userRole = user?.role || 'USER';
+  const roleLabel = userRole === 'ADMIN' ? '👨‍💼 Quản trị viên' : '👤 Người dùng';
+
   if (!isDropdownOpen) return null;
 
   return (
     <div className="absolute right-0 top-full mt-3 w-64 bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+
+      {/* USER INFO */}
+      <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
+        <p className="text-xs text-gray-400">Tài khoản hiện tại</p>
+        <p className="text-sm font-bold text-gray-800 truncate">{user?.email || 'User'}</p>
+        <p className="text-xs text-gray-500 mt-1">{roleLabel}</p>
+      </div>
 
       {/* MENU */}
       <div className="py-2">
@@ -248,22 +259,35 @@ const DropDownMenu = ({ isDropdownOpen, handleLogout, onClose }) => {
           );
         })}
 
+        {/* ADMIN MENU - Hiển thị nếu là ADMIN */}
+        {userRole === 'ADMIN' && (
+          <>
+            <div className="mx-2 my-2 border-t border-gray-100"></div>
+            <NavLink
+              to="/admin"
+              onClick={onClose}
+              className={({ isActive }) =>
+                `w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded transition ${isActive ? 'bg-[#26bc71] text-black' : 'text-gray-700 hover:bg-gray-50'
+                }`
+              }
+            >
+              <User size={18} className="text-gray-500" />
+              <span>🔧 Bảng điều khiển Admin</span>
+            </NavLink>
+          </>
+        )}
       </div>
 
-      {/* DIVIDER */}
-      <div className="border-t border-gray-100"></div>
-
       {/* LOGOUT */}
-      <div className="py-1.5">
+      <div className="p-1.5 border-t border-gray-100">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition"
+          className="w-full flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors"
         >
-          <LogOut size={18} />
+          <LogOut size={16} />
           <span>Đăng xuất</span>
         </button>
       </div>
-
     </div>
   );
 };

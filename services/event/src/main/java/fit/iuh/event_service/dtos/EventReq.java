@@ -1,12 +1,16 @@
 package fit.iuh.event_service.dtos;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties; // 1. Bổ sung import này
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
 
-@Getter @Setter
+@Getter
+@Setter
+@JsonIgnoreProperties(ignoreUnknown = true) // 2. "Bùa" bỏ qua các trường thừa từ Frontend (như id)
 public class EventReq {
+
     private String title;
     private String thumbnailUrl;
     private String posterUrl;

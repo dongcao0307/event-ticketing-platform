@@ -405,21 +405,19 @@ export const getDetailedEventById = async (id) => {
   let performancesRaw = [];
 
   try {
+    // 1. Gọi API Public để lấy thông tin sự kiện (Đã được Backend JOIN FETCH sẵn)
     const res = await get(`/events/${id}`);
     eventData = res?.data ?? null;
+
+    // 2. 🚀 LẤY LUÔN PERFORMANCES TỪ ĐÂY (NẾU CÓ) - KHÔNG CẦN GỌI API NỮA
+    if (eventData && eventData.performances) {
+        performancesRaw = eventData.performances;
+    }
   } catch (err) {
     console.warn('[BookingService] Cannot load event detail from gateway:', err.message);
   }
 
-  try {
-    const perfRes = await request(`/organizer/events/${id}/performances`, {
-      method: 'GET',
-      headers: { 'X-User-Id': resolveOrganizerId() },
-    });
-    performancesRaw = Array.isArray(perfRes) ? perfRes : (perfRes?.data || []);
-  } catch (err) {
-    console.warn('[BookingService] Cannot load performances from gateway:', err.message);
-  }
+  // ❌ XÓA BỎ HOÀN TOÀN CÁI TRY...CATCH GỌI `/organizer/events/${id}/performances` Ở ĐÂY
 
   if (!eventData) {
     const fallbackEvent = detailedEvents.find((e) => String(e.id) === String(id)) || null;

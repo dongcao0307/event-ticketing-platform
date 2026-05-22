@@ -80,35 +80,59 @@ public class AuthService {
         return buildAuthResponse(account, user, accessToken, refreshToken.getToken());
     }
 
-    public AuthResponse login(LoginRequest loginRequest) {
+    @Transactional
+    public AuthResponse login(LoginRequest request) {
+        // 1. Xác định identifier (Ưu tiên SĐT, nếu không có thì dùng Email)
+        String identifier = request.getPhone() != null && !request.getPhone().isBlank()
+                ? request.getPhone()
+                : request.getEmail();
+
+        if (identifier == null || identifier.isBlank()) {
+            throw new ApiException("Email hoặc số điện thoại không được để trống", HttpStatus.BAD_REQUEST);
+        }
+
+        Authentication authentication;
         try {
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
+            // 2. Thực hiện xác thực qua AuthenticationManager
+            authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(identifier, request.getPassword())
             );
         } catch (AuthenticationException e) {
-            Account account = accountRepository.findByEmail(loginRequest.getEmail()).orElse(null);
+            // 3. Nếu thất bại, tìm kiếm tài khoản để kiểm tra trạng thái khóa (LOCKED)
+            Account account = accountRepository.findByEmail(identifier)
+                    .or(() -> accountRepository.findById(identifier))
+                    .or(() -> accountRepository.findByPhone(identifier))
+                    .orElse(null);
+
             if (account != null && account.getStatus() == AccountStatus.LOCKED) {
                 throw new ApiException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên để biết thêm chi tiết.", HttpStatus.LOCKED);
             }
-            throw new ApiException("Email hoặc mật khẩu không chính xác", HttpStatus.UNAUTHORIZED);
+            
+            throw new ApiException("Email, số điện thoại hoặc mật khẩu không chính xác", HttpStatus.UNAUTHORIZED);
         }
 
-
-        Authentication authentication = authenticationManager.authenticate(
-        new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
+        // 4. Lưu thông tin xác thực vào SecurityContextHolder
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-    Account account = accountRepository.findByEmail(loginRequest.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        // 5. Lấy thông tin Account chính xác sau khi đã xác thực thành công
+        Account account = accountRepository.findByEmail(identifier)
+                .or(() -> accountRepository.findById(identifier))
+                .or(() -> accountRepository.findByPhone(identifier))
+                .orElseThrow(() -> new ApiException("Tài khoản không tồn tại", HttpStatus.NOT_FOUND));
 
-        if (account.getStatus() == AccountStatus.LOCKED || account.getStatus() == AccountStatus.BANNED) {
-            throw new RuntimeException("Account is " + account.getStatus());
+        // 6. Kiểm tra bổ sung trạng thái BANNED nếu cần (LOCKED đã được xử lý ở catch hoặc có thể check chung ở đây)
+        if (account.getStatus() == AccountStatus.BANNED) {
+            throw new ApiException("Tài khoản của bạn đã bị cấm (BANNED).", HttpStatus.FORBIDDEN);
         }
 
-    String jwt = jwtService.generateAccessToken(account);
-    RefreshToken refreshToken = createRefreshToken(account);
-    User user = userRepository.findByAccount_Email(account.getEmail()).orElse(null);
-    return buildAuthResponse(account, user, jwt, refreshToken.getToken());
+        // 7. Tạo Token và build Response bằng Account đã tìm thấy
+        String jwt = jwtService.generateAccessToken(account);
+        RefreshToken refreshToken = createRefreshToken(account);
+        
+        // Tìm User theo Email của Account
+        User user = userRepository.findByAccount_Email(account.getEmail()).orElse(null);
+        
+        return buildAuthResponse(account, user, jwt, refreshToken.getToken());
     }
 
     @Transactional

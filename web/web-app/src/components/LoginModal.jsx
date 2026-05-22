@@ -7,30 +7,62 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
   const [showPassword, setShowPassword] = useState(false);
   
   // State quản lý form đăng nhập
-  const [email, setEmail] = useState('');
+  const [input, setInput] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  
+  // Rate Limiter state
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockoutTime, setLockoutTime] = useState(null);
+  const MAX_ATTEMPTS = 5;
+  const LOCKOUT_DURATION = 5 * 60 * 1000; // 5 phút
 
   if (!isOpen) return null;
 
+  // Kiểm tra xem có bị khóa do quá nhiều lần thất bại
+  const isLockedOut = lockoutTime && new Date().getTime() < lockoutTime;
+  const remainingLockoutTime = isLockedOut ? Math.ceil((lockoutTime - new Date().getTime()) / 1000) : 0;
+
   // Hàm xử lý Đăng nhập
   const handleLogin = async () => {
-    // Ngăn người dùng bấm nếu chưa nhập đủ thông tin
-    if (!email || !password) return;
+    // Ngăn người dùng bấm nếu chưa nhập đủ thông tin hoặc bị khóa
+    if (!input || !password || isLockedOut) return;
     
     setIsLoading(true);
-    setErrorMsg(''); // Xóa lỗi cũ (nếu có) trước khi thử lại
+    setErrorMsg('');
     
     try {
-      // Gọi service giả lập đăng nhập
-      await authService.login(email, password);
+      // Phát hiện loại đầu vào (email hay phone)
+      const isPhone = /^\d{10,15}$/.test(input.replace(/\D/g, ''));
+      const loginData = {
+        password,
+        ...(isPhone ? { phone: input } : { email: input })
+      };
+
+      // Gọi service đăng nhập
+      await authService.login(loginData);
+      
+      // Reset rate limiter nếu đăng nhập thành công
+      setFailedAttempts(0);
+      setLockoutTime(null);
       
       // Nếu đăng nhập thành công, load lại trang để Header cập nhật giao diện
       window.location.reload(); 
     } catch (error) {
-      // Nếu lỗi (nhập sai), hiển thị lỗi ra màn hình
-      setErrorMsg(error.message);
+      // Tăng số lần thất bại
+      const newFailedAttempts = failedAttempts + 1;
+      setFailedAttempts(newFailedAttempts);
+
+      // Nếu vượt quá số lần cho phép, khóa tài khoản
+      if (newFailedAttempts >= MAX_ATTEMPTS) {
+        const newLockoutTime = new Date().getTime() + LOCKOUT_DURATION;
+        setLockoutTime(newLockoutTime);
+        setErrorMsg(`Quá nhiều lần thất bại. Vui lòng thử lại sau ${Math.ceil(LOCKOUT_DURATION / 60000)} phút.`);
+      } else {
+        const attemptsLeft = MAX_ATTEMPTS - newFailedAttempts;
+        setErrorMsg(`${error.message} (Còn ${attemptsLeft} lần thử)`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -68,9 +100,10 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
             <input 
               type="text" 
               placeholder="Nhập email hoặc số điện thoại" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="flex-1 w-full outline-none text-[15px] text-gray-700 placeholder:text-gray-400 bg-transparent"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              disabled={isLockedOut}
+              className="flex-1 w-full outline-none text-[15px] text-gray-700 placeholder:text-gray-400 bg-transparent disabled:opacity-50"
             />
             <Info size={18} className="text-gray-400 cursor-pointer shrink-0" />
           </div>
@@ -82,9 +115,10 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
               placeholder="Nhập mật khẩu" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="flex-1 w-full outline-none text-[15px] text-gray-700 placeholder:text-gray-400 bg-transparent"
+              disabled={isLockedOut}
+              className="flex-1 w-full outline-none text-[15px] text-gray-700 placeholder:text-gray-400 bg-transparent disabled:opacity-50"
             />
-            <button onClick={() => setShowPassword(!showPassword)} className="outline-none shrink-0">
+            <button onClick={() => setShowPassword(!showPassword)} className="outline-none shrink-0" disabled={isLockedOut}>
               {showPassword ? (
                 <Eye size={18} className="text-gray-400 hover:text-gray-600 transition-colors" />
               ) : (
@@ -95,18 +129,18 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
 
           {/* HIỂN THỊ THÔNG BÁO LỖI (NẾU ĐĂNG NHẬP SAI) */}
           {errorMsg && (
-            <p className="text-red-500 text-[13px] font-medium m-0">{errorMsg}</p>
+            <p className={`text-[13px] font-medium m-0 ${isLockedOut ? 'text-orange-500' : 'text-red-500'}`}>{errorMsg}</p>
           )}
 
           {/* Nút Tiếp tục */}
           <button 
             onClick={handleLogin}
-            disabled={!email || !password || isLoading}
+            disabled={!input || !password || isLoading || isLockedOut}
             className={`w-full font-bold py-2.5 rounded-md text-[15px] transition-colors mt-2 
-              ${(!email || !password || isLoading) ? 'bg-[#e0e0e0] text-[#999] cursor-not-allowed' : 'bg-[#26bc71] text-white cursor-pointer hover:bg-[#23a861]'}
+              ${(!input || !password || isLoading || isLockedOut) ? 'bg-[#e0e0e0] text-[#999] cursor-not-allowed' : 'bg-[#26bc71] text-white cursor-pointer hover:bg-[#23a861]'}
             `}
           >
-            {isLoading ? 'Đang xử lý...' : 'Tiếp tục'}
+            {isLockedOut ? `Thử lại sau ${remainingLockoutTime}s` : isLoading ? 'Đang xử lý...' : 'Tiếp tục'}
           </button>
 
           {/* Giả lập Cloudflare Captcha */}
