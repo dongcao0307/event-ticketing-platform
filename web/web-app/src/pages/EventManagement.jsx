@@ -43,9 +43,9 @@ const mapApiEventToTable = (apiEvent) => ({
   name: apiEvent.title,
   creator: apiEvent.organizerName || 'Unknown',
   type: apiEvent.type ? (apiEvent.type.includes('Online') ? 'Online' : 'Offline') : 'Offline',
-  time: apiEvent.startDate ? new Date(apiEvent.startDate).toLocaleString('vi-VN') : 'N/A',
+  time: apiEvent.eventDate || 'N/A',
   price: 'Có phí',
-  created: apiEvent.createdAt ? new Date(apiEvent.createdAt).toLocaleDateString('vi-VN') : 'N/A',
+  created: apiEvent.createdAt || 'N/A',
   status: mapStatusToDisplay(apiEvent.status),
   apiStatus: apiEvent.status,
 });

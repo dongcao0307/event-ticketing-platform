@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-const VNPAY_BASE_URL = 'http://localhost:8080/api/payment/vnpay';
-const MOMO_BASE_URL = 'http://localhost:8080/api/payment/momo';
-const FREE_BASE_URL = 'http://localhost:8080/api/payment/free';
+const VNPAY_BASE_URL = '/api/payment/vnpay';
+const MOMO_BASE_URL = '/api/payment/momo';
+const FREE_BASE_URL = '/api/payment/free';
 
 const toStableMockLong = (rawId, prefix) => {
   const safeId = String(rawId ?? '').trim();

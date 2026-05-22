@@ -187,15 +187,15 @@ export const getTicketDetail = async () => simulateFetch(ticketMocks[0]);
 
 
 export const serviceAddTicketTypes = async (ticketTypes) => {
-  return axios.post("http://localhost:8084/api/organizer/ticket_type/bulk", ticketTypes)
+  return axios.post("/api/ticket_types/bulk", ticketTypes)
 }
 export const serviceUpdateTicketTypes = async (ticketTypes) => {
-  return axios.put("http://localhost:8084/api/organizer/ticket_type/bulk", ticketTypes)
+  return axios.put("/api/ticket_types/bulk", ticketTypes)
 }
 export const serviceUpsertTicketTypes = async (ticketTypes) => {
-  return axios.post("http://localhost:8084/api/organizer/ticket_type/upsert/bulk", ticketTypes)
+  return axios.post("/api/ticket_types/upsert/bulk", ticketTypes)
 }
 
 export const serviceGetBookedSeats = async (performanceId) => {
-  return axios.get(`http://localhost:8080/api/tickets/performance/${performanceId}/booked-seats`)
+  return axios.get(`/api/tickets/performance/${performanceId}/booked-seats`)
 }

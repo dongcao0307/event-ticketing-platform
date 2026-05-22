@@ -1,10 +1,10 @@
 // Initialize MongoDB with notification templates
 // This script runs automatically when MongoDB container starts for the first time
 
-const db = db.getSiblingDB('ticketbox');
+const ticketboxDb = db.getSiblingDB('ticketbox');
 
 // Create notification_templates collection with default documents
-db.notification_templates.insertMany([
+ticketboxDb.notification_templates.insertMany([
   {
     _id: 'payment-only',
     templateId: 'payment-only',
