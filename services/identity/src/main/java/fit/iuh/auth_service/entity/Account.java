@@ -52,6 +52,10 @@ public class Account implements UserDetails {
 
     @Override
     public String getUsername() {
+        return email;
+    }
+
+    public String getUserName() {
         return userName;
     }
 
