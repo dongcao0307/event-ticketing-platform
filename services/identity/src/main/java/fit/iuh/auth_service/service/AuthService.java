@@ -75,11 +75,21 @@ public class AuthService {
 
     @Transactional
     public AuthResponse login(LoginRequest request) {
+        String identifier = request.getPhone() != null && !request.getPhone().isBlank()
+                ? request.getPhone()
+                : request.getEmail();
+
+        if (identifier == null || identifier.isBlank()) {
+            throw new ApiException("Email hoặc số điện thoại không được để trống", HttpStatus.BAD_REQUEST);
+        }
+
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(identifier, request.getPassword())
         );
 
-        Account account = accountRepository.findByEmail(request.getEmail())
+        Account account = accountRepository.findByEmail(identifier)
+                .or(() -> accountRepository.findById(identifier))
+                .or(() -> accountRepository.findByPhone(identifier))
                 .orElseThrow(() -> new ApiException("Tài khoản không tồn tại", HttpStatus.NOT_FOUND));
 
         refreshTokenRepository.revokeAllByAccountUserName(account.getUsername());

@@ -19,6 +19,7 @@ import AdminEventDetail from './pages/AdminEventDetail'
 import AdminAnalytics from './pages/AdminAnalytics'
 import AdminOrders from './pages/AdminOrders'
 import AdminRoute from './components/AdminRoute'
+import ProtectedRoute from './components/ProtectedRoute'
 
 import EventDetailPublicPage from './pages/EventDetailPublicPage'
 import SeatSelectionPage from './pages/SeatSelectionPage'
@@ -56,7 +57,7 @@ function App() {
 
           {/* User account */}
           <Route path="/search" element={<SearchPage />} />
-          <Route path="/my-account" element={<MyAccountPage />}>
+          <Route path="/my-account" element={<ProtectedRoute><MyAccountPage /></ProtectedRoute>}>
             <Route index element={<AccountSettings />} />
             <Route path="settings" element={<AccountSettings />} />
             <Route path="tickets" element={<MyTickets />} />
