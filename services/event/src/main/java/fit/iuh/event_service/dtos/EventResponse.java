@@ -1,6 +1,7 @@
 package fit.iuh.event_service.dtos;
 
 import fit.iuh.event_service.models.Event;
+import fit.iuh.event_service.models.EventPerformance; // 1. Thêm import này
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,6 +10,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List; // 2. Thêm import này
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
@@ -40,6 +42,9 @@ public class EventResponse {
     private String organizerLogo;
     private Boolean isFeatured;
     private Integer viewCount;
+
+    // 🚀 3. KHAI BÁO THÊM BIẾN NÀY ĐỂ HẾT NULL NÈ HẬU!
+    private List<EventPerformance> performances;
 
     public static EventResponse fromEntity(Event event) {
         String priceDisplay = "Miễn phí";
@@ -74,6 +79,9 @@ public class EventResponse {
                 .organizerLogo(event.getOrganizerLogo())
                 .isFeatured(event.getIsFeatured())
                 .viewCount(event.getViewCount())
+
+                // 🚀 4. ĐÚT MẢNG PERFORMANCES VÀO ĐÂY ĐỂ TRẢ VỀ CHO FRONTEND
+                .performances(event.getPerformances())
                 .build();
     }
 }

@@ -16,7 +16,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         return accountRepository.findByEmail(username)
                 .orElseGet(() ->
                         accountRepository.findById(username)
-                                .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy tài khoản: " + username))
+                                .orElseGet(() ->
+                                        accountRepository.findByPhone(username)
+                                                .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy tài khoản: " + username))
+                                )
                 );
     }
 }

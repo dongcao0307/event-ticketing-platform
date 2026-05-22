@@ -98,7 +98,12 @@ const EventDetailPublicPage = () => {
             <div className="flex-1 min-w-0">
               {/* Banner */}
               <div className="rounded-xl overflow-hidden shadow-md mb-5">
-                <img src={event.image || event.imageUrl} alt={event.title} className="w-full h-64 lg:h-80 object-cover" />
+                <img
+                  src={event.image || event.imageUrl || 'https://via.placeholder.com/1200x600?text=Ảnh+sự+kiện+không+tồn+tại'}
+                  alt={event.title}
+                  onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/1200x600?text=Ảnh+sự+kiện+không+tồn+tại'; }}
+                  className="w-full h-64 lg:h-80 object-cover"
+                />
               </div>
 
               {/* Title & actions */}

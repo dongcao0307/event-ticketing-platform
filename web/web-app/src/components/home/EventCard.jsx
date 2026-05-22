@@ -16,8 +16,9 @@ const EventCard = ({ id, title, date, location, price, image, badge }) => {
     >
       <div className="relative h-40 bg-gray-100">
         <img
-          src={image}
+          src={image || 'https://via.placeholder.com/520x260?text=Không+có+hình+ảnh'}
           alt={title}
+          onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/520x260?text=Ảnh+không+tồn+tại'; }}
           className="w-full h-full object-cover"
         />
         {badge && (
