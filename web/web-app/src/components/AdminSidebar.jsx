@@ -1,11 +1,13 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
   CalendarDays,
   ShoppingCart,
   BarChart3,
+  Home,
+  ArrowLeft,
 } from 'lucide-react';
 
 const navItems = [
@@ -23,6 +25,34 @@ const AdminSidebar = () => (
       <h1 className="text-[#26bc71] text-2xl font-bold">Ticketbox</h1>
       <p className="text-xs text-gray-500 mt-1 uppercase tracking-widest">Admin Panel</p>
     </div>
+
+    {/* Back to Home button */}
+    <div className="px-4 mb-3">
+      <Link
+        to="/"
+        className="flex items-center gap-3 px-4 py-2.5 rounded-lg font-medium transition-all text-gray-400 hover:text-white group"
+        style={{
+          background: 'rgba(38,188,113,0.08)',
+          border: '1px solid rgba(38,188,113,0.2)',
+          textDecoration: 'none',
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.background = 'rgba(38,188,113,0.18)';
+          e.currentTarget.style.borderColor = 'rgba(38,188,113,0.5)';
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.background = 'rgba(38,188,113,0.08)';
+          e.currentTarget.style.borderColor = 'rgba(38,188,113,0.2)';
+        }}
+      >
+        <ArrowLeft size={16} style={{ color: '#26bc71' }} />
+        <span style={{ color: '#26bc71', fontSize: '13px', fontWeight: 600 }}>Về trang chủ</span>
+        <Home size={14} style={{ color: '#26bc71', marginLeft: 'auto', opacity: 0.7 }} />
+      </Link>
+    </div>
+
+    {/* Divider */}
+    <div className="mx-8 mb-3 border-t border-white/5" />
 
     {/* Nav */}
     <nav className="flex-1 px-4 space-y-1">
