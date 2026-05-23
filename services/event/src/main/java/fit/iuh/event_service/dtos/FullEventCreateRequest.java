@@ -60,6 +60,7 @@ public class FullEventCreateRequest {
         private BigDecimal price;
         private Integer totalQuantity;
         private Integer maxTicketsPerUser;
+        private Integer minTicketsPerUser;
         private boolean isFree;
 
         @JsonSerialize(using = LocalDateTimeSerializer.class)

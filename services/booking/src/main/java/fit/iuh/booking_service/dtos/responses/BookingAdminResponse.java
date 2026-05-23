@@ -12,7 +12,8 @@ import java.time.LocalDateTime;
 public class BookingAdminResponse {
     private Long id;
     private String customerName;    // Mới
-    private String customerEmail;   // Mới
+    private String customerEmail;
+    private String customerPhone;// Mới
     private String eventName;       // Mới
     private String eventLocation;   // Mới
     private BigDecimal totalAmount;

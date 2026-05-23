@@ -347,6 +347,7 @@ public class BookingServiceImpl implements BookingService {
                     .id(p.getId())
                     .customerName(p.getCustomerName())
                     .customerEmail(p.getCustomerEmail())
+                    .customerPhone(p.getCustomerPhone())
                     .eventName(p.getEventName())
                     .eventLocation(p.getEventLocation())
                     .totalAmount(BigDecimal.valueOf(p.getTotalAmount()))

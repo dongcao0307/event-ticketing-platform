@@ -8,6 +8,8 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import fit.iuh.event_service.models.enums.EventStatus;
 import lombok.Data;
+
+import java.math.BigDecimal; // Import thêm cái này cho giá tiền
 import java.time.LocalDateTime;
 
 @Data
@@ -28,4 +30,26 @@ public class EventSummaryResponse {
     private String organizerName;
     private String organizerLogo;
     private String organizerInfo;
+
+    // =========================================================
+    // ---> BỔ SUNG 6 BIẾN NÀY ĐỂ TRẢ DỮ LIỆU RA FRONTEND <---
+    // =========================================================
+
+    private BigDecimal minPrice;
+    private BigDecimal maxPrice;
+    private Integer totalTickets;
+    private Integer availableTickets;
+
+    // Ốp bùa JSON luôn cho 2 thằng thời gian này
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime startTime;
+
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime endTime;
+
+    // =========================================================
 }

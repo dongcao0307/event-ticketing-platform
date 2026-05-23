@@ -31,6 +31,10 @@ public class TicketType {
     private Integer soldQuantity = 0; // Mặc định là 0 khi mới tạo
     @ColumnDefault("0")
     private Integer reservedQuantity = 0; // Mặc định là 0
+
+    // ---> ĐÃ THÊM: SỐ LƯỢNG VÉ TỐI THIỂU MỖI USER <---
+    private Integer minTicketsPerUser;
+
     private Integer maxTicketsPerUser;
 
     // --- ĐỊNH DẠNG THỜI GIAN (ĐÃ ỐP BÙA JSON) ---

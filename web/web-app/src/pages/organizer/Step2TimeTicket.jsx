@@ -7,7 +7,16 @@ const Step2TimeTicket = ({ eventData, setEventData }) => {
   const [activeShowtimeForTicket, setActiveShowtimeForTicket] = useState(null);
   const [editingTicketIndex, setEditingTicketIndex] = useState(null); 
 
-  const defaultTicket = { name: '', price: '', isFree: false, saleStart: '', saleEnd: '' };
+  const defaultTicket = { 
+    name: '', 
+    price: '', 
+    isFree: false, 
+    saleStart: '', 
+    saleEnd: '',
+    totalQuantity: 100,
+    minTicketsPerUser: 1,  // Thêm Tối thiểu
+    maxTicketsPerUser: 10
+  };
   const [ticketData, setTicketData] = useState(defaultTicket);
 
   // --- [MỚI] STATE QUẢN LÝ LỖI RÀNG BUỘC ---
@@ -391,15 +400,31 @@ const Step2TimeTicket = ({ eventData, setEventData }) => {
                 </div>
                 <div>
                   <label className="block text-sm font-bold mb-2"><span className="text-red-500 mr-1">*</span>Tổng vé</label>
-                  <input type="number" defaultValue="100" className="w-full bg-white text-black text-sm p-3 rounded outline-none" />
+                  <input 
+                    type="number" 
+                    value={ticketData.totalQuantity}
+                    onChange={(e) => handleTicketChange('totalQuantity', e.target.value ? parseInt(e.target.value) : '')}
+                    className="w-full bg-white text-black text-sm p-3 rounded outline-none focus:ring-2 focus:ring-[#00b14f] transition-all" 
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-bold mb-2">Tối thiểu</label>
-                  <input type="number" defaultValue="1" className="w-full bg-white text-black text-sm p-3 rounded outline-none" />
+                  {/* Đã thêm value và onChange để React gom data */}
+                  <input 
+                    type="number" 
+                    value={ticketData.minTicketsPerUser}
+                    onChange={(e) => handleTicketChange('minTicketsPerUser', e.target.value ? parseInt(e.target.value) : '')}
+                    className="w-full bg-white text-black text-sm p-3 rounded outline-none focus:ring-2 focus:ring-[#00b14f] transition-all" 
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-bold mb-2">Tối đa</label>
-                  <input type="number" defaultValue="10" className="w-full bg-white text-black text-sm p-3 rounded outline-none" />
+                  <input 
+                    type="number" 
+                    value={ticketData.maxTicketsPerUser}
+                    onChange={(e) => handleTicketChange('maxTicketsPerUser', e.target.value ? parseInt(e.target.value) : '')}
+                    className="w-full bg-white text-black text-sm p-3 rounded outline-none focus:ring-2 focus:ring-[#00b14f] transition-all" 
+                  />
                 </div>
               </div>
 

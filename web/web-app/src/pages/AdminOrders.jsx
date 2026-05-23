@@ -231,6 +231,36 @@ const AdminOrders = () => {
     loadData();
   }, [page, statusTab, search]);
 
+  const handleExportCSV = () => {
+    // 1. Định nghĩa các cột
+    const headers = ["Mã đơn", "Khách hàng", "Email", "Sự kiện", "Số vé", "Tổng tiền", "Ngày", "Trạng thái"];
+    
+    // 2. Map dữ liệu từ state 'orders' thành các hàng CSV
+    const rows = orders.map(o => [
+      o.id,
+      o.customer.name,
+      o.customer.email,
+      o.event.name,
+      o.tickets,
+      o.total,
+      o.date,
+      STATUS_CFG[o.status] ? STATUS_CFG[o.status].label : o.status
+    ]);
+
+    // 3. Tạo nội dung CSV (thêm \uFEFF để Excel đọc không bị lỗi font tiếng Việt)
+    const csvContent = "\uFEFF" + [headers, ...rows].map(row => row.join(",")).join("\n");
+
+    // 4. Tạo file và ép trình duyệt tải về
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `don_hang_${new Date().toLocaleDateString("vi-VN")}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleTab = (t) => {
     setStatusTab(t);
     setPage(1);
@@ -262,9 +292,12 @@ const AdminOrders = () => {
               Theo dõi và xử lý toàn bộ giao dịch trên nền tảng thật
             </p>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#26bc71] hover:bg-[#1ea860] text-white text-sm font-medium transition-colors">
-            <Download size={15} /> Xuất CSV
-          </button>
+          <button 
+  onClick={handleExportCSV} // <--- GẮN VÀO ĐÂY
+  className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#26bc71] hover:bg-[#1ea860] text-white text-sm font-medium transition-colors"
+>
+  <Download size={15} /> Xuất CSV
+</button>
         </div>
 
         <div className="grid grid-cols-3 gap-5 mb-8">
