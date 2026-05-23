@@ -325,7 +325,10 @@ const AdminEventDetail = () => {
               </div>
               <div className="mb-5">
                 <p className="text-gray-500 text-xs mb-1">Mô tả</p>
-                <p className="text-gray-300 text-sm leading-relaxed">{displayEvent.description}</p>
+                <div 
+                  className="event-description text-gray-300 text-sm leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: displayEvent.description || '' }}
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

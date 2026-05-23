@@ -80,15 +80,15 @@ const EventDetailPublicPage = () => {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-[#f5f5f5]">
+      <div className="min-h-screen bg-[#121212] text-[#f0f0f0]">
         {/* Breadcrumb */}
-        <div className="bg-white border-b border-gray-200">
-          <div className="max-w-6xl mx-auto px-4 py-2 flex items-center gap-2 text-sm text-gray-500">
-            <Link to="/" className="hover:text-[#26bc71]">Trang chủ</Link>
-            <ChevronRight size={14} />
+        <div className="bg-[#1a1a1a] border-b border-white/5">
+          <div className="max-w-6xl mx-auto px-4 py-2 flex items-center gap-2 text-sm text-gray-400">
+            <Link to="/" className="hover:text-[#26bc71] transition-colors">Trang chủ</Link>
+            <ChevronRight size={14} className="text-gray-600" />
             <span className="text-gray-400">{event.category}</span>
-            <ChevronRight size={14} />
-            <span className="text-gray-700 truncate max-w-[200px]">{event.title}</span>
+            <ChevronRight size={14} className="text-gray-600" />
+            <span className="text-gray-200 truncate max-w-[200px]">{event.title}</span>
           </div>
         </div>
 
@@ -97,7 +97,7 @@ const EventDetailPublicPage = () => {
             {/* LEFT COLUMN */}
             <div className="flex-1 min-w-0">
               {/* Banner */}
-              <div className="rounded-xl overflow-hidden shadow-md mb-5">
+              <div className="rounded-xl overflow-hidden shadow-lg border border-white/5 mb-5">
                 <img
                   src={event.image || event.imageUrl || 'https://via.placeholder.com/1200x600?text=Ảnh+sự+kiện+không+tồn+tại'}
                   alt={event.title}
@@ -107,26 +107,26 @@ const EventDetailPublicPage = () => {
               </div>
 
               {/* Title & actions */}
-              <div className="bg-white rounded-xl p-5 shadow-sm mb-4">
+              <div className="bg-[#1e1e1e] border border-white/5 rounded-xl p-5 shadow-sm mb-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h1 className="text-2xl font-bold text-gray-900 leading-tight">{event.title}</h1>
-                    {event.subtitle && <p className="text-gray-500 mt-1 text-sm">{event.subtitle}</p>}
+                    <h1 className="text-2xl font-bold text-white leading-tight">{event.title}</h1>
+                    {event.subtitle && <p className="text-gray-400 mt-1 text-sm">{event.subtitle}</p>}
                   </div>
                   <div className="flex gap-2 shrink-0">
                     <button
                       onClick={() => setLiked(!liked)}
-                      className={`p-2 rounded-full border transition ${liked ? 'bg-red-50 border-red-300 text-red-500' : 'border-gray-200 text-gray-400 hover:border-gray-300'}`}
+                      className={`p-2 rounded-full border transition ${liked ? 'bg-red-500/10 border-red-500/30 text-red-500' : 'border-white/10 text-gray-400 hover:border-[#26bc71] hover:text-[#26bc71]'}`}
                     >
                       <Heart size={18} fill={liked ? 'currentColor' : 'none'} />
                     </button>
-                    <button className="p-2 rounded-full border border-gray-200 text-gray-400 hover:border-gray-300 transition">
+                    <button className="p-2 rounded-full border border-white/10 text-gray-400 hover:border-[#26bc71] hover:text-[#26bc71] transition">
                       <Share2 size={18} />
                     </button>
                   </div>
                 </div>
 
-                <div className="mt-4 space-y-2 text-sm text-gray-600">
+                <div className="mt-4 space-y-2 text-sm text-gray-300">
                   <div className="flex items-center gap-2">
                     <Clock size={16} className="text-[#26bc71] shrink-0" />
                     <span>{event.date}</span>
@@ -145,51 +145,27 @@ const EventDetailPublicPage = () => {
               </div>
 
               {/* Description */}
-              <div className="bg-white rounded-xl p-5 shadow-sm mb-4">
-                <h2 className="text-base font-semibold text-gray-900 mb-3">Giới thiệu sự kiện</h2>
-                <p className="text-sm text-gray-600 leading-relaxed">{event.description}</p>
+              <div className="bg-[#1e1e1e] border border-white/5 rounded-xl p-5 shadow-sm mb-4">
+                <h2 className="text-base font-semibold text-white mb-3">Giới thiệu sự kiện</h2>
+                <div 
+                  className="event-description text-sm text-gray-300 leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: event.description || 'Chưa có mô tả chi tiết cho sự kiện này.' }}
+                />
               </div>
+            </div>
 
-              <div className="bg-white rounded-xl p-5 shadow-sm mb-4">
-                <h2 className="text-base font-semibold text-gray-900 mb-3">Thông tin sự kiện</h2>
-                <div className="grid gap-3 text-sm text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <Calendar size={16} />
-                    <span>{event.date || 'Chưa có thời gian'}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <MapPin size={16} />
-                    <span>{event.location || event.city || 'Đang cập nhật'}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="inline-block w-2 h-2 rounded-full bg-[#26bc71]" />
-                    <span>{event.category || 'Khác'}</span>
-                  </div>
-                  {event.status && (
-                    <div className="inline-flex items-center gap-2 rounded-full bg-[#effaf0] px-3 py-1 text-xs font-semibold text-[#166534]">
-                      <span>{event.status}</span>
-                    </div>
-                  )}
-                  <div className="text-sm text-gray-500">
-                    {event.availableTickets != null ? `${event.availableTickets} / ${event.totalTickets} vé còn lại` : 'Thông tin vé chưa có'}
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl p-5 shadow-sm mb-4">
-                <h2 className="text-base font-semibold text-gray-900 mb-3">Mô tả</h2>
-                <p className="text-sm leading-relaxed text-gray-600">{event.description || 'Chưa có mô tả chi tiết cho sự kiện này.'}</p>
-              </div>
-
-              <div className="bg-[#1f2937] rounded-xl shadow-sm overflow-hidden">
-                <div className="bg-[#111827] p-4 text-white border-b border-white/10">
+            {/* RIGHT COLUMN */}
+            <div className="w-full lg:w-[380px] shrink-0 flex flex-col gap-4">
+              {/* Tickets and showtimes */}
+              <div className="bg-[#1e1e1e] border border-white/5 rounded-xl shadow-sm overflow-hidden">
+                <div className="bg-[#1a1a1a] p-4 text-white border-b border-white/5">
                   <h3 className="font-bold text-base">Lịch diễn & vé</h3>
-                  <div className="flex items-center gap-1.5 mt-2 text-sm text-gray-300">
-                    <MapPin size={14} />
+                  <div className="flex items-center gap-1.5 mt-2 text-sm text-gray-400">
+                    <MapPin size={14} className="text-[#26bc71]" />
                     <span>{event.location || event.city}</span>
                   </div>
                 </div>
-                <div className="divide-y divide-white/10">
+                <div className="divide-y divide-white/5">
                   {(event.performances || []).length === 0 && (
                     <div className="p-4 text-sm text-gray-400">Chưa có suất diễn cho sự kiện này.</div>
                   )}
@@ -199,10 +175,10 @@ const EventDetailPublicPage = () => {
                     const isDisabled = perf.status && perf.status !== 'OPEN';
                     const isExpanded = expandedPerformanceId === perf.id;
                     return (
-                      <div key={perf.id} className="bg-[#1f2937]">
+                      <div key={perf.id} className="bg-[#1e1e1e]">
                         <button
                           onClick={() => togglePerformance(perf.id)}
-                          className="w-full px-4 py-3 flex items-center justify-between gap-3 text-left hover:bg-[#2b3340] transition"
+                          className="w-full px-4 py-3 flex items-center justify-between gap-3 text-left hover:bg-[#252525] transition"
                         >
                           <div>
                             <div className="text-sm text-white font-semibold">{timeLabel || 'Chưa có giờ'}</div>
@@ -220,20 +196,20 @@ const EventDetailPublicPage = () => {
                               disabled={isDisabled}
                               className="px-3 py-1.5 bg-[#26bc71] text-white text-xs font-semibold rounded-md hover:bg-[#1fa86a] transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
                             >
-                              Mua vé ngay
+                              Mua vé
                               <ChevronRight size={14} />
                             </button>
                           </div>
                         </button>
                         {isExpanded && (
-                          <div className="bg-[#111827] px-4 py-3">
+                          <div className="bg-[#151515] px-4 py-3 border-t border-white/5">
                             <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-2">Thông tin vé</div>
                             {(perf.tickets || []).length === 0 && (
                               <div className="text-xs text-gray-500">Chưa có loại vé cho suất diễn này.</div>
                             )}
                             {(perf.tickets || []).map((tt) => (
-                              <div key={tt.id} className="flex items-center justify-between py-2 border-b border-white/10 last:border-0">
-                                <span className="text-xs text-gray-200">{tt.label || tt.name}</span>
+                              <div key={tt.id} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
+                                <span className="text-xs text-gray-300">{tt.label || tt.name}</span>
                                 <span className="text-xs font-semibold text-[#26bc71]">{formatPrice(tt.price)}</span>
                               </div>
                             ))}
@@ -244,12 +220,41 @@ const EventDetailPublicPage = () => {
                   })}
                 </div>
               </div>
+
+              {/* Event Info */}
+              <div className="bg-[#1e1e1e] border border-white/5 rounded-xl p-5 shadow-sm">
+                <h2 className="text-base font-semibold text-white mb-3">Thông tin sự kiện</h2>
+                <div className="grid gap-3 text-sm text-gray-300">
+                  <div className="flex items-center gap-2">
+                    <Calendar size={16} className="text-[#26bc71]" />
+                    <span>{event.date || 'Chưa có thời gian'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MapPin size={16} className="text-[#26bc71]" />
+                    <span>{event.location || event.city || 'Đang cập nhật'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block w-2 h-2 rounded-full bg-[#26bc71]" />
+                    <span>{event.category || 'Khác'}</span>
+                  </div>
+                  {event.status && (
+                    <div className="inline-flex items-center gap-2 rounded-full bg-green-500/10 px-3 py-1 text-xs font-semibold text-green-400 border border-green-500/20">
+                      <span>{event.status}</span>
+                    </div>
+                  )}
+                  <div className="text-sm text-gray-400">
+                    {event.availableTickets != null ? `${event.availableTickets} / ${event.totalTickets} vé còn lại` : 'Thông tin vé chưa có'}
+                  </div>
+                </div>
+              </div>
             </div>
+
           </div>
         </div>
       </div>
+      
       {/* Related events section */}
-      <div className="bg-[#1a1a2e] py-10">
+      <div className="bg-[#151515] border-t border-white/5 py-12">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-white text-xl font-bold text-center mb-8">Bạn có thể quan tâm</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -260,7 +265,7 @@ const EventDetailPublicPage = () => {
                 <div
                   key={ev.id}
                   onClick={() => navigate(`/event/${ev.id}`)}
-                  className="bg-[#232340] rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform group"
+                  className="bg-[#1e1e1e] border border-white/5 rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-all duration-300 hover:border-white/10 hover:shadow-lg group"
                 >
                   <div className="h-40 overflow-hidden">
                     <img
@@ -275,7 +280,7 @@ const EventDetailPublicPage = () => {
                     </h3>
                     <div className="text-[#26bc71] font-bold text-sm mt-2">{ev.price || ev.priceDisplay || 'Miễn phí'}</div>
                     <div className="flex items-center gap-1.5 mt-1.5 text-xs text-gray-400">
-                      <Calendar size={12} />
+                      <Calendar size={12} className="text-[#26bc71]" />
                       <span>{ev.date || ev.formattedDate}</span>
                     </div>
                   </div>
