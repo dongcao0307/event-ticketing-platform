@@ -22,23 +22,24 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     // Trong BookingRepository.java
     @org.springframework.data.jpa.repository.Query(
-            value = "SELECT b.id as id, u.full_name as customerName, NULL as customerEmail, " +
-                    "e.title as eventName, NULL as eventLocation, b.total_amount as totalAmount, " +
+            value = "SELECT b.id as id, u.full_name as customerName, a.email as customerEmail, u.phone_number as customerPhone, " +
+                    "e.title as eventName, e.location as eventLocation, b.total_amount as totalAmount, " +
                     "b.status as status, b.created_at as createdAt, " +
                     "COALESCE(SUM(bi.quantity), 0) as totalTickets " +
                     "FROM bookings b " +
                     "LEFT JOIN users u ON b.user_id = u.id " +
+                    "LEFT JOIN accounts a ON u.account_user_name = a.user_name " +
                     "LEFT JOIN booking_items bi ON b.id = bi.booking_id " +
                     "LEFT JOIN ticket_types tt ON bi.ticket_type_id = tt.id " +
                     "LEFT JOIN event_performances ep ON tt.performance_id = ep.id " +
                     "LEFT JOIN events e ON ep.event_id = e.id " +
                     "WHERE (:status IS NULL OR b.status = :status) AND " +
-                    "(:keyword IS NULL OR :keyword = '' OR " + // Mấu chốt tìm kiếm đa năng ở đây
+                    "(:keyword IS NULL OR :keyword = '' OR " +
                     "  CAST(b.id AS CHAR) LIKE CONCAT('%', :keyword, '%') OR " +
                     "  LOWER(u.full_name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
                     "  LOWER(e.title) LIKE LOWER(CONCAT('%', :keyword, '%'))" +
                     ") " +
-                    "GROUP BY b.id, u.full_name, e.title, b.total_amount, b.status, b.created_at " +
+                    "GROUP BY b.id, u.full_name, a.email, u.phone_number, e.title, e.location, b.total_amount, b.status, b.created_at " +
                     "ORDER BY b.created_at DESC",
             countQuery = "SELECT count(DISTINCT b.id) FROM bookings b " +
                     "LEFT JOIN users u ON b.user_id = u.id " +

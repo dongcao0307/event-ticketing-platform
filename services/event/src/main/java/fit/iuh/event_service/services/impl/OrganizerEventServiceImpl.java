@@ -50,8 +50,6 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
     @Override
     @Transactional // 🚀 Cực kỳ quan trọng: Đảm bảo xóa cũ - thêm mới không bị lỗi kẹt dữ liệu
     @CachePut(value = "events", key = "#eventId")
-    // Note: @CachePut is placed AFTER save() to update cache with the modified object
-    // This prevents stale data by ensuring the cache is refreshed with the latest database state
     public Event updateEvent(Long organizerId, Long eventId, EventReq req) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Sự kiện không tồn tại"));
@@ -61,7 +59,7 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
         }
 
         // ==========================================
-        // 1. CẬP NHẬT THÔNG TIN SỰ KIỆN CƠ BẢN (Bước 1)
+        // 1. CẬP NHẬT THÔNG TIN SỰ KIỆN CƠ BẢN
         // ==========================================
         event.setTitle(req.getTitle());
         event.setThumbnailUrl(req.getThumbnailUrl());
@@ -74,62 +72,54 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
 
         Event savedEvent = eventRepository.save(event);
 
+        // ĐƯA BIẾN NÀY RA NGOÀI ĐỂ TRÁNH LỖI SCOPE (Cannot resolve symbol)
+        Venue savedVenue = null;
+
         // ==========================================
-        // 2. CẬP NHẬT SUẤT DIỄN, ĐỊA ĐIỂM VÀ VÉ (Bước 2)
+        // 2. CẬP NHẬT SUẤT DIỄN, ĐỊA ĐIỂM VÀ VÉ
         // ==========================================
         if (req.getPerformances() != null && !req.getPerformances().isEmpty()) {
 
-            // BƯỚC 2.1: DỌN SẠCH DỮ LIỆU CŨ TRONG DATABASE
+            // DỌN SẠCH DỮ LIỆU CŨ TRONG DATABASE
             List<EventPerformance> oldPerformances = performanceRepository.findByEventId(eventId);
             for (EventPerformance oldPerf : oldPerformances) {
-                // Xóa tất cả vé thuộc suất diễn cũ
                 if (oldPerf.getTickets() != null && !oldPerf.getTickets().isEmpty()) {
                     ticketTypeRepository.deleteAll(oldPerf.getTickets());
                 }
             }
-            performanceRepository.deleteAll(oldPerformances); // Xóa suất diễn cũ
+            performanceRepository.deleteAll(oldPerformances);
+            savedEvent.setPerformances(new ArrayList<>());
+            performanceRepository.flush();
 
-            // ---> BƯỚC 2.1.5: TẠO LẠI ĐỊA ĐIỂM (VENUE) ĐỂ KHÔNG BỊ "CHƯA XÁC ĐỊNH" <---
-            Venue savedVenue = null;
+            // TẠO LẠI ĐỊA ĐIỂM
             if (req.getVenueName() != null && !req.getVenueName().trim().isEmpty()) {
                 Venue venue = new Venue();
                 venue.setName(req.getVenueName());
                 venue.setCity(req.getProvince());
 
-                // Gộp Số nhà, Phường, Quận an toàn (xử lý null)
                 String combinedAddress = String.format("%s, %s, %s",
                         req.getStreet() != null ? req.getStreet() : "",
                         req.getWard() != null ? req.getWard() : "",
                         req.getDistrict() != null ? req.getDistrict() : "");
-                // Xóa các dấu phẩy thừa nếu có ô bị bỏ trống
                 combinedAddress = combinedAddress.replaceAll("^, |, $", "").replaceAll(", ,", ",");
                 venue.setAddress(combinedAddress);
 
                 savedVenue = venueRepository.save(venue);
             }
-            // --------------------------------------------------------------------------
 
-            // BƯỚC 2.2: LƯU LẠI TOÀN BỘ SUẤT DIỄN VÀ VÉ MỚI
+            // LƯU LẠI TOÀN BỘ SUẤT DIỄN VÀ VÉ MỚI
             for (FullEventCreateRequest.PerformanceRequest perfReq : req.getPerformances()) {
                 EventPerformance perf = new EventPerformance();
                 perf.setEvent(savedEvent);
 
-                // ---> GẮN ĐỊA ĐIỂM VÀO SUẤT DIỄN <---
                 if (savedVenue != null) {
                     perf.setVenue(savedVenue);
                 }
-
                 perf.setStatus(PerformanceStatus.OPEN);
 
-                // Xử lý an toàn chuỗi thời gian suất diễn
-                if (perfReq.getStartTime() != null) {
-                    perf.setStartTime(perfReq.getStartTime());
-                }
-                if (perfReq.getEndTime() != null) {
-                    perf.setEndTime(perfReq.getEndTime());
-                }
+                if (perfReq.getStartTime() != null) perf.setStartTime(perfReq.getStartTime());
+                if (perfReq.getEndTime() != null) perf.setEndTime(perfReq.getEndTime());
 
-                // Tính tổng sức chứa
                 int totalCapacity = 0;
                 if (perfReq.getTickets() != null) {
                     totalCapacity = perfReq.getTickets().stream()
@@ -141,7 +131,6 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
 
                 EventPerformance savedPerf = performanceRepository.save(perf);
 
-                // Lưu các loại vé cho suất diễn
                 if (perfReq.getTickets() != null) {
                     List<TicketType> ticketTypes = new ArrayList<>();
                     for (FullEventCreateRequest.TicketRequest ticketReq : perfReq.getTickets()) {
@@ -150,13 +139,11 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
                         ticketType.setName(ticketReq.getName());
                         ticketType.setPrice(ticketReq.isFree() ? java.math.BigDecimal.ZERO : ticketReq.getPrice());
 
-                        // ---> LƯU SỐ LƯỢNG VÉ (Gồm cả Tối đa/Tối thiểu) <---
                         ticketType.setTotalQuantity(ticketReq.getTotalQuantity());
-                        ticketType.setMaxTicketsPerUser(ticketReq.getMaxTicketsPerUser());
+                        ticketType.setMaxTicketsPerUser(ticketReq.getMaxTicketsPerUser() != null ? ticketReq.getMaxTicketsPerUser() : 10);
+                        ticketType.setMinTicketsPerUser(ticketReq.getMinTicketsPerUser() != null ? ticketReq.getMinTicketsPerUser() : 1);
                         ticketType.setSoldQuantity(0);
                         ticketType.setReservedQuantity(0);
-
-                        // ---> LƯU THỜI GIAN BÁN VÉ LÚC CHỈNH SỬA <---
                         ticketType.setSaleStart(ticketReq.getSaleStart());
                         ticketType.setSaleEnd(ticketReq.getSaleEnd());
 
@@ -167,7 +154,56 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
             }
         }
 
-        return savedEvent;
+        // ==========================================
+        // 3. CẬP NHẬT NGƯỢC LẠI THỐNG KÊ LÊN EVENT KHI CHỈNH SỬA
+        // ==========================================
+        if (savedVenue != null) {
+            savedEvent.setLocation(savedVenue.getName());
+            savedEvent.setCity(savedVenue.getCity());
+        }
+
+        int totalEventTickets = 0;
+        java.math.BigDecimal minPrice = null;
+        java.math.BigDecimal maxPrice = null;
+        LocalDateTime eventStartTime = null;
+        LocalDateTime eventEndTime = null;
+
+        if (req.getPerformances() != null) {
+            for (FullEventCreateRequest.PerformanceRequest perfReq : req.getPerformances()) {
+                if (perfReq.getStartTime() != null) {
+                    if (eventStartTime == null || perfReq.getStartTime().isBefore(eventStartTime)) {
+                        eventStartTime = perfReq.getStartTime();
+                    }
+                }
+                if (perfReq.getEndTime() != null) {
+                    if (eventEndTime == null || perfReq.getEndTime().isAfter(eventEndTime)) {
+                        eventEndTime = perfReq.getEndTime();
+                    }
+                }
+
+                if (perfReq.getTickets() != null) {
+                    for (FullEventCreateRequest.TicketRequest tReq : perfReq.getTickets()) {
+                        totalEventTickets += (tReq.getTotalQuantity() != null ? tReq.getTotalQuantity() : 0);
+
+                        java.math.BigDecimal price = tReq.isFree() ? java.math.BigDecimal.ZERO : tReq.getPrice();
+                        if (price != null) {
+                            if (minPrice == null || price.compareTo(minPrice) < 0) minPrice = price;
+                            if (maxPrice == null || price.compareTo(maxPrice) > 0) maxPrice = price;
+                        }
+                    }
+                }
+            }
+        }
+
+        savedEvent.setTotalTickets(totalEventTickets);
+        savedEvent.setAvailableTickets(totalEventTickets);
+        savedEvent.setMinPrice(minPrice);
+        savedEvent.setMaxPrice(maxPrice);
+        savedEvent.setStartTime(eventStartTime);
+        savedEvent.setEndTime(eventEndTime);
+        savedEvent.setUpdatedAt(LocalDateTime.now());
+
+        return eventRepository.save(savedEvent);
     }
 
 //    @Override
@@ -344,6 +380,8 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
                         // Xử lý giá vé: Nếu tick Free thì để 0, ngược lại lấy giá BigDecimal
                         ticketType.setPrice(ticketReq.isFree() ? java.math.BigDecimal.ZERO : ticketReq.getPrice());
 
+                        ticketType.setMaxTicketsPerUser(ticketReq.getMaxTicketsPerUser() != null ? ticketReq.getMaxTicketsPerUser() : 10);
+                        ticketType.setMinTicketsPerUser(ticketReq.getMinTicketsPerUser() != null ? ticketReq.getMinTicketsPerUser() : 1);
                         ticketType.setTotalQuantity(ticketReq.getTotalQuantity());
                         ticketType.setSoldQuantity(0);
                         ticketType.setReservedQuantity(0);
@@ -375,6 +413,60 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
             organizerPaymentInfoRepository.save(payment);
         }
 
+        // ==========================================
+        // 5. CẬP NHẬT NGƯỢC THỐNG KÊ LÊN BẢNG SỰ KIỆN (Tránh Null)
+        // ==========================================
+        if (savedVenue != null) {
+            savedEvent.setLocation(savedVenue.getName());
+            savedEvent.setCity(savedVenue.getCity());
+        }
+
+        int totalEventTickets = 0;
+        java.math.BigDecimal minPrice = null;
+        java.math.BigDecimal maxPrice = null;
+        LocalDateTime eventStartTime = null;
+        LocalDateTime eventEndTime = null;
+
+        if (request.getPerformances() != null) {
+            for (FullEventCreateRequest.PerformanceRequest perfReq : request.getPerformances()) {
+                // Tính ngày bắt đầu sớm nhất và kết thúc muộn nhất
+                if (perfReq.getStartTime() != null) {
+                    if (eventStartTime == null || perfReq.getStartTime().isBefore(eventStartTime)) {
+                        eventStartTime = perfReq.getStartTime();
+                    }
+                }
+                if (perfReq.getEndTime() != null) {
+                    if (eventEndTime == null || perfReq.getEndTime().isAfter(eventEndTime)) {
+                        eventEndTime = perfReq.getEndTime();
+                    }
+                }
+
+                // Cộng dồn vé và tìm giá Min/Max
+                if (perfReq.getTickets() != null) {
+                    for (FullEventCreateRequest.TicketRequest tReq : perfReq.getTickets()) {
+                        totalEventTickets += (tReq.getTotalQuantity() != null ? tReq.getTotalQuantity() : 0);
+
+                        java.math.BigDecimal price = tReq.isFree() ? java.math.BigDecimal.ZERO : tReq.getPrice();
+                        if (price != null) {
+                            if (minPrice == null || price.compareTo(minPrice) < 0) minPrice = price;
+                            if (maxPrice == null || price.compareTo(maxPrice) > 0) maxPrice = price;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Gắn số liệu vào Event
+        savedEvent.setTotalTickets(totalEventTickets);
+        savedEvent.setAvailableTickets(totalEventTickets); // Mới tạo thì vé trống = tổng vé
+        savedEvent.setMinPrice(minPrice);
+        savedEvent.setMaxPrice(maxPrice);
+        savedEvent.setStartTime(eventStartTime);
+        savedEvent.setEndTime(eventEndTime);
+
+        // Lưu bản cập nhật cuối cùng xuống DB
+        eventRepository.save(savedEvent);
+
         return savedEvent;
     }
 
@@ -396,6 +488,12 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
             res.setOrganizerName(event.getOrganizerName());
             res.setOrganizerLogo(event.getOrganizerLogo());
             res.setOrganizerInfo(event.getOrganizerInfo());
+            res.setMinPrice(event.getMinPrice());
+            res.setMaxPrice(event.getMaxPrice());
+            res.setStartTime(event.getStartTime());
+            res.setEndTime(event.getEndTime());
+            res.setTotalTickets(event.getTotalTickets());
+            res.setAvailableTickets(event.getAvailableTickets());
 
             // Đảm bảo dữ liệu được lấy an toàn
             try {
