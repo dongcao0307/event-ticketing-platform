@@ -52,9 +52,22 @@ const doRefresh = async () => {
   return accessToken;
 };
 
+// Thêm danh sách các đường dẫn không cần Token
+const PUBLIC_ENDPOINTS = [
+  '/events/featured',
+  '/events/latest',
+  '/events/trending',
+  '/events/search',
+  '/events/category'
+];
+
 export const request = async (endpoint, options = {}) => {
   const url = `${BASE_URL}${endpoint}`;
-  const token = getAccessToken();
+  // 1. Chỉ lấy Token nếu endpoint không nằm trong danh sách PUBLIC_ENDPOINTS
+  const isPublic = PUBLIC_ENDPOINTS.some(path => endpoint.startsWith(path));
+  
+  // KHAI BÁO LẦN ĐẦU
+  let token = isPublic ? null : getAccessToken();
 
   // 1. Khởi tạo headers cơ bản và đính kèm Bearer Token nếu có
   const headers = {
@@ -71,7 +84,7 @@ export const request = async (endpoint, options = {}) => {
 
   let response = await fetch(url, { ...options, headers });
 
-  if (response.status === 401) {
+ if (response.status === 401 && !isPublic) {
     const refresh = getRefreshToken();
     if (!refresh) {
       clearTokens();
