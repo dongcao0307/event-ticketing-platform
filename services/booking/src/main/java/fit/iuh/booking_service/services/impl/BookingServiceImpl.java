@@ -11,10 +11,12 @@ import fit.iuh.booking_service.entities.BookingStatus;
 import fit.iuh.booking_service.exceptions.AppException;
 import fit.iuh.booking_service.exceptions.ErrorCode;
 import fit.iuh.booking_service.exceptions.PostException;
-import fit.iuh.booking_service.messaging.BookingEventPublisher;
+import fit.iuh.booking_service.messaging.BookingCancelledEvent;
+import fit.iuh.booking_service.messaging.BookingCreatedEvent;
 import fit.iuh.booking_service.messaging.BookingPaidEvent;
 import fit.iuh.booking_service.mappers.BookingMapper;
 import fit.iuh.booking_service.mappers.BookingWithEventMapper;
+import fit.iuh.booking_service.outbox.BookingOutboxService;
 import fit.iuh.booking_service.redis.BookingExpiryScheduler;
 import fit.iuh.booking_service.repositories.BookingRepository;
 import fit.iuh.booking_service.services.BookingService;
@@ -49,7 +51,7 @@ public class BookingServiceImpl implements BookingService {
     private final BookingMapper bookingMapper;
     private final BookingWithEventMapper bookingWithEventMapper;
     private final BookingExpiryScheduler bookingExpiryScheduler;
-    private final BookingEventPublisher bookingEventPublisher;
+    private final BookingOutboxService bookingOutboxService;
     private final EventGrpcClient eventGrpcClient;
 
     @Value("${booking.expire.minutes:15}")
@@ -102,6 +104,8 @@ public class BookingServiceImpl implements BookingService {
             throw new AppException(ErrorCode.BOOKING_NOT_PENDING);
         }
 
+        boolean hadItems = booking.getItems() != null && !booking.getItems().isEmpty();
+
         for (AddBookingItemRequest request : requests) {
             if (request.getUnitPrice() != null && request.getUnitPrice().compareTo(BigDecimal.ZERO) < 0) {
                 throw new AppException(ErrorCode.INVALID_POST_REQUEST);
@@ -122,6 +126,11 @@ public class BookingServiceImpl implements BookingService {
 
         Booking saved = bookingRepository.save(booking);
         ensureExpiryKey(saved);
+
+        if (!hadItems) {
+            bookingOutboxService.enqueueBookingCreated(toBookingCreatedEvent(saved));
+        }
+
         return bookingMapper.toBookingResponse(saved);
     }
 
@@ -150,8 +159,12 @@ public class BookingServiceImpl implements BookingService {
         }
 
         if (newStatus == BookingStatus.PAID) {
-            bookingEventPublisher.publishBookingPaid(toBookingPaidEvent(saved));
-            bookingEventPublisher.publishBookingNotification(toBookingNotificationEvent(saved));
+            bookingOutboxService.enqueueBookingPaid(toBookingPaidEvent(saved));
+            bookingOutboxService.enqueueBookingNotification(toBookingNotificationEvent(saved));
+        }
+
+        if (newStatus == BookingStatus.CANCELLED || newStatus == BookingStatus.EXPIRED) {
+            bookingOutboxService.enqueueBookingCancelled(toBookingCancelledEvent(saved, "STATUS_CHANGE"));
         }
 
         return bookingMapper.toBookingResponse(saved);
@@ -357,4 +370,33 @@ public class BookingServiceImpl implements BookingService {
                     .build();
         });
     }
+
+        private BookingCreatedEvent toBookingCreatedEvent(Booking booking) {
+        List<BookingCreatedEvent.BookingCreatedItem> items = booking.getItems().stream()
+            .map(item -> BookingCreatedEvent.BookingCreatedItem.builder()
+                .ticketTypeId(item.getTicketTypeId())
+                .quantity(item.getQuantity())
+                .unitPrice(item.getUnitPrice())
+                .build())
+            .toList();
+
+        return BookingCreatedEvent.builder()
+            .bookingId(booking.getId())
+            .userId(booking.getUserId())
+            .idempotenceKey(booking.getIdempotenceKey())
+            .createdAt(booking.getCreatedAt())
+            .expiredAt(booking.getExpiredAt())
+            .items(items)
+            .build();
+        }
+
+        private BookingCancelledEvent toBookingCancelledEvent(Booking booking, String reason) {
+        return BookingCancelledEvent.builder()
+            .bookingId(booking.getId())
+            .userId(booking.getUserId())
+            .status(booking.getStatus().name())
+            .reason(reason)
+            .cancelledAt(LocalDateTime.now())
+            .build();
+        }
 }
