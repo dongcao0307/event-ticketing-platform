@@ -108,7 +108,7 @@ const Header = () => {
               <div style={{ width: '1px', height: '18px', background: '#e5e7eb' }} />
               <button
                 type="button"
-                onClick={() => { setIsSearchOpen(false); navigate(`/search?find=${searchQuery}`); }}
+                onClick={() => { setIsSearchOpen(false); navigate(`/search?q=${searchQuery}`); }}
                 style={{
                   padding: '0 16px',
                   fontSize: '13px',

@@ -6,7 +6,7 @@ import EventCard from '../components/home/EventCard';
 import DateFilter from '../components/search/DateRangePicker';
 import FilterDropdown from '../components/search/FilterDropdown';
 import FilterChips from '../components/search/FilterChips';
-import { searchEvents } from '../services/eventService';
+import { searchEvents, searchSemanticEvents } from '../services/eventService';
 
 const EVENTS_PER_PAGE = 20;
 
@@ -18,13 +18,15 @@ const SearchPage = () => {
     const [totalElements, setTotalElements] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(false);
+    const [isSemanticSearch, setIsSemanticSearch] = useState(false);
 
-    const keyword = searchParams.get('q') || '';
+    const keyword = searchParams.get('q') || searchParams.get('find') || '';
 
     const fetchEvents = useCallback(async () => {
         setLoading(true);
         try {
-            const result = await searchEvents(keyword, filters, page, EVENTS_PER_PAGE);
+            const searchFn = isSemanticSearch && keyword ? searchSemanticEvents : searchEvents;
+            const result = await searchFn(keyword, filters, page, EVENTS_PER_PAGE);
             setEvents(result.events || []);
             setTotalElements(result.totalElements || 0);
             setTotalPages(result.totalPages || 1);
@@ -33,11 +35,11 @@ const SearchPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [keyword, filters, page]);
+    }, [keyword, filters, page, isSemanticSearch]);
 
     useEffect(() => {
         setPage(0);
-    }, [keyword, filters]);
+    }, [keyword, filters, isSemanticSearch]);
 
     useEffect(() => {
         fetchEvents();
@@ -60,6 +62,15 @@ const SearchPage = () => {
                             </p>
                         </div>
                         <div className="flex items-center gap-2 flex-wrap">
+                            <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer mr-2 bg-[#1d2a26] px-3 py-1.5 rounded-full border border-[#2f3d37] hover:border-[#26bc71] transition-colors">
+                                <input
+                                    type="checkbox"
+                                    checked={isSemanticSearch}
+                                    onChange={(e) => setIsSemanticSearch(e.target.checked)}
+                                    className="rounded border-gray-600 bg-gray-700 text-[#26bc71] focus:ring-[#26bc71]"
+                                />
+                                <span className="font-medium flex items-center gap-1">✨ AI Search</span>
+                            </label>
                             <DateFilter onApply={(value) => console.log(value)} />
                             <FilterDropdown onApply={(f) => setFilters(f)} />
                             <FilterChips

@@ -106,6 +106,27 @@ export const searchEvents = async (keyword, filters = {}, page = 0, size = 20) =
     page: 0,
   });
 
+export const searchSemanticEvents = async (keyword, filters = {}, page = 0, size = 20) =>
+  tryApi(async () => {
+    const params = { page, size };
+    if (keyword) params.keyword = keyword;
+    if (filters.category) params.category = filters.category;
+    if (filters.city) params.city = filters.city;
+    if (filters.status) params.status = filters.status;
+    const res = await get('/events/search-semantic', params);
+    return {
+      events: (res.data?.content || []).map(normalizeEvent),
+      totalElements: res.data?.totalElements || 0,
+      totalPages: res.data?.totalPages || 0,
+      page: res.data?.page || 0,
+    };
+  }, {
+    events: [],
+    totalElements: 0,
+    totalPages: 0,
+    page: 0,
+  });
+
 export const getEventById = async (id) =>
   tryApi(async () => {
     const res = await get(`/events/${id}`);
