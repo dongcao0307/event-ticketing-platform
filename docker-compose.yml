@@ -187,6 +187,7 @@ services:
       RABBITMQ_PASSWORD: guest
       EVENT_SERVICE_GRPC_HOST: event-service
       EVENT_SERVICE_GRPC_PORT: 50051
+      EVENT_SERVICE_GRPC_DEADLINE_MS: 2000
 
   payment-service:
     build:
@@ -296,7 +297,14 @@ services:
       MONGODB_AUTHENTICATION_DATABASE: admin
       IDENTITY_SERVICE_GRPC_HOST: identity-service
       IDENTITY_SERVICE_GRPC_PORT: 50052
+      IDENTITY_SERVICE_GRPC_DEADLINE_MS: 2000
       BOOKING_SERVICE_BASE_URL: http://booking-service:8083
+      NOTIFICATION_PAYMENT_MESSAGING_DLQ_EXCHANGE: payment.notification.dlq.exchange
+      NOTIFICATION_PAYMENT_MESSAGING_DLQ_ROUTING_KEY: payment.notification.dlq
+      NOTIFICATION_PAYMENT_MESSAGING_DLQ_QUEUE: payment.notification.dlq.queue
+      NOTIFICATION_BOOKING_MESSAGING_DLQ_EXCHANGE: booking.notification.dlq.exchange
+      NOTIFICATION_BOOKING_MESSAGING_DLQ_ROUTING_KEY: booking.notification.dlq
+      NOTIFICATION_BOOKING_MESSAGING_DLQ_QUEUE: booking.notification.dlq.queue
 
   voucher-service:
     build:
