@@ -25,6 +25,7 @@ export const authService = {
     } else {
       if (credentials.phone) payload.phone = credentials.phone;
       if (credentials.email) payload.email = credentials.email;
+      if (credentials.turnstileToken) payload.turnstileToken = credentials.turnstileToken;
     }
 
     const res = await post('/auth/login', payload);

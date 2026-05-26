@@ -26,6 +26,7 @@ import SeatSelectionPage from './pages/SeatSelectionPage'
 import TicketSelectPage from './pages/TicketSelectPage'
 import BookingInfoPage from './pages/BookingInfoPage'
 import BookingPaymentPage from './pages/BookingPaymentPage'
+import EventsPage from './pages/EventsPage'
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
         <Routes>
           {/* ==================== Public Routes ==================== */}
           <Route path="/" element={<Home />} />
+          <Route path="/events" element={<EventsPage />} />
 
           {/* Public event detail & booking flow */}
           <Route path="/event/:id" element={<EventDetailPublicPage />} />

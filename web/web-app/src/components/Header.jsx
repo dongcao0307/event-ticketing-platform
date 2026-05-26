@@ -322,7 +322,7 @@ const DropDownMenu = ({ isDropdownOpen, handleLogout, onClose }) => {
               className={({ isActive }) => `tb-dropdown-item ${isActive ? 'active' : ''}`}
             >
               <User size={15} style={{ opacity: 0.7 }} />
-              <span>🔧 Bảng điều khiển Admin</span>
+              <span>Bảng điều khiển Admin</span>
             </NavLink>
           </>
         )}
