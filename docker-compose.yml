@@ -235,27 +235,6 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
 
-  seat-service:
-    build:
-      context: ./services/seat
-      dockerfile: Dockerfile
-    container_name: ticketbox-seat
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    ports:
-      - "8086:8086"
-    networks:
-      - ticketbox-net
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: 6379
-
   notification-service:
     build:
       context: ./services/notification
@@ -292,27 +271,6 @@ services:
       IDENTITY_SERVICE_GRPC_HOST: identity-service
       IDENTITY_SERVICE_GRPC_PORT: 50052
       BOOKING_SERVICE_BASE_URL: http://booking-service:8083
-
-  voucher-service:
-    build:
-      context: ./services/voucher
-      dockerfile: Dockerfile
-    container_name: ticketbox-voucher
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    ports:
-      - "8088:8088"
-    networks:
-      - ticketbox-net
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: 6379
 
   statistical-service:
     build:
