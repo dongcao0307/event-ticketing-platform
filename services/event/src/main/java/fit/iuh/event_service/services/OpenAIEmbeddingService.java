@@ -2,21 +2,14 @@ package fit.iuh.event_service.services;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 public class OpenAIEmbeddingService implements EmbeddingService {
 
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
-
-    @Value("${openai.embedding.model:text-embedding-3-small}")
-    private String model;
 
     public OpenAIEmbeddingService(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
@@ -25,25 +18,11 @@ public class OpenAIEmbeddingService implements EmbeddingService {
 
     @Override
     public double[] embed(String text) {
-        String apiKey = System.getenv("GEMINI_API_KEY");
-        if (apiKey == null || apiKey.isBlank()) {
-            throw new IllegalStateException("Missing GEMINI_API_KEY environment variable");
-        }
-
-        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=" + apiKey;
+        String url = "http://ai-service:8091/api/v1/embeddings";
 
         try {
             var payload = objectMapper.createObjectNode();
-            payload.put("model", "models/gemini-embedding-001");
-            
-            var contentNode = objectMapper.createObjectNode();
-            var partsArray = objectMapper.createArrayNode();
-            var partNode = objectMapper.createObjectNode();
-            partNode.put("text", text);
-            partsArray.add(partNode);
-            contentNode.set("parts", partsArray);
-            
-            payload.set("content", contentNode);
+            payload.put("text", text);
 
             JsonNode root = restClient.post()
                     .uri(url)
@@ -52,19 +31,19 @@ public class OpenAIEmbeddingService implements EmbeddingService {
                     .retrieve()
                     .body(JsonNode.class);
 
-            JsonNode valuesNode = root.get("embedding").get("values");
-            List<Double> vec = new ArrayList<>();
-            for (JsonNode v : valuesNode) {
-                vec.add(v.asDouble());
+            if (root == null || !root.has("embedding")) {
+                throw new RuntimeException("Invalid response from ai-service");
             }
 
-            double[] result = new double[vec.size()];
-            for (int i = 0; i < vec.size(); i++) {
-                result[i] = vec.get(i);
+            JsonNode embeddingNode = root.get("embedding");
+            double[] result = new double[embeddingNode.size()];
+            for (int i = 0; i < embeddingNode.size(); i++) {
+                result[i] = embeddingNode.get(i).asDouble();
             }
             return result;
         } catch (Exception e) {
-            throw new RuntimeException("Failed to call Gemini embeddings: " + e.getMessage(), e);
+            throw new RuntimeException("Failed to call internal ai-service: " + e.getMessage(), e);
         }
     }
 }
+

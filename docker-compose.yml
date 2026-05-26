@@ -334,6 +334,18 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
 
+  ai-service:
+    build:
+      context: ./services/ai-service
+      dockerfile: Dockerfile
+    container_name: ticketbox-ai
+    ports:
+      - "8091:8091"
+    networks:
+      - ticketbox-net
+    environment:
+      GEMINI_API_KEY: "AIzaSyCOoc308kUvee6X7XV-8iAC3-ZODVTBaJ8"
+
   # ═══════════════════════════════════════════════════════════
   # WEB APPLICATION (React + Vite)
   # ═══════════════════════════════════════════════════════════
