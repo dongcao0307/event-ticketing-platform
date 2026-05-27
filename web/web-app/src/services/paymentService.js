@@ -141,3 +141,8 @@ export const serviceSavePaymentCallback = async (payload) => {
   const response = await axios.post(PAYMENT_CALLBACK_BASE_URL, payload);
   return unwrapApiResponseBody(response);
 };
+
+export const serviceRequestRefund = async (payload) => {
+  const response = await axios.post('/api/payment/refunds', payload);
+  return unwrapApiResponseBody(response);
+};

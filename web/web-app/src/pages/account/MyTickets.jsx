@@ -28,6 +28,7 @@ const MyTickets = () => {
   const navigate = useNavigate();
   const { setBookingOrderData, setSelectedTicketDetail } = useEvent();
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedBookingToCancel, setSelectedBookingToCancel] = useState(null);
   const [page, setPage] = useState(1);
 
   const [statusFilter, setStatusFilter] = useState("all");
@@ -128,7 +129,8 @@ const MyTickets = () => {
     return data;
   }, [statusFilter, timeFilter, ticketsData]);
 
-  const openCancelModal = () => {
+  const openCancelModal = (booking) => {
+    setSelectedBookingToCancel(booking || null);
     setShowCancelModal(true);
   };
 
@@ -136,8 +138,33 @@ const MyTickets = () => {
     setShowCancelModal(false);
   };
 
-  const handleCancelTicket = () => {
-    closeCancelModal()
+  const handleCancelTicket = async () => {
+    if (!selectedBookingToCancel) {
+      closeCancelModal();
+      return;
+    }
+
+    // Decide where to route cancel: if paid and amount > 0 => request refund via Payment Service
+    try {
+      const booking = selectedBookingToCancel;
+      if (booking.status === 'PAID' && Number(booking.totalAmount || booking.total || 0) > 0) {
+        // Request refund
+        const { serviceRequestRefund } = await import('../../services/paymentService');
+        await serviceRequestRefund({
+          orderId: booking.id,
+          reason: 'user_cancel',
+          idempotencyKey: `refund-${booking.id}-${Date.now()}`,
+        });
+      } else {
+        // Non-paid or zero-amount: mark booking canceled via booking API
+        const { serviceUpdateBookingStatusAdmin } = await import('../../services/bookingService');
+        await serviceUpdateBookingStatusAdmin(booking.id, 'CANCEL');
+      }
+    } catch (err) {
+      console.error('Cancel action failed', err);
+    } finally {
+      closeCancelModal();
+    }
   };
 
   // Map booking data by ticket ID để dễ lookup
