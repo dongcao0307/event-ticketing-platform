@@ -23,13 +23,15 @@ public interface EventRepository extends JpaRepository<Event, Long> {
             "(:keyword IS NULL OR LOWER(e.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND " +
             "(:category IS NULL OR e.category = :category) AND " +
             "(:city IS NULL OR LOWER(e.city) LIKE LOWER(CONCAT('%', :city, '%'))) AND " +
-            "(:status IS NULL OR e.status = :status) " +
+            "(:status IS NULL OR e.status = :status) AND " +
+            "(:maxPrice IS NULL OR e.minPrice <= :maxPrice) " +
             "ORDER BY e.isFeatured DESC, e.startTime ASC")
     Page<Event> searchEvents(
             @Param("keyword") String keyword,
             @Param("category") EventCategory category,
             @Param("city") String city,
             @Param("status") EventStatus status,
+            @Param("maxPrice") Long maxPrice,
             Pageable pageable
     );
 

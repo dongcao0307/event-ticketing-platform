@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Calendar, MapPin, Ticket } from 'lucide-react';
 import Header from '../components/Header';
 import { useEvent } from '../hooks/useEvent';
+import { createCallLimiter } from '../utils/rateLimiter';
 import { serviceGetBookingById } from '../services/bookingService';
 import { serviceGetMomoPaymentStatus, serviceGetVnPayPaymentStatus } from '../services/paymentService';
 
@@ -340,6 +341,23 @@ const BookingPaymentPage = () => {
     run();
   };
 
+  // Client-side limiter to avoid accidental rapid repeated payment attempts.
+  // Allows up to 5 calls per 1 second (matches gateway soft limit). Throws when exceeded.
+  const paymentCallLimiter = useMemo(() => createCallLimiter(5, 1000), []);
+
+  const handlePayWithLimiter = () => {
+    try {
+      paymentCallLimiter.call(handlePay);
+    } catch (err) {
+      if (err?.code === 'TOO_MANY_REQUESTS') {
+        setPaymentError('Quá nhiều yêu cầu thanh toán. Vui lòng thử lại sau.');
+        return;
+      }
+      // rethrow unexpected
+      throw err;
+    }
+  };
+
   if (loadingOrder) {
     return (
       <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center">
@@ -518,7 +536,7 @@ const BookingPaymentPage = () => {
               )}
 
               <button
-                onClick={handlePay}
+                onClick={handlePayWithLimiter}
                 disabled={isExpired || paying || paymentStatus?.status === 'COMPLETED'}
                 className="mt-3 w-full py-2.5 bg-[#26bc71] text-white font-bold rounded-lg hover:bg-[#1fa86a] disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
               >

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { X, Info, EyeOff, Eye, Loader2 } from 'lucide-react';
 import mascotImg from '../assets/mascot.png';
 import { authService } from '../services/authService'; // Nhớ tạo file này như hướng dẫn trước đó
 import Turnstile from './Turnstile';
+import { createCallLimiter } from '../utils/rateLimiter';
 
 const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -35,12 +36,13 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
     setErrorMsg('');
     
     try {
-      // Phát hiện loại đầu vào (email hay phone)
-      const isPhone = /^\d{10,15}$/.test(input.replace(/\D/g, ''));
+      // Phát hiện loại đầu vào (email hay username)
+      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(input || '').trim());
       const loginData = {
         password,
         turnstileToken,
         ...(isPhone ? { phone: input } : { email: input })
+        ...(isEmail ? { email: input } : { userName: input })
       };
 
       // Gọi service đăng nhập
@@ -53,7 +55,16 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
       // Nếu đăng nhập thành công, load lại trang để Header cập nhật giao diện
       window.location.reload(); 
     } catch (error) {
-      // Tăng số lần thất bại
+      // Nếu backend/nginx trả 429 (Too Many Requests), hiển thị thông báo riêng
+      if (error?.status === 429) {
+        // không tăng failedAttempts, nhưng tạm thông báo và khóa UI nhẹ trong 60s
+        const serverLockMs = 60 * 1000; // 1 phút tạm thời
+        setLockoutTime(new Date().getTime() + serverLockMs);
+        setErrorMsg('Quá nhiều yêu cầu đăng nhập. Vui lòng thử lại sau vài chục giây.');
+        return;
+      }
+
+      // Tăng số lần thất bại (logic theo trước)
       const newFailedAttempts = failedAttempts + 1;
       setFailedAttempts(newFailedAttempts);
 
@@ -68,6 +79,23 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Client-side limiter to avoid rapid repeated login attempts (5 calls / 1s)
+  const loginCallLimiter = useMemo(() => createCallLimiter(5, 1000), []);
+
+  const handleLoginWithLimiter = async () => {
+    try {
+      await loginCallLimiter.call(handleLogin);
+    } catch (err) {
+      // If too many local clicks
+      if (err?.code === 'TOO_MANY_REQUESTS') {
+        setErrorMsg('Quá nhiều yêu cầu. Vui lòng thử lại sau vài giây.');
+        return;
+      }
+      // Unexpected error: rethrow so it surfaces in console during dev
+      throw err;
     }
   };
 
@@ -98,11 +126,11 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
         {/* NỘI DUNG FORM */}
         <div className="p-6 pt-8 space-y-4 relative z-0">
           
-          {/* Input Email/SĐT */}
+          {/* Input Tên đăng nhập / Email */}
           <div className="flex items-center border border-gray-300 rounded-md px-3 h-11 focus-within:border-[#26bc71] focus-within:ring-1 focus-within:ring-[#26bc71] transition-all bg-white">
             <input 
               type="text" 
-              placeholder="Nhập email hoặc số điện thoại" 
+              placeholder="Nhập tên đăng nhập hoặc email" 
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={isLockedOut}
@@ -137,8 +165,8 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
 
           {/* Nút Tiếp tục */}
           <button 
-            onClick={handleLogin}
-            disabled={!input || !password || isLoading || isLockedOut || !turnstileToken}
+            onClick={handleLoginWithLimiter}
+            disabled={!input || !password || isLoading || isLockedOut}
             className={`w-full font-bold py-2.5 rounded-md text-[15px] transition-colors mt-2 
               ${(!input || !password || isLoading || isLockedOut || !turnstileToken) ? 'bg-[#e0e0e0] text-[#999] cursor-not-allowed' : 'bg-[#26bc71] text-white cursor-pointer hover:bg-[#23a861]'}
             `}

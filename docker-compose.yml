@@ -10,14 +10,15 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: ticketbox
-    ports:
-      - "3306:3306"          # Giữ cổng chuẩn 3306
+    #    ports:
+    #      - "3307:3306" # Đổi cổng ra 3307 để tránh đụng với MySQL trên máy bạn
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./script/ticketbox-db.sql:/docker-entrypoint-initdb.d/ticketbox-db.sql
     networks:
       - ticketbox-net
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -26,6 +27,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: ticketbox-redis
+    command: ["redis-server", "--appendonly", "yes", "--notify-keyspace-events", "Ex"]
     ports:
       - "6379:6379"
     volumes:
@@ -33,7 +35,7 @@ services:
     networks:
       - ticketbox-net
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -45,8 +47,8 @@ services:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin
       MONGO_INITDB_DATABASE: ticketbox
-    ports:
-      - "27017:27017"
+    #    ports:
+    #      - "27018:27017"
     volumes:
       - mongodb_data:/data/db
       - mongodb_config:/data/configdb
@@ -54,7 +56,7 @@ services:
     networks:
       - ticketbox-net
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -67,13 +69,13 @@ services:
       RABBITMQ_DEFAULT_PASS: guest
     ports:
       - "5672:5672"
-      - "15672:15672"        # Management UI
+      - "15672:15672" # Management UI
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
       - ticketbox-net
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
       interval: 15s
       timeout: 15s
       retries: 10
@@ -136,16 +138,22 @@ services:
         condition: service_healthy
     ports:
       - "8082:8082"
-      - "50051:50051"       # gRPC server port
+      - "50051:50051" # gRPC server port
     networks:
       - ticketbox-net
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: 6379
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
       GRPC_SERVER_PORT: 50051
+
+      GEMINI_API_KEY: "AIzaSyCJpHSo9ORxinYsAVPh9pDniqGdDqlL5Ac"
 
       AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
@@ -168,6 +176,7 @@ services:
         condition: service_started
     ports:
       - "8083:8083"
+      - "50053:50053"       # gRPC server port
     networks:
       - ticketbox-net
     environment:
@@ -182,6 +191,8 @@ services:
       RABBITMQ_PASSWORD: guest
       EVENT_SERVICE_GRPC_HOST: event-service
       EVENT_SERVICE_GRPC_PORT: 50051
+      EVENT_SERVICE_GRPC_DEADLINE_MS: 2000
+      GRPC_SERVER_PORT: 50053
 
   payment-service:
     build:
@@ -193,6 +204,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      booking-service:
+        condition: service_started
     ports:
       - "8085:8085"
     networks:
@@ -205,6 +218,10 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USERNAME: guest
       RABBITMQ_PASSWORD: guest
+      BOOKING_SERVICE_GRPC_HOST: booking-service
+      BOOKING_SERVICE_GRPC_PORT: 50053
+      EVENT_SERVICE_GRPC_HOST: event-service
+      EVENT_SERVICE_GRPC_PORT: 50051
       PAYMENT_VNPAY_RETURN_URL: https://youtube.com
       PAYMENT_VNPAY_TIMEZONE: Asia/Ho_Chi_Minh
       PAYMENT_MOMO_RETURN_URL: https://youtube.com
@@ -270,7 +287,14 @@ services:
       MONGODB_AUTHENTICATION_DATABASE: admin
       IDENTITY_SERVICE_GRPC_HOST: identity-service
       IDENTITY_SERVICE_GRPC_PORT: 50052
+      IDENTITY_SERVICE_GRPC_DEADLINE_MS: 2000
       BOOKING_SERVICE_BASE_URL: http://booking-service:8083
+      NOTIFICATION_PAYMENT_MESSAGING_DLQ_EXCHANGE: payment.notification.dlq.exchange
+      NOTIFICATION_PAYMENT_MESSAGING_DLQ_ROUTING_KEY: payment.notification.dlq
+      NOTIFICATION_PAYMENT_MESSAGING_DLQ_QUEUE: payment.notification.dlq.queue
+      NOTIFICATION_BOOKING_MESSAGING_DLQ_EXCHANGE: booking.notification.dlq.exchange
+      NOTIFICATION_BOOKING_MESSAGING_DLQ_ROUTING_KEY: booking.notification.dlq
+      NOTIFICATION_BOOKING_MESSAGING_DLQ_QUEUE: booking.notification.dlq.queue
 
   statistical-service:
     build:
@@ -289,6 +313,18 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
 
+  ai-service:
+    build:
+      context: ./services/ai-service
+      dockerfile: Dockerfile
+    container_name: ticketbox-ai
+    ports:
+      - "8091:8091"
+    networks:
+      - ticketbox-net
+    environment:
+      GEMINI_API_KEY: "AIzaSyDvdPZDPhnxQNWmm4hTnpZ0Ih1dWx7bOXs"
+
   # ═══════════════════════════════════════════════════════════
   # WEB APPLICATION (React + Vite)
   # ═══════════════════════════════════════════════════════════
@@ -300,7 +336,7 @@ services:
     depends_on:
       - gateway
     ports:
-      - "3000:3000"
+      - "3001:3000"
     networks:
       - ticketbox-net
     restart: on-failure

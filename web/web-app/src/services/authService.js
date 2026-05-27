@@ -19,13 +19,15 @@ export const authService = {
     const payload = { password: credentials.password };
     if (typeof credentials === 'string') {
       const identifier = credentials;
-      const isPhone = /^\d{10,15}$/.test(identifier.replace(/\D/g, ''));
-      if (isPhone) payload.phone = identifier;
-      else payload.email = identifier;
+      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(identifier).trim());
+      if (isEmail) payload.email = identifier;
+      else payload.userName = identifier;
     } else {
-      if (credentials.phone) payload.phone = credentials.phone;
+      if (credentials.userName) payload.userName = credentials.userName;
       if (credentials.email) payload.email = credentials.email;
       if (credentials.turnstileToken) payload.turnstileToken = credentials.turnstileToken;
+      // keep phone support for backward compatibility if present
+      if (credentials.phone) payload.phone = credentials.phone;
     }
 
     const res = await post('/auth/login', payload);

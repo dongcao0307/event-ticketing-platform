@@ -428,7 +428,6 @@ export const getDetailedEventById = async (id) => {
 };
 
 const BOOKING_SERVICE_BASE_URL = '/api/bookings';
-const TICKET_SERVICE_BASE_URL = '/api/tickets';
 
 const toStableMockLong = (rawId, prefix) => {
   const safeId = String(rawId ?? '').trim();
@@ -471,11 +470,6 @@ export const serviceGetBookingById = async (bookingId) => {
 export const serviceGetBookingsByUser = async (userId) => {
   const response = await axios.get(`${BOOKING_SERVICE_BASE_URL}/user/${userId}`);
   return response?.data?.data || response?.data?.body || response?.data;
-};
-
-export const serviceCreateTickets = async (payload) => {
-  const response = await axios.post(`${TICKET_SERVICE_BASE_URL}/bulk`, payload);
-  return unwrapApiResponseBody(response);
 };
 
 export const submitBooking = async (bookingData) => {

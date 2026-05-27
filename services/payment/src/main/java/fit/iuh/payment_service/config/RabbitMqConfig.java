@@ -12,7 +12,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@EnableConfigurationProperties({RabbitMqProperties.class, PaymentNotificationRabbitProperties.class})
+@EnableConfigurationProperties({RabbitMqProperties.class, PaymentNotificationRabbitProperties.class, BookingLifecycleRabbitProperties.class})
 public class RabbitMqConfig {
 
     @Bean
@@ -48,5 +48,29 @@ public class RabbitMqConfig {
     @ConditionalOnProperty(prefix = "payment.notification.messaging", name = "enabled", havingValue = "true")
     public TopicExchange paymentNotificationExchange(PaymentNotificationRabbitProperties properties) {
         return new TopicExchange(properties.getExchange(), true, false);
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "booking.lifecycle.messaging", name = "enabled", havingValue = "true")
+    public TopicExchange bookingLifecycleExchange(BookingLifecycleRabbitProperties properties) {
+        return new TopicExchange(properties.getExchange(), true, false);
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "booking.lifecycle.messaging", name = "enabled", havingValue = "true")
+    public Queue bookingLifecycleCancelledQueue(BookingLifecycleRabbitProperties properties) {
+        return new Queue(properties.getCancelledQueue(), true);
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "booking.lifecycle.messaging", name = "enabled", havingValue = "true")
+    public Binding bookingLifecycleCancelledBinding(
+            Queue bookingLifecycleCancelledQueue,
+            TopicExchange bookingLifecycleExchange,
+            BookingLifecycleRabbitProperties properties
+    ) {
+        return BindingBuilder.bind(bookingLifecycleCancelledQueue)
+                .to(bookingLifecycleExchange)
+                .with(properties.getCancelledRoutingKey());
     }
 }

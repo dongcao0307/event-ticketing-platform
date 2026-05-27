@@ -6,7 +6,7 @@ import EventCard from '../components/home/EventCard';
 import DateFilter from '../components/search/DateRangePicker';
 import FilterDropdown from '../components/search/FilterDropdown';
 import FilterChips from '../components/search/FilterChips';
-import { searchEvents } from '../services/eventService';
+import { searchEvents, searchSemanticEvents } from '../services/eventService';
 
 const EVENTS_PER_PAGE = 20;
 
@@ -18,13 +18,15 @@ const SearchPage = () => {
     const [totalElements, setTotalElements] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(false);
+    const [isSemanticSearch] = useState(true);
 
-    const keyword = searchParams.get('q') || '';
+    const keyword = searchParams.get('q') || searchParams.get('find') || '';
 
     const fetchEvents = useCallback(async () => {
         setLoading(true);
         try {
-            const result = await searchEvents(keyword, filters, page, EVENTS_PER_PAGE);
+            const searchFn = isSemanticSearch && keyword ? searchSemanticEvents : searchEvents;
+            const result = await searchFn(keyword, filters, page, EVENTS_PER_PAGE);
             setEvents(result.events || []);
             setTotalElements(result.totalElements || 0);
             setTotalPages(result.totalPages || 1);
@@ -33,11 +35,11 @@ const SearchPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [keyword, filters, page]);
+    }, [keyword, filters, page, isSemanticSearch]);
 
     useEffect(() => {
         setPage(0);
-    }, [keyword, filters]);
+    }, [keyword, filters, isSemanticSearch]);
 
     useEffect(() => {
         fetchEvents();

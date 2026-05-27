@@ -2,6 +2,7 @@ package fit.iuh.notification_service.clients;
 
 import fit.iuh.notification_service.clients.dto.ApiResponse;
 import fit.iuh.notification_service.clients.dto.BookingResponse;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -23,6 +24,7 @@ public class BookingRestClient {
         this.baseUrl = baseUrl;
     }
 
+    @CircuitBreaker(name = "bookingRestClient", fallbackMethod = "findUserIdFallback")
     public Optional<Long> findUserIdByBookingId(Long bookingId) {
         if (bookingId == null) {
             return Optional.empty();
@@ -43,7 +45,12 @@ public class BookingRestClient {
             return Optional.ofNullable(body.getBody().getUserId());
         } catch (Exception ex) {
             log.warn("Failed to fetch booking {} from booking-service", bookingId, ex);
-            return Optional.empty();
+            throw ex;
         }
+    }
+
+    protected Optional<Long> findUserIdFallback(Long bookingId, Throwable throwable) {
+        log.warn("Fallback for booking-service lookup, bookingId={}", bookingId, throwable);
+        return Optional.empty();
     }
 }

@@ -103,6 +103,19 @@ const TicketCard = ({ ticket, rawBooking, onCardClick, onPaymentClick, openCance
             Tiếp tục thanh toán
           </button>
         )}
+        {ticket.status === "PAID" && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (typeof openCancelModal === 'function') {
+                openCancelModal(rawBooking);
+              }
+            }}
+            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+          >
+            Hủy vé
+          </button>
+        )}
       </div>
 
 

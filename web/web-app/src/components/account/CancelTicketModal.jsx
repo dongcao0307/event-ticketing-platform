@@ -30,8 +30,14 @@ const CancelTicketModal = ({ open, onClose, onConfirm }) => {
         {/* body */}
         <div className="p-8 text-gray-700 text-center">
 
-          Nếu bạn hủy vé trước thời điểm diễn ra sự kiện 24 giờ sẽ không được hoàn tiền.
-          Bạn chắc chắn muốn hủy vé chứ?
+          Lưu ý: Nếu lựa chọn hủy vé thì sẽ được hoàn tiền theo quy tắc sau:<br/>
+          - Nếu chọn hoàn vé trước 1 ngày: Hoàn 100%<br/>
+          - Nếu chọn hoàn vé trước 2 ngày: Hoàn 80%<br/>
+          - Nếu chọn hoàn vé trước 1 tuần: Hoàn 50%<br/>
+          - Nếu chọn hoàn vé trước 1 tháng: Hoàn 20%<br/>
+          - Nếu chọn hoàn vé sau 1 tháng: Không được hoàn lại<br/>
+          - Nếu đã qua thời gian bán vé: Không được hoàn lại<br/>
+          <strong>Bạn chắc chắn muốn hủy vé chứ?</strong>
 
         </div>
 

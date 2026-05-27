@@ -1,0 +1,8 @@
+server:
+  port: 8091
+spring:
+  application:
+    name: ai-service
+openai:
+  embedding:
+    model: text-embedding-3-small
