@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { X, Info, EyeOff, Eye, Loader2 } from 'lucide-react';
 import mascotImg from '../assets/mascot.png';
 import { authService } from '../services/authService'; // Nhớ tạo file này như hướng dẫn trước đó
+import Turnstile from './Turnstile';
 import { createCallLimiter } from '../utils/rateLimiter';
 
 const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
@@ -12,6 +13,7 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState(null);
   
   // Rate Limiter state
   const [failedAttempts, setFailedAttempts] = useState(0);
@@ -27,8 +29,8 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
 
   // Hàm xử lý Đăng nhập
   const handleLogin = async () => {
-    // Ngăn người dùng bấm nếu chưa nhập đủ thông tin hoặc bị khóa
-    if (!input || !password || isLockedOut) return;
+    // Ngăn người dùng bấm nếu chưa nhập đủ thông tin hoặc bị khóa hoặc chưa xác thực Turnstile
+    if (!input || !password || isLockedOut || !turnstileToken) return;
     
     setIsLoading(true);
     setErrorMsg('');
@@ -38,6 +40,8 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
       const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(input || '').trim());
       const loginData = {
         password,
+        turnstileToken,
+        ...(isPhone ? { phone: input } : { email: input })
         ...(isEmail ? { email: input } : { userName: input })
       };
 
@@ -164,26 +168,17 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
             onClick={handleLoginWithLimiter}
             disabled={!input || !password || isLoading || isLockedOut}
             className={`w-full font-bold py-2.5 rounded-md text-[15px] transition-colors mt-2 
-              ${(!input || !password || isLoading || isLockedOut) ? 'bg-[#e0e0e0] text-[#999] cursor-not-allowed' : 'bg-[#26bc71] text-white cursor-pointer hover:bg-[#23a861]'}
+              ${(!input || !password || isLoading || isLockedOut || !turnstileToken) ? 'bg-[#e0e0e0] text-[#999] cursor-not-allowed' : 'bg-[#26bc71] text-white cursor-pointer hover:bg-[#23a861]'}
             `}
           >
             {isLockedOut ? `Thử lại sau ${remainingLockoutTime}s` : isLoading ? 'Đang xử lý...' : 'Tiếp tục'}
           </button>
 
-          {/* Giả lập Cloudflare Captcha */}
-          <div className="w-full h-[60px] border border-[#e0e0e0] bg-[#fafafa] rounded shadow-sm flex items-center justify-between px-4 mt-4">
-            <div className="flex items-center gap-3 text-sm text-[#333]">
-              <Loader2 size={24} className="text-[#26bc71] animate-spin" />
-              <span>Đang xác minh...</span>
-            </div>
-            <div className="flex flex-col items-end">
-              <span className="font-bold text-gray-700 text-xs">CLOUDFLARE</span>
-              <div className="text-[9px] text-gray-500 flex gap-1">
-                <a href="#" className="hover:underline">Quyền riêng tư</a> • 
-                <a href="#" className="hover:underline">Điều khoản</a>
-              </div>
-            </div>
-          </div>
+          {/* Cloudflare Turnstile CAPTCHA */}
+          <Turnstile 
+            sitekey="1x00000000000000000000AA" 
+            onVerify={(token) => setTurnstileToken(token)} 
+          />
 
           {/* === QUÊN MẬT KHẨU & TẠO TÀI KHOẢN === */}
           <div className="text-center text-[14px] mt-4 space-y-1.5">

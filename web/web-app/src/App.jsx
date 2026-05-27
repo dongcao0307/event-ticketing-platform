@@ -10,6 +10,7 @@ import MyAccountPage from './pages/MyAccountPage'
 import AccountSettings from './pages/account/AccountSettings'
 import MyTickets from './pages/account/MyTickets'
 import TicketDetailPage from './pages/TicketDetailPage'
+import CategoryPage from './pages/CategoryPage'
 
 // Import trang mới vừa tạo
 import EventManagement from './pages/EventManagement'
@@ -26,6 +27,7 @@ import SeatSelectionPage from './pages/SeatSelectionPage'
 import TicketSelectPage from './pages/TicketSelectPage'
 import BookingInfoPage from './pages/BookingInfoPage'
 import BookingPaymentPage from './pages/BookingPaymentPage'
+import EventsPage from './pages/EventsPage'
 
 function App() {
   return (
@@ -34,6 +36,8 @@ function App() {
         <Routes>
           {/* ==================== Public Routes ==================== */}
           <Route path="/" element={<Home />} />
+          <Route path="/events" element={<EventsPage />} />
+          <Route path="/category/:categoryName" element={<CategoryPage />} />
 
           {/* Public event detail & booking flow */}
           <Route path="/event/:id" element={<EventDetailPublicPage />} />

@@ -51,6 +51,12 @@ public class AuthService {
     @Value("${jwt.refresh-token-expiration}")
     private long refreshTokenExpiration;
 
+    @Value("${cloudflare.turnstile.secret-key}")
+    private String turnstileSecretKey;
+
+    @Value("${cloudflare.turnstile.verify-url:https://challenges.cloudflare.com/turnstile/v0/siteverify}")
+    private String turnstileVerifyUrl;
+
     @Transactional
     public AuthResponse register(RegisterRequest registerRequest) {
         if (accountRepository.existsByUserName(registerRequest.getUserName())) {
@@ -82,6 +88,9 @@ public class AuthService {
 
     @Transactional
     public AuthResponse login(LoginRequest request) {
+        // 0. Xác thực Cloudflare Turnstile CAPTCHA trước khi xử lý đăng nhập
+        verifyTurnstile(request.getTurnstileToken());
+
         // 1. Xác định identifier (Ưu tiên SĐT, nếu không có thì dùng Email)
         String identifier = request.getPhone() != null && !request.getPhone().isBlank()
                 ? request.getPhone()
@@ -293,5 +302,43 @@ public class AuthService {
                 account.getStatus(),
                 user != null ? user.getCreatedDate() : null
         );
+    }
+
+    private void verifyTurnstile(String token) {
+        if (token == null || token.isBlank()) {
+            throw new ApiException("Vui lòng hoàn thành xác minh bảo mật (CAPTCHA)", HttpStatus.BAD_REQUEST);
+        }
+
+        try {
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            
+            java.util.Map<String, String> requestMap = new java.util.HashMap<>();
+            requestMap.put("secret", turnstileSecretKey);
+            requestMap.put("response", token);
+
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+            org.springframework.http.HttpEntity<java.util.Map<String, String>> entity = new org.springframework.http.HttpEntity<>(requestMap, headers);
+
+            org.springframework.http.ResponseEntity<java.util.Map> response = restTemplate.postForEntity(
+                turnstileVerifyUrl,
+                entity,
+                java.util.Map.class
+            );
+
+            if (response.getBody() == null || !Boolean.TRUE.equals(response.getBody().get("success"))) {
+                Object errorCodes = response.getBody() != null ? response.getBody().get("error-codes") : "No response body";
+                System.err.println("Xác thực Cloudflare Turnstile thất bại. Error codes: " + errorCodes);
+                throw new ApiException("Xác minh bảo mật (CAPTCHA) không hợp lệ. Vui lòng thử lại.", HttpStatus.BAD_REQUEST);
+            }
+        } catch (ApiException e) {
+            throw e;
+        } catch (org.springframework.web.client.RestClientException e) {
+            System.err.println("Lỗi kết nối API Cloudflare Turnstile: " + e.getMessage());
+            throw new ApiException("Không thể kết nối đến dịch vụ xác thực bảo mật. Vui lòng thử lại sau.", HttpStatus.SERVICE_UNAVAILABLE);
+        } catch (Exception e) {
+            System.err.println("Lỗi xác thực Turnstile không xác định: " + e.getMessage());
+            throw new ApiException("Hệ thống xác thực bảo mật gặp sự cố.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }

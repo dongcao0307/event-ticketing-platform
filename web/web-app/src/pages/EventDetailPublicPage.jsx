@@ -80,7 +80,7 @@ const EventDetailPublicPage = () => {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-[#121212] text-[#f0f0f0]">
+      <div className="min-h-screen bg-[#121212] text-[#f0f0f0] overflow-x-hidden">
         {/* Breadcrumb */}
         <div className="bg-[#1a1a1a] border-b border-white/5">
           <div className="max-w-6xl mx-auto px-4 py-2 flex items-center gap-2 text-sm text-gray-400">
@@ -92,58 +92,113 @@ const EventDetailPublicPage = () => {
           </div>
         </div>
 
-        <div className="max-w-6xl mx-auto px-4 py-6">
-          <div className="flex flex-col lg:flex-row gap-6">
-            {/* LEFT COLUMN */}
-            <div className="flex-1 min-w-0">
-              {/* Banner */}
-              <div className="rounded-xl overflow-hidden shadow-lg border border-white/5 mb-5">
-                <img
-                  src={event.image || event.imageUrl || 'https://via.placeholder.com/1200x600?text=Ảnh+sự+kiện+không+tồn+tại'}
-                  alt={event.title}
-                  onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/1200x600?text=Ảnh+sự+kiện+không+tồn+tại'; }}
-                  className="w-full h-64 lg:h-80 object-cover"
-                />
-              </div>
-
-              {/* Title & actions */}
-              <div className="bg-[#1e1e1e] border border-white/5 rounded-xl p-5 shadow-sm mb-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h1 className="text-2xl font-bold text-white leading-tight">{event.title}</h1>
-                    {event.subtitle && <p className="text-gray-400 mt-1 text-sm">{event.subtitle}</p>}
-                  </div>
-                  <div className="flex gap-2 shrink-0">
+        <div className="max-w-6xl mx-auto px-4 pt-6">
+          {/* Ticket-shaped Banner (Full Width) */}
+          <div className="relative flex flex-col md:flex-row bg-[#1e1e1e] rounded-2xl shadow-2xl mb-8 overflow-visible">
+            {/* Left Stub: Event Details */}
+            <div className="flex-1 p-6 lg:p-8 flex flex-col justify-between min-w-0 md:pr-10 relative rounded-t-2xl md:rounded-t-none md:rounded-l-2xl border-b md:border-b-0 md:border-r border-dashed border-white/15 z-20">
+              <div>
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <span className="inline-block px-3 py-1 rounded-full bg-[#26bc71]/10 text-[#26bc71] text-xs font-bold uppercase tracking-wider">
+                    {event.category || 'SỰ KIỆN'}
+                  </span>
+                  <div className="flex gap-2">
                     <button
                       onClick={() => setLiked(!liked)}
                       className={`p-2 rounded-full border transition ${liked ? 'bg-red-500/10 border-red-500/30 text-red-500' : 'border-white/10 text-gray-400 hover:border-[#26bc71] hover:text-[#26bc71]'}`}
                     >
-                      <Heart size={18} fill={liked ? 'currentColor' : 'none'} />
+                      <Heart size={16} fill={liked ? 'currentColor' : 'none'} />
                     </button>
                     <button className="p-2 rounded-full border border-white/10 text-gray-400 hover:border-[#26bc71] hover:text-[#26bc71] transition">
-                      <Share2 size={18} />
+                      <Share2 size={16} />
                     </button>
                   </div>
                 </div>
 
-                <div className="mt-4 space-y-2 text-sm text-gray-300">
-                  <div className="flex items-center gap-2">
-                    <Clock size={16} className="text-[#26bc71] shrink-0" />
-                    <span>{event.date}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <MapPin size={16} className="text-[#26bc71] shrink-0" />
-                    <span>{event.location}</span>
-                  </div>
-                  {event.address && (
-                    <div className="flex items-start gap-2">
-                      <Building2 size={16} className="text-[#26bc71] shrink-0 mt-0.5" />
-                      <span className="text-gray-400">{event.address}</span>
+                <h1 className="text-2xl lg:text-3xl font-extrabold text-white leading-tight mb-5 tracking-tight">
+                  {event.title}
+                </h1>
+
+                <div className="space-y-3.5 text-sm text-gray-300">
+                  <div className="flex items-center gap-3">
+                    <Calendar size={18} className="text-[#26bc71] shrink-0" />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold text-[#26bc71]">
+                        {event.performances?.length > 0 
+                          ? `${formatTime(event.performances[0].startTime)} - ${formatTime(event.performances[0].endTime)}, ${formatDate(event.performances[0].startTime)}`
+                          : (event.date || 'Đang cập nhật')}
+                      </span>
+                      {event.performances?.length > 1 && (
+                        <span className="text-[11px] font-semibold text-[#26bc71] bg-[#26bc71]/10 px-2 py-0.5 rounded border border-[#26bc71]/20">
+                          + {event.performances.length - 1} ngày khác
+                        </span>
+                      )}
                     </div>
-                  )}
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <MapPin size={18} className="text-[#26bc71] shrink-0 mt-0.5" />
+                    <div>
+                      <div className="font-semibold text-[#26bc71]">{event.location || event.city}</div>
+                      {event.address && <div className="text-gray-400 text-xs mt-0.5">{event.address}</div>}
+                    </div>
+                  </div>
                 </div>
               </div>
 
+              {/* Price and CTA */}
+              <div className="mt-8 border-t border-white/10 pt-5 flex flex-col gap-4">
+                <div className="flex items-center gap-2 cursor-pointer group/price" onClick={() => {
+                  document.getElementById('showtimes-section')?.scrollIntoView({ behavior: 'smooth' });
+                }}>
+                  <span className="text-sm text-gray-400">Giá từ</span>
+                  <span className="text-2xl font-black text-[#26bc71] tracking-tight hover:underline flex items-center gap-1">
+                    {event.minPrice !== null && event.minPrice !== undefined && Number(event.minPrice) > 0 
+                      ? formatPrice(event.minPrice) 
+                      : 'Miễn phí'}
+                  </span>
+                  <ChevronRight size={20} className="text-[#26bc71] transition-transform group-hover/price:translate-x-1" />
+                </div>
+                <button
+                  onClick={() => {
+                    if (event.performances?.length > 0) {
+                      if (event.performances.length === 1) {
+                        handlePurchase(event.performances[0].id);
+                      } else {
+                        document.getElementById('showtimes-section')?.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }
+                  }}
+                  className="w-full py-4 bg-[#26bc71] hover:bg-[#1fa86a] text-white font-bold rounded-xl transition-all duration-300 shadow-lg shadow-[#26bc71]/20 hover:shadow-[#26bc71]/30 flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99]"
+                >
+                  Mua vé ngay
+                </button>
+              </div>
+
+              {/* Responsive Ticket Cutouts */}
+              {/* Cutout 1: Left-Bottom on Mobile, Right-Top on Desktop */}
+              <div className="absolute w-8 h-8 rounded-full bg-[#121212] z-30 left-0 bottom-0 -translate-x-1/2 translate-y-1/2 md:left-auto md:right-0 md:top-0 md:bottom-auto md:translate-x-1/2 md:-translate-y-1/2" />
+              
+              {/* Cutout 2: Right-Bottom on Mobile, Right-Bottom on Desktop */}
+              <div className="absolute w-8 h-8 rounded-full bg-[#121212] z-30 right-0 bottom-0 translate-x-1/2 translate-y-1/2" />
+            </div>
+
+            {/* Right: Event Poster/Cover */}
+            <div className="w-full md:w-[46%] lg:w-[48%] shrink-0 relative overflow-hidden rounded-b-2xl md:rounded-b-none md:rounded-l-none md:rounded-r-2xl h-64 md:h-auto z-10">
+              <img
+                src={event.image || event.imageUrl || 'https://via.placeholder.com/1200x600?text=Ảnh+sự+kiện+không+tồn+tại'}
+                alt={event.title}
+                onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/1200x600?text=Ảnh+sự+kiện+không+tồn+tại'; }}
+                className="w-full h-full object-cover md:absolute md:inset-0 hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-black/60 via-transparent to-transparent pointer-events-none" />
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-6xl mx-auto px-4 pb-12">
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* LEFT COLUMN */}
+            <div className="flex-1 min-w-0">
               {/* Description */}
               <div className="bg-[#1e1e1e] border border-white/5 rounded-xl p-5 shadow-sm mb-4">
                 <h2 className="text-base font-semibold text-white mb-3">Giới thiệu sự kiện</h2>
@@ -155,7 +210,7 @@ const EventDetailPublicPage = () => {
             </div>
 
             {/* RIGHT COLUMN */}
-            <div className="w-full lg:w-[380px] shrink-0 flex flex-col gap-4">
+            <div id="showtimes-section" className="w-full lg:w-[380px] shrink-0 flex flex-col gap-4">
               {/* Tickets and showtimes */}
               <div className="bg-[#1e1e1e] border border-white/5 rounded-xl shadow-sm overflow-hidden">
                 <div className="bg-[#1a1a1a] p-4 text-white border-b border-white/5">
