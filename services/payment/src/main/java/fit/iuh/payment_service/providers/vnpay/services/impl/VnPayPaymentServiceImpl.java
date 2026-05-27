@@ -273,11 +273,11 @@ public class VnPayPaymentServiceImpl implements VnPayPaymentService {
 
     private String buildTxnRef(Long paymentId) {
         String randomPart = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
-        return "PAY-" + paymentId + "-" + randomPart;
+        return "VNPAY-PAY" + paymentId + "-" + randomPart;
     }
 
     private Long extractPaymentIdFromTxnRef(String txnRef) {
-        Matcher matcher = Pattern.compile("^PAY-(\\d+)-.*$").matcher(txnRef);
+        Matcher matcher = Pattern.compile("^VNPAY-PAY(\\d+)-.*$").matcher(txnRef);
         if (!matcher.matches()) {
             return null;
         }
