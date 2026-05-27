@@ -117,11 +117,14 @@ export const request = async (endpoint, options = {}) => {
 
   if (!response.ok) {
     let errMsg = `HTTP ${response.status}`;
+    let errStatus = response.status;
     try {
       const errJson = await response.json();
       errMsg = errJson.message || errMsg;
     } catch (_) {}
-    throw new Error(errMsg);
+    const err = new Error(errMsg);
+    err.status = errStatus;
+    throw err;
   }
 
   return response.json();
