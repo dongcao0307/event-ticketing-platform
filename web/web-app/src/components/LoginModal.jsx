@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { X, Info, EyeOff, Eye, Loader2 } from 'lucide-react';
 import mascotImg from '../assets/mascot.png';
 import { authService } from '../services/authService'; // Nhớ tạo file này như hướng dẫn trước đó
@@ -18,14 +18,29 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
   // Rate Limiter state
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [lockoutTime, setLockoutTime] = useState(null);
+  const [currentTime, setCurrentTime] = useState(new Date().getTime());
   const MAX_ATTEMPTS = 5;
   const LOCKOUT_DURATION = 5 * 60 * 1000; // 5 phút
 
-  if (!isOpen) return null;
+  // Tự động đếm ngược và mở khóa khi hết thời gian lockout
+  useEffect(() => {
+    if (!lockoutTime) return;
+    
+    setCurrentTime(new Date().getTime());
+
+    const interval = setInterval(() => {
+      const now = new Date().getTime();
+      setCurrentTime(now);
+      if (now >= lockoutTime) {
+        setLockoutTime(null);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [lockoutTime]);
 
   // Kiểm tra xem có bị khóa do quá nhiều lần thất bại
-  const isLockedOut = lockoutTime && new Date().getTime() < lockoutTime;
-  const remainingLockoutTime = isLockedOut ? Math.ceil((lockoutTime - new Date().getTime()) / 1000) : 0;
+  const isLockedOut = lockoutTime && currentTime < lockoutTime;
+  const remainingLockoutTime = isLockedOut ? Math.ceil((lockoutTime - currentTime) / 1000) : 0;
 
   // Hàm xử lý Đăng nhập
   const handleLogin = async () => {
@@ -41,7 +56,6 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
       const loginData = {
         password,
         turnstileToken,
-        ...(isPhone ? { phone: input } : { email: input })
         ...(isEmail ? { email: input } : { userName: input })
       };
 
@@ -98,6 +112,8 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
       throw err;
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 font-sans backdrop-blur-sm animate-in fade-in duration-200">
@@ -166,7 +182,7 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
           {/* Nút Tiếp tục */}
           <button 
             onClick={handleLoginWithLimiter}
-            disabled={!input || !password || isLoading || isLockedOut}
+            disabled={!input || !password || isLoading || isLockedOut || !turnstileToken}
             className={`w-full font-bold py-2.5 rounded-md text-[15px] transition-colors mt-2 
               ${(!input || !password || isLoading || isLockedOut || !turnstileToken) ? 'bg-[#e0e0e0] text-[#999] cursor-not-allowed' : 'bg-[#26bc71] text-white cursor-pointer hover:bg-[#23a861]'}
             `}
