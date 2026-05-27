@@ -58,10 +58,16 @@ public class BookingClient {
             info.setStatus(bookingDto.getStatus());
             info.setTotalAmount(BigDecimal.valueOf(bookingDto.getTotalAmount()));
             info.setCreatedAt(parseDateTime(bookingDto.getCreatedAt()));
-            info.setTicketTypeIds(bookingDto.getItemsList().stream()
-                    .map(item -> item.getTicketTypeId())
-                    .filter(id -> id != null && id > 0)
-                    .distinct()
+            info.setItems(bookingDto.getItemsList().stream()
+                    .map(item -> {
+                        BookingInfo.BookingItemInfo bookingItemInfo = new BookingInfo.BookingItemInfo();
+                        bookingItemInfo.setTicketTypeId(item.getTicketTypeId());
+                        bookingItemInfo.setQuantity(item.getQuantity());
+                        bookingItemInfo.setUnitPrice(BigDecimal.valueOf(item.getUnitPrice()));
+                        bookingItemInfo.setTicketTypeName(null);
+                        return bookingItemInfo;
+                    })
+                    .filter(item -> item.getTicketTypeId() != null && item.getTicketTypeId() > 0 && item.getQuantity() != null && item.getQuantity() > 0)
                     .toList());
             return info;
         } catch (Exception ex) {
@@ -103,7 +109,7 @@ public class BookingClient {
         private Long userId;
         private String status;
         private LocalDateTime createdAt;
-        private List<Long> ticketTypeIds = new ArrayList<>();
+        private List<BookingItemInfo> items = new ArrayList<>();
         private BigDecimal totalAmount;
 
         public Long getId() { return id; }
@@ -114,9 +120,25 @@ public class BookingClient {
         public void setStatus(String status) { this.status = status; }
         public LocalDateTime getCreatedAt() { return createdAt; }
         public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-        public List<Long> getTicketTypeIds() { return ticketTypeIds; }
-        public void setTicketTypeIds(List<Long> ticketTypeIds) { this.ticketTypeIds = ticketTypeIds; }
+        public List<BookingItemInfo> getItems() { return items; }
+        public void setItems(List<BookingItemInfo> items) { this.items = items; }
         public BigDecimal getTotalAmount() { return totalAmount; }
         public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
+
+        public static class BookingItemInfo {
+            private Long ticketTypeId;
+            private Integer quantity;
+            private BigDecimal unitPrice;
+            private String ticketTypeName;
+
+            public Long getTicketTypeId() { return ticketTypeId; }
+            public void setTicketTypeId(Long ticketTypeId) { this.ticketTypeId = ticketTypeId; }
+            public Integer getQuantity() { return quantity; }
+            public void setQuantity(Integer quantity) { this.quantity = quantity; }
+            public BigDecimal getUnitPrice() { return unitPrice; }
+            public void setUnitPrice(BigDecimal unitPrice) { this.unitPrice = unitPrice; }
+            public String getTicketTypeName() { return ticketTypeName; }
+            public void setTicketTypeName(String ticketTypeName) { this.ticketTypeName = ticketTypeName; }
+        }
     }
 }

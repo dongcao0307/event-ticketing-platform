@@ -1,4 +1,4 @@
-package fit.iuh.ticket_service.messaging;
+package fit.iuh.payment_service.messaging;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -12,7 +12,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@EnableConfigurationProperties({RabbitMqProperties.class, PaymentNotificationRabbitProperties.class})
+@EnableConfigurationProperties({RabbitMqProperties.class, PaymentNotificationRabbitProperties.class, BookingLifecycleRabbitProperties.class})
 public class RabbitMqConfig {
 
     @Bean
@@ -47,6 +47,12 @@ public class RabbitMqConfig {
     @Bean
     @ConditionalOnProperty(prefix = "payment.notification.messaging", name = "enabled", havingValue = "true")
     public TopicExchange paymentNotificationExchange(PaymentNotificationRabbitProperties properties) {
+        return new TopicExchange(properties.getExchange(), true, false);
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "booking.lifecycle.messaging", name = "enabled", havingValue = "true")
+    public TopicExchange bookingLifecycleExchange(BookingLifecycleRabbitProperties properties) {
         return new TopicExchange(properties.getExchange(), true, false);
     }
 }

@@ -54,6 +54,13 @@ public class BookingExpiryHandler {
             .userId(booking.getUserId())
             .status(booking.getStatus().name())
             .reason("EXPIRED")
+            .items(booking.getItems().stream()
+                .map(item -> BookingCancelledEvent.BookingCancelledItem.builder()
+                    .ticketTypeId(item.getTicketTypeId())
+                    .quantity(item.getQuantity())
+                    .unitPrice(item.getUnitPrice())
+                    .build())
+                .toList())
             .cancelledAt(LocalDateTime.now())
             .build());
     }

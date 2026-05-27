@@ -47,6 +47,13 @@ public class BookingCancelledListener {
                 ticket.setTicketStatus(TicketStatus.CANCELLED);
                 ticketExpiryScheduler.cancel(ticket.getId());
                 updatedCount++;
+                continue;
+            }
+
+            if (ticket.getTicketStatus() == TicketStatus.PAID) {
+                ticket.setTicketStatus(TicketStatus.REFUNDED);
+                ticketExpiryScheduler.cancel(ticket.getId());
+                updatedCount++;
             }
         }
 

@@ -67,7 +67,22 @@ public class TicketQuantityService {
             return;
         }
 
-        releaseReservationByBooking(event.getBookingId());
+        if (isAlreadyProcessed(event.getBookingId())) {
+            log.info("Booking cancel already processed for booking {}, skip", event.getBookingId());
+            return;
+        }
+
+        if (isRefundOrFreeCancel(event)) {
+            if (event.getItems() != null && !event.getItems().isEmpty()) {
+                reverseSold(event.getItems());
+            } else {
+                releaseReservationByBooking(event.getBookingId());
+            }
+        } else {
+            releaseReservationByBooking(event.getBookingId());
+        }
+
+        markProcessed(event.getBookingId());
     }
 
     public void handleBookingPaid(BookingPaidEvent event) {
@@ -111,6 +126,16 @@ public class TicketQuantityService {
 
         releaseReserved(snapshot.getItems());
         deleteReservationKeys(bookingId);
+    }
+
+    @Transactional
+    public void reverseSold(List<BookingCancelledEvent.BookingCancelledItem> items) {
+        for (BookingCancelledEvent.BookingCancelledItem item : items) {
+            if (item == null || item.getTicketTypeId() == null || item.getQuantity() == null || item.getQuantity() <= 0) {
+                continue;
+            }
+            adjustQuantities(item.getTicketTypeId(), 0, -item.getQuantity(), false);
+        }
     }
 
     @Transactional
@@ -261,6 +286,26 @@ public class TicketQuantityService {
 
         stringRedisTemplate.delete(EventReservationKeys.dataKey(bookingId));
         stringRedisTemplate.delete(EventReservationKeys.ttlKey(bookingId));
+    }
+
+    private boolean isAlreadyProcessed(Long bookingId) {
+        return Boolean.TRUE.equals(stringRedisTemplate.hasKey(EventReservationKeys.cancelledKey(bookingId)));
+    }
+
+    private void markProcessed(Long bookingId) {
+        if (bookingId == null) {
+            return;
+        }
+        stringRedisTemplate.opsForValue().set(EventReservationKeys.cancelledKey(bookingId), "1", Duration.ofMinutes(reservationTtlMinutes));
+    }
+
+    private boolean isRefundOrFreeCancel(BookingCancelledEvent event) {
+        if (event == null || event.getReason() == null) {
+            return false;
+        }
+
+        String reason = event.getReason().trim().toUpperCase();
+        return "REFUND_COMPLETED".equals(reason) || "FREE_ORDER_CANCELLED".equals(reason);
     }
 
     private List<EventReservationSnapshot.ReservationItem> toSnapshotItems(List<TicketReservedEvent.TicketReservedItem> items) {

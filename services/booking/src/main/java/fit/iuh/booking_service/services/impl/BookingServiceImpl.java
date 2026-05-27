@@ -171,6 +171,23 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @Transactional
+    public BookingResponse cancelBookingWithReason(Long bookingId, String reason) {
+        Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+
+        if (booking.getStatus() == BookingStatus.CANCELLED || booking.getStatus() == BookingStatus.EXPIRED) {
+            return bookingMapper.toBookingResponse(booking);
+        }
+
+        booking.setStatus(BookingStatus.CANCELLED);
+        booking.setVersion(booking.getVersion() == null ? 1L : booking.getVersion() + 1);
+        Booking saved = bookingRepository.save(booking);
+        bookingExpiryScheduler.cancel(bookingId);
+        bookingOutboxService.enqueueBookingCancelled(toBookingCancelledEvent(saved, reason));
+        return bookingMapper.toBookingResponse(saved);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public BookingResponse findById(Long bookingId) {
         Booking booking = bookingRepository.findByIdWithItems(bookingId)
@@ -391,12 +408,22 @@ public class BookingServiceImpl implements BookingService {
         }
 
         private BookingCancelledEvent toBookingCancelledEvent(Booking booking, String reason) {
+            List<BookingCancelledEvent.BookingCancelledItem> items = booking.getItems().stream()
+                .map(item -> BookingCancelledEvent.BookingCancelledItem.builder()
+                    .ticketTypeId(item.getTicketTypeId())
+                    .quantity(item.getQuantity())
+                    .unitPrice(item.getUnitPrice())
+                    .ticketTypeName(resolveTicketTypeName(item.getTicketTypeId()))
+                    .build())
+                .toList();
+
         return BookingCancelledEvent.builder()
             .bookingId(booking.getId())
             .userId(booking.getUserId())
             .status(booking.getStatus().name())
             .reason(reason)
             .cancelledAt(LocalDateTime.now())
+                .items(items)
             .build();
         }
 }
