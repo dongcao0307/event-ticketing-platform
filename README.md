@@ -34,8 +34,8 @@ Hệ thống bao gồm 9 Microservices độc lập:
 | **api-gateway**      | `8080` | Cổng vào duy nhất, reverse proxy bằng Nginx. |
 | **identity-service** | `8087` | Đăng ký, Đăng nhập, cấp phát JWT.            |
 | **event-service**    | `8082` | Quản lý sự kiện, tích hợp Redis Cache.       |
-| **ticket-service**   | `8083` | Quản lý kho vé.                              |
-| **booking-service**  | `8084` | Xử lý đặt vé, Retry, tích hợp RabbitMQ.      |
+| **ticket-service**   | `8084` | Quản lý kho vé.                              |
+| **booking-service**  | `8083` | Xử lý đặt vé, Retry, tích hợp RabbitMQ.      |
 | **payment-service**  | `8085` | Giả lập thanh toán.                          |
 | ...                  | ...    | (Các service khác)                           |
 

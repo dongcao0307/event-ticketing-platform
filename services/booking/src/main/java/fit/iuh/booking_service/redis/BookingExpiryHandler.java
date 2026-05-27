@@ -2,6 +2,8 @@ package fit.iuh.booking_service.redis;
 
 import fit.iuh.booking_service.entities.Booking;
 import fit.iuh.booking_service.entities.BookingStatus;
+import fit.iuh.booking_service.messaging.BookingCancelledEvent;
+import fit.iuh.booking_service.outbox.BookingOutboxService;
 import fit.iuh.booking_service.repositories.BookingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -13,6 +15,7 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class BookingExpiryHandler {
     private final BookingRepository bookingRepository;
+    private final BookingOutboxService bookingOutboxService;
 
     @Transactional
     public void handleExpiredKey(String expiredKey) {
@@ -45,5 +48,20 @@ public class BookingExpiryHandler {
         booking.setStatus(BookingStatus.EXPIRED);
         booking.setVersion(booking.getVersion() == null ? 1L : booking.getVersion() + 1);
         bookingRepository.save(booking);
+
+        bookingOutboxService.enqueueBookingCancelled(BookingCancelledEvent.builder()
+            .bookingId(booking.getId())
+            .userId(booking.getUserId())
+            .status(booking.getStatus().name())
+            .reason("EXPIRED")
+            .items(booking.getItems().stream()
+                .map(item -> BookingCancelledEvent.BookingCancelledItem.builder()
+                    .ticketTypeId(item.getTicketTypeId())
+                    .quantity(item.getQuantity())
+                    .unitPrice(item.getUnitPrice())
+                    .build())
+                .toList())
+            .cancelledAt(LocalDateTime.now())
+            .build());
     }
 }

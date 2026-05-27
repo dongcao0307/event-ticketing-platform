@@ -11,6 +11,7 @@ import fit.iuh.payment_service.exceptions.AppException;
 import fit.iuh.payment_service.exceptions.ErrorCode;
 import fit.iuh.payment_service.messaging.PaymentEventPublisher;
 import fit.iuh.payment_service.messaging.PaymentStatusChangedEvent;
+import fit.iuh.payment_service.providers.common.dtos.ProviderRefundResult;
 import fit.iuh.payment_service.providers.free.dtos.requests.FreeCreatePaymentRequest;
 import fit.iuh.payment_service.providers.free.dtos.responses.FreeCreatePaymentResponse;
 import fit.iuh.payment_service.providers.free.services.FreePaymentService;
@@ -95,6 +96,42 @@ public class FreePaymentServiceImpl implements FreePaymentService {
                 .paymentId(payment.getId())
                 .paymentToken(payment.getPaymentToken())
                 .status(payment.getStatus())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public ProviderRefundResult refund(String refundRequestId, Payment payment, BigDecimal refundAmount, String reason) {
+        String providerTransactionId = "FREE-REFUND-" + refundRequestId;
+        String providerResponse = "{\"phase\":\"REFUND\",\"provider\":\"FREE\",\"paymentId\":" + payment.getId()
+                + ",\"reason\":\"" + (reason == null ? "" : reason.replace("\"", "\\\"")) + "\"}";
+
+        if (transactionRepository.existsByProviderTransactionId(providerTransactionId)) {
+            return ProviderRefundResult.builder()
+                    .success(true)
+                    .providerName(PROVIDER_NAME)
+                    .providerTransactionId(providerTransactionId)
+                    .message("Duplicate refund skipped")
+                    .refundedAmount(refundAmount)
+                    .build();
+        }
+
+        Transaction transaction = Transaction.builder()
+                .id(refundRequestId)
+                .providerResponse(providerResponse)
+                .timestamp(LocalDateTime.now())
+                .providerTransactionId(providerTransactionId)
+                .status(TransactionStatus.SUCCESS)
+                .payment(payment)
+                .build();
+        transactionRepository.save(transaction);
+
+        return ProviderRefundResult.builder()
+                .success(true)
+                .providerName(PROVIDER_NAME)
+                .providerTransactionId(providerTransactionId)
+                .message("Free refund completed as no-op")
+                .refundedAmount(refundAmount)
                 .build();
     }
 

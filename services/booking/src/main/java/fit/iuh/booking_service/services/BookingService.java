@@ -12,6 +12,7 @@ public interface BookingService {
     BookingResponse createBooking(CreateBookingRequest request);
     BookingResponse addBookingItems(Long bookingId, List<AddBookingItemRequest> requests);
     BookingResponse updateBookingStatus(Long bookingId, UpdateBookingStatusRequest request);
+    BookingResponse cancelBookingWithReason(Long bookingId, String reason);
     BookingResponse findById(Long bookingId);
     List<BookingWithEventResponse> getBookingsByUserId(Long userId);
 

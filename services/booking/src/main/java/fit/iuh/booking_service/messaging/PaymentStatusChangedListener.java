@@ -24,13 +24,20 @@ public class PaymentStatusChangedListener {
         }
 
         if (!"COMPLETED".equalsIgnoreCase(event.getStatus())) {
-            return;
+            if (!"REFUNDED".equalsIgnoreCase(event.getStatus())) {
+                return;
+            }
         }
 
         try {
             BookingResponse booking = bookingService.findById(event.getBookingId());
             if (booking != null && booking.getStatus() == BookingStatus.PAID) {
                 log.info("Booking {} is already PAID; skipping", event.getBookingId());
+            }
+
+            if ("REFUNDED".equalsIgnoreCase(event.getStatus())) {
+                bookingService.cancelBookingWithReason(event.getBookingId(), "REFUND_COMPLETED");
+                log.info("Booking {} cancelled after refund event {}", event.getBookingId(), event.getPaymentId());
                 return;
             }
 

@@ -137,6 +137,7 @@ public class EventGrpcServiceImpl extends EventGrpcServiceGrpc.EventGrpcServiceI
                         .setPrice(tt.getPrice() != null ? tt.getPrice().doubleValue() : 0.0)
                         .setQuantity(tt.getTotalQuantity() != null ? tt.getTotalQuantity() : 0)
                         .setAvailableQuantity(calculateAvailableQuantity(tt))
+                        .setSaleEnd(tt.getSaleEnd() != null ? tt.getSaleEnd().format(FORMATTER) : "")
                         .build()
                 )
                 .toList();

@@ -15,7 +15,9 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties({
     PaymentRabbitProperties.class,
     BookingRabbitProperties.class,
-    BookingNotificationRabbitProperties.class
+    BookingNotificationRabbitProperties.class,
+    BookingLifecycleRabbitProperties.class,
+    TicketReservationRabbitProperties.class
 })
 public class RabbitMqConfig {
 
@@ -76,5 +78,53 @@ public class RabbitMqConfig {
     @ConditionalOnProperty(prefix = "booking.notification.messaging", name = "enabled", havingValue = "true")
     public TopicExchange bookingNotificationExchange(BookingNotificationRabbitProperties properties) {
         return new TopicExchange(properties.getExchange(), true, false);
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "booking.lifecycle.messaging", name = "enabled", havingValue = "true")
+    public TopicExchange bookingLifecycleExchange(BookingLifecycleRabbitProperties properties) {
+        return new TopicExchange(properties.getExchange(), true, false);
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "ticket.reservation.messaging", name = "enabled", havingValue = "true")
+    public TopicExchange ticketReservationExchange(TicketReservationRabbitProperties properties) {
+        return new TopicExchange(properties.getExchange(), true, false);
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "ticket.reservation.messaging", name = "enabled", havingValue = "true")
+    public Queue ticketReservedQueue(TicketReservationRabbitProperties properties) {
+        return new Queue(properties.getReservedQueue(), true);
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "ticket.reservation.messaging", name = "enabled", havingValue = "true")
+    public Queue ticketReservationFailedQueue(TicketReservationRabbitProperties properties) {
+        return new Queue(properties.getFailedQueue(), true);
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "ticket.reservation.messaging", name = "enabled", havingValue = "true")
+    public Binding ticketReservedBinding(
+            Queue ticketReservedQueue,
+            TopicExchange ticketReservationExchange,
+            TicketReservationRabbitProperties properties
+    ) {
+        return BindingBuilder.bind(ticketReservedQueue)
+                .to(ticketReservationExchange)
+                .with(properties.getReservedRoutingKey());
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "ticket.reservation.messaging", name = "enabled", havingValue = "true")
+    public Binding ticketReservationFailedBinding(
+            Queue ticketReservationFailedQueue,
+            TopicExchange ticketReservationExchange,
+            TicketReservationRabbitProperties properties
+    ) {
+        return BindingBuilder.bind(ticketReservationFailedQueue)
+                .to(ticketReservationExchange)
+                .with(properties.getFailedRoutingKey());
     }
 }

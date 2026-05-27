@@ -52,4 +52,11 @@ public class TicketType {
 
     @Version
     private Long version; // Khớp với UML dùng để Lock Optimistic
+
+    @PrePersist
+    void ensureVersion() {
+        if (version == null) {
+            version = 0L;
+        }
+    }
 }

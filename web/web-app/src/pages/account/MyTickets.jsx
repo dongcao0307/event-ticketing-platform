@@ -6,6 +6,7 @@ import TicketSuggestionGrid from "../../components/account/TicketSuggestionGrid"
 import { serviceGetBookingsByUser } from "../../services/bookingService";
 import { getFeaturedEvents } from "../../services/eventService";
 import { useEvent } from "../../hooks/useEvent";
+import { useToast } from "../../context/ToastContext";
 
 const PER_PAGE = 4;
 
@@ -27,7 +28,9 @@ const formatDateLabel = (dateStr) => {
 const MyTickets = () => {
   const navigate = useNavigate();
   const { setBookingOrderData, setSelectedTicketDetail } = useEvent();
+  const { success: showSuccessToast, error: showErrorToast } = useToast();
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedBookingToCancel, setSelectedBookingToCancel] = useState(null);
   const [page, setPage] = useState(1);
 
   const [statusFilter, setStatusFilter] = useState("all");
@@ -128,7 +131,8 @@ const MyTickets = () => {
     return data;
   }, [statusFilter, timeFilter, ticketsData]);
 
-  const openCancelModal = () => {
+  const openCancelModal = (booking) => {
+    setSelectedBookingToCancel(booking || null);
     setShowCancelModal(true);
   };
 
@@ -136,8 +140,40 @@ const MyTickets = () => {
     setShowCancelModal(false);
   };
 
-  const handleCancelTicket = () => {
-    closeCancelModal()
+  const handleCancelTicket = async () => {
+    if (!selectedBookingToCancel) {
+      closeCancelModal();
+      return;
+    }
+
+    // Decide where to route cancel: if paid and amount > 0 => request refund via Payment Service
+    try {
+      const booking = selectedBookingToCancel;
+      if (booking.status === 'PAID' && Number(booking.totalAmount || booking.total || 0) > 0) {
+        // Request refund
+        const { serviceRequestRefund } = await import('../../services/paymentService');
+        const refundResponse = await serviceRequestRefund({
+          orderId: booking.id,
+          reason: 'user_cancel',
+          idempotencyKey: `refund-${booking.id}-${Date.now()}`,
+        });
+
+        if (refundResponse) {
+          showSuccessToast("Yêu cầu hủy vé đang được xử lý");
+        } else {
+          showErrorToast("Đã xảy ra lỗi khi thực hiện hủy vé");
+        }
+      } else {
+        // Non-paid or zero-amount: mark booking canceled via booking API
+        const { serviceUpdateBookingStatusAdmin } = await import('../../services/bookingService');
+        await serviceUpdateBookingStatusAdmin(booking.id, 'CANCEL');
+      }
+    } catch (err) {
+      console.error('Cancel action failed', err);
+      showErrorToast("Đã xảy ra lỗi khi thực hiện hủy vé");
+    } finally {
+      closeCancelModal();
+    }
   };
 
   // Map booking data by ticket ID để dễ lookup
@@ -237,7 +273,7 @@ const MyTickets = () => {
           { key: "all", label: "Tất cả" },
           { key: "PAID", label: "Thành công" },
           { key: "PENDING", label: "Đang xử lý" },
-          { key: "CANCEL", label: "Đã hủy" },
+          { key: "CANCELLED", label: "Đã hủy" },
         ].map((item) => (
           <button
             key={item.key}

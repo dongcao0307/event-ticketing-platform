@@ -1,7 +1,7 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, MapPin, Clock, Info, Plus, Minus } from 'lucide-react';
-import { getDetailedEventById, serviceAddBookingItems, serviceCreateBooking, serviceCreateTickets } from '../services/bookingService';
+import { getDetailedEventById, serviceAddBookingItems, serviceCreateBooking } from '../services/bookingService';
 import { buildFreeCheckoutPayload, serviceCreateFreeCheckout } from '../services/paymentService';
 import { useEvent } from '../hooks/useEvent';
 
@@ -97,13 +97,6 @@ const TicketSelectPage = () => {
     return parsed;
   };
 
-  const buildQrCode = () => {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-      return crypto.randomUUID();
-    }
-    return `QR-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
-  };
-
   const handleContinue = async () => {
     if (!activePerformance || totalQty === 0 || submitting) return;
     setSubmitError('');
@@ -136,22 +129,6 @@ const TicketSelectPage = () => {
 
       const updatedBooking = await serviceAddBookingItems(bookingId, orderItemsPayload);
       const finalBooking = updatedBooking ?? createdBooking;
-
-      const ticketPayload = orderItemsPayload.flatMap((item) =>
-        Array.from({ length: item.quantity }, () => ({
-          ticketTypeId: item.ticketTypeId,
-          performanceId,
-          userId,
-          orderId: bookingId,
-          qrCode: buildQrCode(),
-          priceAtPurchase: item.unitPrice,
-          seatNumber: null,
-        }))
-      );
-
-      if (ticketPayload.length) {
-        await serviceCreateTickets(ticketPayload);
-      }
 
       const showtimeContext = activePerformance
         ? { id: activePerformance.id, label: activePerformance.label, date: activePerformance.date }

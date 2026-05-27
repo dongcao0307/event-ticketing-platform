@@ -12,4 +12,7 @@ public class NotificationBookingRabbitProperties {
     private String exchange;
     private String routingKey;
     private String queue;
+    private String dlqExchange;
+    private String dlqRoutingKey;
+    private String dlqQueue;
 }
