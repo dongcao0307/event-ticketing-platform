@@ -55,4 +55,22 @@ public class RabbitMqConfig {
     public TopicExchange bookingLifecycleExchange(BookingLifecycleRabbitProperties properties) {
         return new TopicExchange(properties.getExchange(), true, false);
     }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "booking.lifecycle.messaging", name = "enabled", havingValue = "true")
+    public Queue bookingLifecycleCancelledQueue(BookingLifecycleRabbitProperties properties) {
+        return new Queue(properties.getCancelledQueue(), true);
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "booking.lifecycle.messaging", name = "enabled", havingValue = "true")
+    public Binding bookingLifecycleCancelledBinding(
+            Queue bookingLifecycleCancelledQueue,
+            TopicExchange bookingLifecycleExchange,
+            BookingLifecycleRabbitProperties properties
+    ) {
+        return BindingBuilder.bind(bookingLifecycleCancelledQueue)
+                .to(bookingLifecycleExchange)
+                .with(properties.getCancelledRoutingKey());
+    }
 }

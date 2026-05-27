@@ -12,4 +12,5 @@ public class BookingLifecycleRabbitProperties {
     private String exchange;
     private String createdRoutingKey;
     private String cancelledRoutingKey;
+    private String cancelledQueue;
 }

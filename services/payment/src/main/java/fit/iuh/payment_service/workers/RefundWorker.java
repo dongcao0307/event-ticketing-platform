@@ -21,21 +21,18 @@ public class RefundWorker {
     private final RefundRequestRepository refundRequestRepository;
     private final RefundProcessor refundProcessor;
 
-    @Scheduled(fixedDelayString = "30000")
+    @Scheduled(fixedDelayString = "${refund.worker.poll-interval-ms:30000}")
     @Transactional
     public void pollAndProcess() {
-        List<RefundRequest> pending = refundRequestRepository.findAll();
-        // Simple filter for PENDING items
+        List<RefundRequest> pending = refundRequestRepository.findTop50ByStatusOrderByUpdatedAtAsc(RefundStatus.PENDING);
         for (RefundRequest r : pending) {
-            if (r.getStatus() == RefundStatus.PENDING) {
-                try {
-                    log.info("Worker picked refund {}", r.getId());
-                    refundProcessor.process(r);
-                } catch (Exception ex) {
-                    log.error("Processing refund {} failed", r.getId(), ex);
-                    r.setStatus(RefundStatus.FAILED);
-                    refundRequestRepository.save(r);
-                }
+            try {
+                log.info("Worker picked refund {}", r.getId());
+                refundProcessor.process(r);
+            } catch (Exception ex) {
+                log.error("Processing refund {} failed", r.getId(), ex);
+                r.setStatus(RefundStatus.FAILED);
+                refundRequestRepository.save(r);
             }
         }
     }

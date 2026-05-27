@@ -4,7 +4,10 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,7 +15,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
@@ -21,40 +23,36 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "refund_requests")
-public class RefundRequest {
-
+@Table(name = "payment_outbox_events")
+public class PaymentOutboxEvent {
     @Id
-    @Column(nullable = false, length = 64)
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
+    @Column(nullable = false, length = 80)
+    private String aggregateType;
+
+    @Column(nullable = false, length = 80)
+    private String aggregateId;
+
+    @Column(nullable = false, length = 80)
+    private String eventType;
+
+    @Lob
     @Column(nullable = false)
-    private Long orderId;
-
-    @Column(nullable = true)
-    private Long paymentId;
-
-    @Column(nullable = true)
-    private BigDecimal amount;
-
-    @Column(nullable = true, length = 500)
-    private String reason;
-
-    @Column(nullable = true, unique = true, length = 120)
-    private String idempotencyKey;
+    private String payload;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private RefundStatus status;
+    private PaymentOutboxStatus status;
+
+    @Column(nullable = false)
+    private int retryCount;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
-    @Column(nullable = false)
-    private LocalDateTime updatedAt;
-
-    @Column(nullable = false)
-    private int retryCount;
+    private LocalDateTime publishedAt;
 
     @Column(length = 500)
     private String lastError;

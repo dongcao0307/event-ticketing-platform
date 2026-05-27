@@ -9,12 +9,12 @@ import fit.iuh.payment_service.providers.common.dtos.ProviderRefundResult;
 import fit.iuh.payment_service.providers.free.services.FreePaymentService;
 import fit.iuh.payment_service.providers.momo.services.MoMoPaymentService;
 import fit.iuh.payment_service.providers.vnpay.services.VnPayPaymentService;
-import fit.iuh.payment_service.messaging.PaymentEventPublisher;
 import fit.iuh.payment_service.messaging.PaymentStatusChangedEvent;
 import fit.iuh.payment_service.repositories.RefundRequestRepository;
 import fit.iuh.payment_service.repositories.PaymentRepository;
 import fit.iuh.payment_service.clients.BookingClient;
 import fit.iuh.payment_service.clients.EventClient;
+import fit.iuh.payment_service.services.PaymentOutboxService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +35,7 @@ public class RefundProcessor {
     private final MoMoPaymentService moMoPaymentService;
     private final VnPayPaymentService vnPayPaymentService;
     private final FreePaymentService freePaymentService;
-    private final PaymentEventPublisher paymentEventPublisher;
+    private final PaymentOutboxService paymentOutboxService;
 
     @Transactional
     public void process(RefundRequest req) {
@@ -43,6 +43,8 @@ public class RefundProcessor {
 
         // Transition to PROCESSING
         req.setStatus(RefundStatus.PROCESSING);
+        req.setUpdatedAt(LocalDateTime.now());
+        req.setRetryCount(req.getRetryCount() + 1);
         refundRequestRepository.save(req);
 
         // 1. Fetch booking details via Booking gRPC
@@ -53,6 +55,8 @@ public class RefundProcessor {
 
         if (booking == null) {
             req.setStatus(RefundStatus.FAILED);
+            req.setUpdatedAt(LocalDateTime.now());
+            req.setLastError("BOOKING_NOT_FOUND");
             refundRequestRepository.save(req);
             log.warn("Refund request {} failed: booking not found", req.getId());
             return;
@@ -61,6 +65,8 @@ public class RefundProcessor {
         // 2. Basic business decision based on booking.createdAt
         if (booking.getStatus() == null || !booking.getStatus().equalsIgnoreCase("PAID")) {
             req.setStatus(RefundStatus.FAILED);
+            req.setUpdatedAt(LocalDateTime.now());
+            req.setLastError("BOOKING_NOT_PAID");
             refundRequestRepository.save(req);
             log.info("Refund request {} failed: booking not in PAID status", req.getId());
             return;
@@ -78,6 +84,8 @@ public class RefundProcessor {
                 if (ticket != null && ticket.getSaleEnd() != null && LocalDateTime.now().isAfter(ticket.getSaleEnd())) {
                     log.info("TicketType {} saleEnd {} passed: failing refund {}", ticketTypeId, ticket.getSaleEnd(), req.getId());
                     req.setStatus(RefundStatus.FAILED);
+                    req.setUpdatedAt(LocalDateTime.now());
+                    req.setLastError("SALE_END_PASSED");
                     refundRequestRepository.save(req);
                     return;
                 }
@@ -102,6 +110,8 @@ public class RefundProcessor {
         Payment payment = paymentRepository.findByOrderId(req.getOrderId()).orElse(null);
         if (payment == null || payment.getPaymentMethod() == null || payment.getPaymentMethod().getProcessorType() == null) {
             req.setStatus(RefundStatus.FAILED);
+            req.setUpdatedAt(LocalDateTime.now());
+            req.setLastError("PAYMENT_OR_METHOD_NOT_FOUND");
             refundRequestRepository.save(req);
             log.warn("Refund request {} failed: payment or payment method not found", req.getId());
             return;
@@ -109,6 +119,8 @@ public class RefundProcessor {
 
         if (refundAmount.compareTo(java.math.BigDecimal.ZERO) <= 0 && payment.getPaymentMethod().getProcessorType() != ProcessorType.FreeProcessor) {
             req.setStatus(RefundStatus.FAILED);
+            req.setUpdatedAt(LocalDateTime.now());
+            req.setLastError("ZERO_REFUND_AMOUNT");
             refundRequestRepository.save(req);
             log.info("Refund request {} failed due to zero refund amount", req.getId());
             return;
@@ -126,31 +138,39 @@ public class RefundProcessor {
         } catch (Exception ex) {
             log.error("Refund request {} provider call failed", req.getId(), ex);
             req.setStatus(RefundStatus.FAILED);
+            req.setUpdatedAt(LocalDateTime.now());
+            req.setLastError(ex.getMessage());
             refundRequestRepository.save(req);
             return;
         }
 
         if (providerResult == null || !providerResult.isSuccess()) {
             req.setStatus(RefundStatus.FAILED);
+            req.setUpdatedAt(LocalDateTime.now());
+            req.setLastError(providerResult == null ? "PROVIDER_RESULT_NULL" : providerResult.getMessage());
             refundRequestRepository.save(req);
             log.warn("Refund request {} failed by provider adapter", req.getId());
             return;
         }
 
-        req.setStatus(RefundStatus.COMPLETED);
-        req.setCreatedAt(req.getCreatedAt() == null ? LocalDateTime.now() : req.getCreatedAt());
+        req.setStatus(RefundStatus.BOOKING_SYNC_PENDING);
+        req.setUpdatedAt(LocalDateTime.now());
         refundRequestRepository.save(req);
 
         payment.setStatus(PaymentStatus.REFUNDED);
         paymentRepository.save(payment);
 
-        paymentEventPublisher.publishPaymentStatusChanged(PaymentStatusChangedEvent.builder()
-                .paymentId(payment.getId())
-                .orderId(payment.getOrderId())
-                .eventId(payment.getEventId())
-                .status(PaymentStatus.REFUNDED)
-                .occurredAt(LocalDateTime.now())
-                .build());
+        boolean queued = paymentOutboxService.enqueuePaymentStatusChanged(PaymentStatusChangedEvent.builder()
+            .paymentId(payment.getId())
+            .orderId(payment.getOrderId())
+            .eventId(payment.getEventId())
+            .status(PaymentStatus.REFUNDED)
+            .occurredAt(LocalDateTime.now())
+            .build());
+
+        if (!queued) {
+            log.info("Refund request {} skipped outbox enqueue because a pending payment sync event already exists", req.getId());
+        }
 
         log.info("Refund request {} completed by provider {}. refundAmount={}, providerTxId={}",
                 req.getId(), providerResult.getProviderName(), providerResult.getRefundedAmount(), providerResult.getProviderTransactionId());
