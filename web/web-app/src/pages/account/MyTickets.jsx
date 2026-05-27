@@ -6,6 +6,7 @@ import TicketSuggestionGrid from "../../components/account/TicketSuggestionGrid"
 import { serviceGetBookingsByUser } from "../../services/bookingService";
 import { getFeaturedEvents } from "../../services/eventService";
 import { useEvent } from "../../hooks/useEvent";
+import { useToast } from "../../context/ToastContext";
 
 const PER_PAGE = 4;
 
@@ -27,6 +28,7 @@ const formatDateLabel = (dateStr) => {
 const MyTickets = () => {
   const navigate = useNavigate();
   const { setBookingOrderData, setSelectedTicketDetail } = useEvent();
+  const { success: showSuccessToast, error: showErrorToast } = useToast();
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedBookingToCancel, setSelectedBookingToCancel] = useState(null);
   const [page, setPage] = useState(1);
@@ -150,11 +152,17 @@ const MyTickets = () => {
       if (booking.status === 'PAID' && Number(booking.totalAmount || booking.total || 0) > 0) {
         // Request refund
         const { serviceRequestRefund } = await import('../../services/paymentService');
-        await serviceRequestRefund({
+        const refundResponse = await serviceRequestRefund({
           orderId: booking.id,
           reason: 'user_cancel',
           idempotencyKey: `refund-${booking.id}-${Date.now()}`,
         });
+
+        if (refundResponse) {
+          showSuccessToast("Yêu cầu hủy vé đang được xử lý");
+        } else {
+          showErrorToast("Đã xảy ra lỗi khi thực hiện hủy vé");
+        }
       } else {
         // Non-paid or zero-amount: mark booking canceled via booking API
         const { serviceUpdateBookingStatusAdmin } = await import('../../services/bookingService');
@@ -162,6 +170,7 @@ const MyTickets = () => {
       }
     } catch (err) {
       console.error('Cancel action failed', err);
+      showErrorToast("Đã xảy ra lỗi khi thực hiện hủy vé");
     } finally {
       closeCancelModal();
     }
