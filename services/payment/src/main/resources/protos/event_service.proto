@@ -6,8 +6,6 @@ option java_multiple_files = true;
 option java_package = "fit.iuh.event_service.grpc.generated";
 
 service EventGrpcService {
-    // Retrieves the Event, Event Performance, and all its Ticket Types based on a single Ticket Type ID.
-    // This allows the client to fetch all necessary related information in a single call.
     rpc GetEventAndPerformanceByTicketType(GetEventAndPerformanceRequest) returns (GetEventAndPerformanceResponse);
 }
 
@@ -38,8 +36,8 @@ message VenueDto {
 
 message EventPerformanceDto {
     int64 id = 1;
-    string start_time = 2; // ISO-8601 string
-    string end_time = 3;   // ISO-8601 string
+    string start_time = 2;
+    string end_time = 3;
     string status = 4;
 }
 
@@ -49,5 +47,5 @@ message TicketTypeDto {
     double price = 3;
     int32 quantity = 4;
     int32 available_quantity = 5;
-    string sale_end = 6; // ISO-8601 string
+    string sale_end = 6;
 }

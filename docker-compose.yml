@@ -173,6 +173,7 @@ services:
         condition: service_started
     ports:
       - "8083:8083"
+      - "50053:50053"       # gRPC server port
     networks:
       - ticketbox-net
     environment:
@@ -188,6 +189,7 @@ services:
       EVENT_SERVICE_GRPC_HOST: event-service
       EVENT_SERVICE_GRPC_PORT: 50051
       EVENT_SERVICE_GRPC_DEADLINE_MS: 2000
+      GRPC_SERVER_PORT: 50053
 
   payment-service:
     build:
@@ -199,6 +201,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      booking-service:
+        condition: service_started
     ports:
       - "8085:8085"
     networks:
@@ -211,6 +215,10 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USERNAME: guest
       RABBITMQ_PASSWORD: guest
+      BOOKING_SERVICE_GRPC_HOST: booking-service
+      BOOKING_SERVICE_GRPC_PORT: 50053
+      EVENT_SERVICE_GRPC_HOST: event-service
+      EVENT_SERVICE_GRPC_PORT: 50051
       PAYMENT_VNPAY_RETURN_URL: https://youtube.com
       PAYMENT_VNPAY_TIMEZONE: Asia/Ho_Chi_Minh
       PAYMENT_MOMO_RETURN_URL: https://youtube.com

@@ -49,4 +49,5 @@ message TicketTypeDto {
     double price = 3;
     int32 quantity = 4;
     int32 available_quantity = 5;
+    string sale_end = 6; // ISO-8601 string
 }
