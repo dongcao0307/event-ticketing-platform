@@ -73,5 +73,8 @@ public interface EventRepository extends JpaRepository<Event, Long> {
             "e.max_price = (SELECT COALESCE(MAX(t.price), 0) FROM ticket_types t JOIN event_performances p ON t.performance_id = p.id WHERE p.event_id = :eventId) " +
             "WHERE e.id = :eventId", nativeQuery = true)
     void syncPriceOnApproval(@Param("eventId") Long eventId);
+
+    @Query("SELECT e FROM Event e WHERE e.id IN (SELECT f.eventId FROM FavoriteEvent f WHERE f.userId = :userId)")
+    List<Event> findFavoriteEventsByUserId(@Param("userId") Long userId);
 }
 

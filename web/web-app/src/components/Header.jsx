@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { Search, Ticket, User, ChevronDown, LogOut, CalendarDays } from 'lucide-react';
+import { Search, Ticket, User, ChevronDown, LogOut, CalendarDays, Heart } from 'lucide-react';
 import LoginModal from './LoginModal';
 import RegisterModal from './RegisterModal';
 import SearchOverlay from './SearchOverlay';
 import { authService } from '../services/authService';
+import { useEvent } from '../hooks/useEvent';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -17,6 +18,8 @@ const Header = () => {
 
   const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('jwt_token'));
   const isAdmin = user?.role === 'ADMIN';
+
+  const { bookingOrder, clearBookingOrderData } = useEvent();
 
   const dropdownRef = useRef(null);
   const searchRef = useRef(null);
@@ -42,10 +45,41 @@ const Header = () => {
   }, []);
 
   const handleLogout = async () => {
+    // 1. Rollback booking if there is a pending transaction
+    let bookingIdToCancel = bookingOrder?.id;
+    if (!bookingIdToCancel) {
+      // Fallback: check query params if they are on a checkout page and refreshed
+      const urlParams = new URLSearchParams(window.location.search);
+      const queryBookingId = urlParams.get('bookingId');
+      if (queryBookingId && (
+        window.location.pathname.includes('/booking') ||
+        window.location.pathname.includes('/payment') ||
+        window.location.pathname.includes('/seats') ||
+        window.location.pathname.includes('/tickets')
+      )) {
+        bookingIdToCancel = queryBookingId;
+      }
+    }
+
+    if (bookingIdToCancel) {
+      try {
+        console.log("Rolling back booking:", bookingIdToCancel);
+        const { serviceUpdateBookingStatusAdmin } = await import('../services/bookingService');
+        await serviceUpdateBookingStatusAdmin(bookingIdToCancel, 'CANCELLED');
+        clearBookingOrderData();
+      } catch (err) {
+        console.error("Error rolling back booking on logout:", err);
+      }
+    }
+
+    // 2. Perform logout
     await authService.logout();
     setIsLoggedIn(false);
     setUser(null);
     setIsDropdownOpen(false);
+
+    // 3. Navigate to homepage
+    navigate('/');
   };
 
   const openLogin = () => { setIsRegisterOpen(false); setIsLoginOpen(true); };
@@ -262,6 +296,7 @@ export default Header;
 const accountMenuItems = [
   { icon: User, label: 'Tài khoản của tôi', to: '/my-account' },
   { icon: Ticket, label: 'Vé của tôi', to: '/my-account/tickets' },
+  { icon: Heart, label: 'Sự kiện yêu thích', to: '/my-account/favorites' },
 ];
 
 const DropDownMenu = ({ isDropdownOpen, handleLogout, onClose }) => {
