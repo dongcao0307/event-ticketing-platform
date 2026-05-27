@@ -12,6 +12,7 @@ import fit.iuh.payment_service.entities.TransactionStatus;
 import fit.iuh.payment_service.exceptions.AppException;
 import fit.iuh.payment_service.exceptions.ErrorCode;
 import fit.iuh.payment_service.messaging.PaymentEventPublisher;
+import fit.iuh.payment_service.providers.common.dtos.ProviderRefundResult;
 import fit.iuh.payment_service.providers.momo.config.MoMoProperties;
 import fit.iuh.payment_service.providers.momo.config.MoMoSecretProperties;
 import fit.iuh.payment_service.providers.momo.dtos.requests.MoMoCreatePaymentRequest;
@@ -217,6 +218,42 @@ public class MoMoPaymentServiceImpl implements MoMoPaymentService {
                 .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
         return moMoPaymentMapper.toPaymentStatusResponse(payment);
     }
+
+        @Override
+        @Transactional
+        public ProviderRefundResult refund(String refundRequestId, Payment payment, BigDecimal refundAmount, String reason) {
+        String providerTransactionId = "MOMO-REFUND-" + refundRequestId;
+        String providerResponse = "{\"phase\":\"REFUND\",\"provider\":\"MOMO\",\"paymentId\":" + payment.getId()
+            + ",\"reason\":\"" + (reason == null ? "" : reason.replace("\"", "\\\"")) + "\",\"refundAmount\":\"" + refundAmount + "\"}";
+
+        if (transactionRepository.existsByProviderTransactionId(providerTransactionId)) {
+            return ProviderRefundResult.builder()
+                .success(true)
+                .providerName(moMoProperties.getProviderName())
+                .providerTransactionId(providerTransactionId)
+                .message("Duplicate refund skipped")
+                .refundedAmount(refundAmount)
+                .build();
+        }
+
+        Transaction refundTransaction = moMoTransactionMapper.toTransaction(
+            refundRequestId,
+            providerResponse,
+            LocalDateTime.now(),
+            providerTransactionId,
+            TransactionStatus.SUCCESS,
+            payment
+        );
+        transactionRepository.save(refundTransaction);
+
+        return ProviderRefundResult.builder()
+            .success(true)
+            .providerName(moMoProperties.getProviderName())
+            .providerTransactionId(providerTransactionId)
+            .message("Refund simulated successfully")
+            .refundedAmount(refundAmount)
+            .build();
+        }
 
     private Map<String, Object> buildCreateRequestBody(String amount,
                                                        String requestId,

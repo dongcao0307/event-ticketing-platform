@@ -10,6 +10,7 @@ import fit.iuh.payment_service.entities.TransactionStatus;
 import fit.iuh.payment_service.exceptions.AppException;
 import fit.iuh.payment_service.exceptions.ErrorCode;
 import fit.iuh.payment_service.messaging.PaymentEventPublisher;
+import fit.iuh.payment_service.providers.common.dtos.ProviderRefundResult;
 import fit.iuh.payment_service.providers.vnpay.config.VnPayProperties;
 import fit.iuh.payment_service.providers.vnpay.config.VnPaySecretProperties;
 import fit.iuh.payment_service.providers.vnpay.dtos.requests.VnPayCreatePaymentRequest;
@@ -232,6 +233,42 @@ public class VnPayPaymentServiceImpl implements VnPayPaymentService {
                 .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
         return vnPayPaymentMapper.toPaymentStatusResponse(payment);
     }
+
+        @Override
+        @Transactional
+        public ProviderRefundResult refund(String refundRequestId, Payment payment, BigDecimal refundAmount, String reason) {
+        String providerTransactionId = "VNPAY-REFUND-" + refundRequestId;
+        String providerResponse = "{\"phase\":\"REFUND\",\"provider\":\"VNPAY\",\"paymentId\":" + payment.getId()
+            + ",\"reason\":\"" + (reason == null ? "" : reason.replace("\"", "\\\"")) + "\",\"refundAmount\":\"" + refundAmount + "\"}";
+
+        if (transactionRepository.existsByProviderTransactionId(providerTransactionId)) {
+            return ProviderRefundResult.builder()
+                .success(true)
+                .providerName(vnPayProperties.getProviderName())
+                .providerTransactionId(providerTransactionId)
+                .message("Duplicate refund skipped")
+                .refundedAmount(refundAmount)
+                .build();
+        }
+
+        Transaction refundTransaction = vnPayTransactionMapper.toTransaction(
+            refundRequestId,
+            providerResponse,
+            LocalDateTime.now(),
+            providerTransactionId,
+            TransactionStatus.SUCCESS,
+            payment
+        );
+        transactionRepository.save(refundTransaction);
+
+        return ProviderRefundResult.builder()
+            .success(true)
+            .providerName(vnPayProperties.getProviderName())
+            .providerTransactionId(providerTransactionId)
+            .message("Refund simulated successfully")
+            .refundedAmount(refundAmount)
+            .build();
+        }
 
     private String buildSandboxPaymentUrl(String txnRef, VnPayCreatePaymentRequest request) {
         String payUrl = vnPayProperties.getPayUrl();
