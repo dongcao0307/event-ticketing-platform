@@ -15,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import fit.iuh.event_service.services.NerService;
+import fit.iuh.event_service.dtos.NerResponse;
 import java.util.*;
 
 @Service
@@ -25,10 +27,32 @@ public class SemanticSearchServiceImpl implements SemanticSearchService {
     private final EventRepository eventRepository;
     private final EventEmbeddingRepository embeddingRepository;
     private final ObjectMapper objectMapper;
+    private final NerService nerService;
 
     @Override
     public List<EventResponse> search(String keyword, String category, String city, String status, int page, int size) {
-        // 1) parse filters
+        // 1) use NER to extract filters from keyword if not provided
+        String cleanedKeyword = keyword;
+        Long maxPrice = null;
+        if (keyword != null && !keyword.isBlank()) {
+            NerResponse nerResponse = nerService.extractEntities(keyword);
+            if (nerResponse != null) {
+                if ((category == null || category.isBlank()) && nerResponse.getCategory() != null) {
+                    category = nerResponse.getCategory();
+                }
+                if ((city == null || city.isBlank()) && nerResponse.getCity() != null) {
+                    city = nerResponse.getCity();
+                }
+                if (nerResponse.getCleanedKeyword() != null && !nerResponse.getCleanedKeyword().isBlank()) {
+                    cleanedKeyword = nerResponse.getCleanedKeyword();
+                }
+                if (nerResponse.getMaxPrice() != null) {
+                    maxPrice = nerResponse.getMaxPrice();
+                }
+            }
+        }
+
+        // 2) parse filters
         EventCategory cat = null;
         if (category != null && !category.isBlank()) {
             try {
@@ -44,10 +68,10 @@ public class SemanticSearchServiceImpl implements SemanticSearchService {
             }
         }
 
-        // 2) embed query
-        double[] queryEmbedding = embeddingService.embed(keyword);
+        // 3) embed query (using cleaned keyword)
+        double[] queryEmbedding = embeddingService.embed(cleanedKeyword);
 
-        // 3) candidates: reuse keyword repository filtering by forcing keyword null.
+        // 4) candidates: reuse keyword repository filtering by forcing keyword null.
         // We'll build a quick candidate list using existing JPA query by setting
         // keyword=null.
         // (This is still hybrid: DB filters first, semantic second.)
@@ -58,6 +82,7 @@ public class SemanticSearchServiceImpl implements SemanticSearchService {
                 cat,
                 city != null && !city.isBlank() ? city : null,
                 st,
+                maxPrice,
                 pageable);
 
         List<Event> candidates = candidatePage.getContent();

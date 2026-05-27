@@ -18,7 +18,7 @@ const SearchPage = () => {
     const [totalElements, setTotalElements] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(false);
-    const [isSemanticSearch, setIsSemanticSearch] = useState(false);
+    const [isSemanticSearch] = useState(true);
 
     const keyword = searchParams.get('q') || searchParams.get('find') || '';
 
@@ -62,15 +62,6 @@ const SearchPage = () => {
                             </p>
                         </div>
                         <div className="flex items-center gap-2 flex-wrap">
-                            <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer mr-2 bg-[#1d2a26] px-3 py-1.5 rounded-full border border-[#2f3d37] hover:border-[#26bc71] transition-colors">
-                                <input
-                                    type="checkbox"
-                                    checked={isSemanticSearch}
-                                    onChange={(e) => setIsSemanticSearch(e.target.checked)}
-                                    className="rounded border-gray-600 bg-gray-700 text-[#26bc71] focus:ring-[#26bc71]"
-                                />
-                                <span className="font-medium flex items-center gap-1">✨ AI Search</span>
-                            </label>
                             <DateFilter onApply={(value) => console.log(value)} />
                             <FilterDropdown onApply={(f) => setFilters(f)} />
                             <FilterChips

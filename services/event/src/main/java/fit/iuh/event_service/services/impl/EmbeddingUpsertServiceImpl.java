@@ -37,12 +37,24 @@ public class EmbeddingUpsertServiceImpl implements EmbeddingUpsertService {
 
     private String buildEmbeddingText(Event e) {
         StringBuilder sb = new StringBuilder();
-        if (e.getTitle() != null)
-            sb.append(e.getTitle()).append(' ');
-        if (e.getDescription() != null)
-            sb.append(e.getDescription()).append(' ');
-        if (e.getCity() != null)
-            sb.append(e.getCity());
+        
+        // Tạo ra một đoạn văn bản tự nhiên miêu tả sự kiện để AI dễ hiểu nhất
+        sb.append("Sự kiện: ");
+        if (e.getTitle() != null) sb.append(e.getTitle()).append(". ");
+        
+        if (e.getCategory() != null) sb.append("Thể loại: ").append(e.getCategory().name()).append(". ");
+        
+        if (e.getLocation() != null || e.getCity() != null) {
+            sb.append("Địa điểm tổ chức: ");
+            if (e.getLocation() != null) sb.append(e.getLocation()).append(", ");
+            if (e.getCity() != null) sb.append(e.getCity());
+            sb.append(". ");
+        }
+        
+        if (e.getStartTime() != null) sb.append("Thời gian bắt đầu: ").append(e.getStartTime().toString()).append(". ");
+        
+        if (e.getDescription() != null) sb.append("Mô tả chi tiết: ").append(e.getDescription()).append(". ");
+        
         return sb.toString().trim();
     }
 }

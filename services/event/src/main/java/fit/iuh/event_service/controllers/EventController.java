@@ -23,10 +23,11 @@ public class EventController {
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String city,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) Long maxPrice,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
-        PageResponse<EventResponse> result = eventService.searchEvents(keyword, category, city, status, page, size);
+        PageResponse<EventResponse> result = eventService.searchEvents(keyword, category, city, status, maxPrice, page, size);
         return ResponseEntity.ok(ApiResponse.success("Tìm kiếm thành công", result));
     }
 
