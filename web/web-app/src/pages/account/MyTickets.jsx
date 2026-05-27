@@ -273,7 +273,7 @@ const MyTickets = () => {
           { key: "all", label: "Tất cả" },
           { key: "PAID", label: "Thành công" },
           { key: "PENDING", label: "Đang xử lý" },
-          { key: "CANCEL", label: "Đã hủy" },
+          { key: "CANCELLED", label: "Đã hủy" },
         ].map((item) => (
           <button
             key={item.key}
