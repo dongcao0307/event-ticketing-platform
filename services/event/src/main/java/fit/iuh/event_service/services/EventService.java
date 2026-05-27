@@ -35,10 +35,8 @@ public class EventService {
             try { cat = EventCategory.valueOf(category.toUpperCase()); } catch (Exception ignored) {}
         }
 
-        EventStatus st = null;
-        if (status != null && !status.isBlank()) {
-            try { st = EventStatus.valueOf(status.toUpperCase()); } catch (Exception ignored) {}
-        }
+        // Public search always defaults to PUBLISHED events
+        EventStatus st = EventStatus.PUBLISHED;
 
         Pageable pageable = PageRequest.of(page, size);
         var pageResult = eventRepository.searchEvents(
@@ -66,17 +64,17 @@ public class EventService {
     }
 
     public List<EventResponse> getFeaturedEvents() {
-        return eventRepository.findByIsFeaturedTrueOrderByStartTimeAsc()
+        return eventRepository.findByIsFeaturedTrueAndStatusOrderByStartTimeAsc(EventStatus.PUBLISHED)
                 .stream().map(EventResponse::fromEntity).toList();
     }
 
     public List<EventResponse> getTrendingEvents() {
-        return eventRepository.findTop10ByOrderByViewCountDesc()
+        return eventRepository.findTop10ByStatusOrderByViewCountDesc(EventStatus.PUBLISHED)
                 .stream().map(EventResponse::fromEntity).toList();
     }
 
     public List<EventResponse> getLatestEvents() {
-        return eventRepository.findTop10ByOrderByCreatedAtDesc()
+        return eventRepository.findTop10ByStatusOrderByCreatedAtDesc(EventStatus.PUBLISHED)
                 .stream().map(EventResponse::fromEntity).toList();
     }
 
@@ -84,7 +82,7 @@ public class EventService {
         EventCategory cat;
         try { cat = EventCategory.valueOf(category.toUpperCase()); }
         catch (Exception e) { return List.of(); }
-        return eventRepository.findByCategoryOrderByStartTimeAsc(cat)
+        return eventRepository.findByCategoryAndStatusOrderByStartTimeAsc(cat, EventStatus.PUBLISHED)
                 .stream().map(EventResponse::fromEntity).toList();
     }
 }

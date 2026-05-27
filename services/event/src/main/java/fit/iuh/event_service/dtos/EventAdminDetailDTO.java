@@ -29,6 +29,8 @@ public class EventAdminDetailDTO {
     @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
     private LocalDateTime endDate;
     private String location;
+    private String thumbnailUrl;
+    private String posterUrl;
     
     // Organizer Info
     private OrganizerInfoDTO organizer;
@@ -66,6 +68,7 @@ public class EventAdminDetailDTO {
         private String bankName;
         private String businessType;
         private String taxId;
+        private String logo;
     }
     
     @Data

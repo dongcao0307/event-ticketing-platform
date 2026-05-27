@@ -45,10 +45,10 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     Optional<Event> findFullEventById(@Param("id") Long id);
 
 
-    List<Event> findByIsFeaturedTrueOrderByStartTimeAsc();
-    List<Event> findTop10ByOrderByViewCountDesc();
-    List<Event> findTop10ByOrderByCreatedAtDesc();
-    List<Event> findByCategoryOrderByStartTimeAsc(EventCategory category);
+    List<Event> findByIsFeaturedTrueAndStatusOrderByStartTimeAsc(EventStatus status);
+    List<Event> findTop10ByStatusOrderByViewCountDesc(EventStatus status);
+    List<Event> findTop10ByStatusOrderByCreatedAtDesc(EventStatus status);
+    List<Event> findByCategoryAndStatusOrderByStartTimeAsc(EventCategory category, EventStatus status);
 
     @Modifying
     @Transactional

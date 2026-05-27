@@ -52,6 +52,11 @@ const EventDetailPublicPage = () => {
   const isSeatEvent = (event?.category || '').toUpperCase() === 'THEATER';
 
   const handlePurchase = (performanceId) => {
+    const token = localStorage.getItem('jwt_token');
+    if (!token) {
+      window.dispatchEvent(new CustomEvent('openLoginModal'));
+      return;
+    }
     const params = new URLSearchParams({ showtime: performanceId });
     const nextPath = isSeatEvent ? 'seats' : 'tickets';
     navigate(`/event/${id}/${nextPath}?${params.toString()}`);

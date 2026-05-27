@@ -60,13 +60,8 @@ public class SemanticSearchServiceImpl implements SemanticSearchService {
             } catch (Exception ignored) {
             }
         }
-        EventStatus st = null;
-        if (status != null && !status.isBlank()) {
-            try {
-                st = EventStatus.valueOf(status.toUpperCase());
-            } catch (Exception ignored) {
-            }
-        }
+        // Semantic search (public-facing) only targets PUBLISHED events
+        EventStatus st = EventStatus.PUBLISHED;
 
         // 3) embed query (using cleaned keyword)
         double[] queryEmbedding = embeddingService.embed(cleanedKeyword);
