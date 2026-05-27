@@ -18,6 +18,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import fit.iuh.event_service.services.EmbeddingUpsertService;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +32,7 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
     private final TicketTypeRepository ticketTypeRepository;
     private final OrganizerPaymentInfoRepository organizerPaymentInfoRepository;
     private final ObjectMapper objectMapper;
+    private final fit.iuh.event_service.services.EmbeddingUpsertService embeddingUpsertService;
 
     @Override
     public Event createEvent(Long organizerId, EventReq req) {
@@ -44,7 +46,8 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
                 .status(EventStatus.DRAFT) // Mặc định là Nháp khi mới tạo
                 .build();
         return eventRepository.save(event);
-        // Note: No cache annotation needed for CREATE - cache is populated on first READ
+        // Note: No cache annotation needed for CREATE - cache is populated on first
+        // READ
     }
 
     @Override
@@ -117,8 +120,10 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
                 }
                 perf.setStatus(PerformanceStatus.OPEN);
 
-                if (perfReq.getStartTime() != null) perf.setStartTime(perfReq.getStartTime());
-                if (perfReq.getEndTime() != null) perf.setEndTime(perfReq.getEndTime());
+                if (perfReq.getStartTime() != null)
+                    perf.setStartTime(perfReq.getStartTime());
+                if (perfReq.getEndTime() != null)
+                    perf.setEndTime(perfReq.getEndTime());
 
                 int totalCapacity = 0;
                 if (perfReq.getTickets() != null) {
@@ -140,8 +145,10 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
                         ticketType.setPrice(ticketReq.isFree() ? java.math.BigDecimal.ZERO : ticketReq.getPrice());
 
                         ticketType.setTotalQuantity(ticketReq.getTotalQuantity());
-                        ticketType.setMaxTicketsPerUser(ticketReq.getMaxTicketsPerUser() != null ? ticketReq.getMaxTicketsPerUser() : 10);
-                        ticketType.setMinTicketsPerUser(ticketReq.getMinTicketsPerUser() != null ? ticketReq.getMinTicketsPerUser() : 1);
+                        ticketType.setMaxTicketsPerUser(
+                                ticketReq.getMaxTicketsPerUser() != null ? ticketReq.getMaxTicketsPerUser() : 10);
+                        ticketType.setMinTicketsPerUser(
+                                ticketReq.getMinTicketsPerUser() != null ? ticketReq.getMinTicketsPerUser() : 1);
                         ticketType.setSoldQuantity(0);
                         ticketType.setReservedQuantity(0);
                         ticketType.setSaleStart(ticketReq.getSaleStart());
@@ -187,8 +194,10 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
 
                         java.math.BigDecimal price = tReq.isFree() ? java.math.BigDecimal.ZERO : tReq.getPrice();
                         if (price != null) {
-                            if (minPrice == null || price.compareTo(minPrice) < 0) minPrice = price;
-                            if (maxPrice == null || price.compareTo(maxPrice) > 0) maxPrice = price;
+                            if (minPrice == null || price.compareTo(minPrice) < 0)
+                                minPrice = price;
+                            if (maxPrice == null || price.compareTo(maxPrice) > 0)
+                                maxPrice = price;
                         }
                     }
                 }
@@ -203,16 +212,24 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
         savedEvent.setEndTime(eventEndTime);
         savedEvent.setUpdatedAt(LocalDateTime.now());
 
-        return eventRepository.save(savedEvent);
+        Event finalEvent = eventRepository.save(savedEvent);
+        try {
+            embeddingUpsertService.upsertEventEmbedding(finalEvent);
+        } catch (Exception ignored) {
+        }
+
+        return finalEvent;
     }
 
-//    @Override
-//    public List<Event> getMyEvents(Long organizerId, String keyword) {
-//        if (keyword == null || keyword.trim().isEmpty()) {
-//            return eventRepository.findByOrganizerId(organizerId);
-//        }
-//        return eventRepository.findByOrganizerIdAndTitleContainingIgnoreCase(organizerId, keyword);
-//    }
+    // @Override
+    // public List<Event> getMyEvents(Long organizerId, String keyword) {
+    // if (keyword == null || keyword.trim().isEmpty()) {
+    // return eventRepository.findByOrganizerId(organizerId);
+    // }
+    // return
+    // eventRepository.findByOrganizerIdAndTitleContainingIgnoreCase(organizerId,
+    // keyword);
+    // }
     @Override
     public EventPerformance createPerformance(Long organizerId, Long eventId, PerformanceReq req) {
         Event event = eventRepository.findById(eventId)
@@ -281,7 +298,8 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
     }
 
     @Override
-    @Transactional // 🚀 Đảm bảo nếu lỗi ở bất kỳ bước nào, toàn bộ dữ liệu sẽ không bị lưu (All-or-Nothing)
+    @Transactional // 🚀 Đảm bảo nếu lỗi ở bất kỳ bước nào, toàn bộ dữ liệu sẽ không bị lưu
+                   // (All-or-Nothing)
     public Event createFullEvent(Long organizerId, FullEventCreateRequest request) {
 
         // ==========================================
@@ -380,8 +398,10 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
                         // Xử lý giá vé: Nếu tick Free thì để 0, ngược lại lấy giá BigDecimal
                         ticketType.setPrice(ticketReq.isFree() ? java.math.BigDecimal.ZERO : ticketReq.getPrice());
 
-                        ticketType.setMaxTicketsPerUser(ticketReq.getMaxTicketsPerUser() != null ? ticketReq.getMaxTicketsPerUser() : 10);
-                        ticketType.setMinTicketsPerUser(ticketReq.getMinTicketsPerUser() != null ? ticketReq.getMinTicketsPerUser() : 1);
+                        ticketType.setMaxTicketsPerUser(
+                                ticketReq.getMaxTicketsPerUser() != null ? ticketReq.getMaxTicketsPerUser() : 10);
+                        ticketType.setMinTicketsPerUser(
+                                ticketReq.getMinTicketsPerUser() != null ? ticketReq.getMinTicketsPerUser() : 1);
                         ticketType.setTotalQuantity(ticketReq.getTotalQuantity());
                         ticketType.setSoldQuantity(0);
                         ticketType.setReservedQuantity(0);
@@ -448,8 +468,10 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
 
                         java.math.BigDecimal price = tReq.isFree() ? java.math.BigDecimal.ZERO : tReq.getPrice();
                         if (price != null) {
-                            if (minPrice == null || price.compareTo(minPrice) < 0) minPrice = price;
-                            if (maxPrice == null || price.compareTo(maxPrice) > 0) maxPrice = price;
+                            if (minPrice == null || price.compareTo(minPrice) < 0)
+                                minPrice = price;
+                            if (maxPrice == null || price.compareTo(maxPrice) > 0)
+                                maxPrice = price;
                         }
                     }
                 }
@@ -465,9 +487,13 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
         savedEvent.setEndTime(eventEndTime);
 
         // Lưu bản cập nhật cuối cùng xuống DB
-        eventRepository.save(savedEvent);
+        Event finalEvent = eventRepository.save(savedEvent);
+        try {
+            embeddingUpsertService.upsertEventEmbedding(finalEvent);
+        } catch (Exception ignored) {
+        }
 
-        return savedEvent;
+        return finalEvent;
     }
 
     @Override
@@ -497,12 +523,14 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
 
             // Đảm bảo dữ liệu được lấy an toàn
             try {
-                // Nếu Event đã có performances (do fetch ở repo), dùng luôn, không cần gọi repo nữa
+                // Nếu Event đã có performances (do fetch ở repo), dùng luôn, không cần gọi repo
+                // nữa
                 List<EventPerformance> performances = event.getPerformances();
                 if (performances != null && !performances.isEmpty() && performances.get(0).getVenue() != null) {
                     Venue v = performances.get(0).getVenue();
                     res.setVenueName(v.getName());
-                    res.setFullAddress((v.getAddress() != null ? v.getAddress() : "") + ", " + (v.getCity() != null ? v.getCity() : ""));
+                    res.setFullAddress((v.getAddress() != null ? v.getAddress() : "") + ", "
+                            + (v.getCity() != null ? v.getCity() : ""));
                 } else {
                     res.setVenueName("Chưa xác định");
                     res.setFullAddress("Đang cập nhật địa chỉ");

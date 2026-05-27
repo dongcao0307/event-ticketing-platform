@@ -26,6 +26,7 @@ public class EventService {
             String category,
             String city,
             String status,
+            Long maxPrice,
             int page,
             int size) {
 
@@ -45,6 +46,7 @@ public class EventService {
                 cat,
                 city != null && !city.isBlank() ? city : null,
                 st,
+                maxPrice,
                 pageable
         );
 
