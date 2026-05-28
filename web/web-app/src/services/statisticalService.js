@@ -6,7 +6,7 @@ import { get } from './apiClient';
  */
 export const getRevenueStats = async (startDate, endDate) => {
   try {
-    const response = await get('/api/statistics/revenue', {
+    const response = await get('/statistics/revenue', {
       start: startDate, end: endDate 
     });
     return response.data;
@@ -18,7 +18,7 @@ export const getRevenueStats = async (startDate, endDate) => {
 
 export const getTopCustomers = async () => {
   try {
-    const response = await get('/api/statistics/top-customers');
+    const response = await get('/statistics/top-customers');
     return response.data;
   } catch (error) {
     console.error('Error fetching top customers:', error);
@@ -28,7 +28,7 @@ export const getTopCustomers = async () => {
 
 export const getEventStats = async (eventId, startDate, endDate) => {
   try {
-    const response = await get(`/api/statistics/events/${eventId}`, {
+    const response = await get(`/statistics/events/${eventId}`, {
       start: startDate, end: endDate 
     });
     return response.data;

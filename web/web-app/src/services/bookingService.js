@@ -427,7 +427,7 @@ export const getDetailedEventById = async (id) => {
   return normalizeDetailedEvent(eventData, performancesRaw, null);
 };
 
-const BOOKING_SERVICE_BASE_URL = '/api/bookings';
+const BOOKING_SERVICE_BASE_URL = '/bookings';
 
 const toStableMockLong = (rawId, prefix) => {
   const safeId = String(rawId ?? '').trim();
