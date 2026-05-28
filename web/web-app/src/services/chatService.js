@@ -55,31 +55,49 @@ export const streamChat = async (message, onChunk, onDone, onError) => {
       }
 
       buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
+      
+      // Events are separated by double newlines (\n\n or \r\n\r\n)
+      const events = buffer.split(/\n\n|\r\n\r\n/);
+      buffer = events.pop() || '';
 
-      for (const line of lines) {
-        if (line.startsWith('data:')) {
-          let content = line.slice(5);
-          if (content.endsWith('\r')) {
-            content = content.slice(0, -1);
+      for (const event of events) {
+        if (!event.trim()) continue;
+
+        const lines = event.split(/\r?\n/);
+        const dataLines = [];
+
+        for (const line of lines) {
+          if (line.startsWith('data:')) {
+            let content = line.slice(5);
+            if (content.startsWith(' ')) {
+              content = content.slice(1);
+            }
+            dataLines.push(content);
           }
-          if (content) {
-            onChunk(content);
-          }
+        }
+
+        if (dataLines.length > 0) {
+          const eventData = dataLines.join('\n');
+          onChunk(eventData);
         }
       }
     }
 
-    if (buffer) {
-      if (buffer.startsWith('data:')) {
-        let content = buffer.slice(5);
-        if (content.endsWith('\r')) {
-          content = content.slice(0, -1);
+    if (buffer.trim()) {
+      const lines = buffer.split(/\r?\n/);
+      const dataLines = [];
+      for (const line of lines) {
+        if (line.startsWith('data:')) {
+          let content = line.slice(5);
+          if (content.startsWith(' ')) {
+            content = content.slice(1);
+          }
+          dataLines.push(content);
         }
-        if (content) {
-          onChunk(content);
-        }
+      }
+      if (dataLines.length > 0) {
+        const eventData = dataLines.join('\n');
+        onChunk(eventData);
       }
     }
 

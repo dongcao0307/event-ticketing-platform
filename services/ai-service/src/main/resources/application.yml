@@ -6,12 +6,12 @@ spring:
     name: ai-service
   ai:
     openai:
-      # Groq's OpenAI-compatible endpoint
-      base-url: https://api.groq.com/openai
-      api-key: ${GROQ_API_KEY}
+      # Gemini's OpenAI-compatible endpoint
+      base-url: https://generativelanguage.googleapis.com/v1beta/openai
+      api-key: ${GEMINI_API_KEY}
       chat:
         options:
-          model: llama-3.3-70b-versatile
+          model: gemini-2.5-flash
           temperature: 0.2
       # Disable Spring AI's embedding auto-config – we use a custom Gemini embedder
       embedding:

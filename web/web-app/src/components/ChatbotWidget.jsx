@@ -9,15 +9,15 @@ const INITIAL_MESSAGES = [
   {
     id: 1,
     sender: 'ai',
-    text: 'Xin chào! 👋 Tôi là trợ lý AI của TicketBox. Tôi có thể giúp bạn tìm sự kiện, xem giá vé và hỗ trợ đặt vé. Bạn muốn tìm gì hôm nay?',
+    text: 'Xin chào! Tôi là trợ lý AI của TicketBox. Tôi có thể giúp bạn tìm sự kiện, xem giá vé và hỗ trợ đặt vé. Bạn muốn tìm gì hôm nay?',
   },
 ];
 
 const QUICK_QUESTIONS = [
-  '🎵 Sự kiện âm nhạc nào đang hot?',
-  '🏙️ Có sự kiện nào ở Hà Nội không?',
-  '🎭 Cho tôi xem các show cuối tuần này',
-  '💰 Sự kiện nào có vé dưới 200k?',
+  'Sự kiện âm nhạc nào đang hot?',
+  'Có sự kiện nào ở Hà Nội không?',
+  'Cho tôi xem các show cuối tuần này',
+  'Sự kiện nào có vé dưới 200k?',
 ];
 
 // URL regex — matches https?:// links, stopping at whitespace or trailing punctuation
@@ -37,8 +37,8 @@ function parseMessageParts(text) {
     if (match.index > lastIndex) {
       parts.push({ type: 'text', value: text.slice(lastIndex, match.index) });
     }
-    // Strip trailing punctuation that's unlikely part of the URL
-    const url = match[0].replace(/[.,;:!?)]+$/, '');
+    // Strip trailing punctuation and markdown characters that are unlikely part of the URL
+    const url = match[0].replace(/[.,;:!?)*~_\/]+$/, '');
     parts.push({ type: 'url', value: url });
     lastIndex = match.index + match[0].length;
   }
@@ -53,6 +53,18 @@ function parseMessageParts(text) {
 // ─────────────────────────────────────────────────────────────────────────────
 // AiMessageContent — renders text + deep-link CTA buttons
 // ─────────────────────────────────────────────────────────────────────────────
+
+function renderFormattedText(text) {
+  // Regex to split on **bold** boundaries
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      const boldText = part.slice(2, -2);
+      return <strong key={index} className="font-bold text-white">{boldText}</strong>;
+    }
+    return part;
+  });
+}
 
 function AiMessageContent({ text }) {
   const parts = parseMessageParts(text);
@@ -80,10 +92,10 @@ function AiMessageContent({ text }) {
           );
         }
 
-        // Render plain text, preserving newlines
+        // Render plain text, preserving newlines and formatting bold text
         return (
           <span key={i} className="whitespace-pre-wrap">
-            {part.value}
+            {renderFormattedText(part.value)}
           </span>
         );
       })}
@@ -297,7 +309,7 @@ export default function ChatbotWidget() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-white leading-tight">TicketBox AI</p>
             <p className="text-[11px] text-green-400 leading-tight">
-              {isLoading ? '● Đang xử lý...' : '● Trực tuyến · Groq Llama 3'}
+              {isLoading ? '● Đang xử lý...' : '● Trực tuyến · Gemini 2.5 Flash'}
             </p>
           </div>
 
@@ -398,7 +410,7 @@ export default function ChatbotWidget() {
           </div>
 
           <p className="text-center text-[10px] text-gray-600 mt-1.5 select-none">
-            Powered by <span className="text-gray-500">Groq Llama 3 70B</span> · TicketBox AI
+            Powered by <span className="text-gray-500">Gemini 2.5 Flash</span> · TicketBox AI
           </p>
         </div>
       </div>

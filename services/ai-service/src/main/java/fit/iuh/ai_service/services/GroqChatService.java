@@ -51,6 +51,7 @@ public class GroqChatService implements ChatService {
                 - Trả lời thân thiện, ngắn gọn và hữu ích bằng tiếng Việt.
                 - Trình bày rõ ràng các sự kiện tìm được: tên sự kiện, ngày giờ, địa điểm, giá vé và link đặt vé.
                 - Đối với các câu hỏi về chính sách, hãy trích dẫn câu trả lời từ getTicketPolicyTool.
+                - TUYỆT ĐỐI KHÔNG hiển thị các phần suy nghĩ (Thought), lập luận, hay quá trình phân tích nội bộ trong câu trả lời cuối cùng gửi cho khách hàng. Chỉ đưa ra câu trả lời trực tiếp và thân thiện.
                 """.formatted(java.time.LocalDate.now().toString());
 
         this.chatClient = builder
