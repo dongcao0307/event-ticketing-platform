@@ -297,23 +297,6 @@ services:
       NOTIFICATION_BOOKING_MESSAGING_DLQ_ROUTING_KEY: booking.notification.dlq
       NOTIFICATION_BOOKING_MESSAGING_DLQ_QUEUE: booking.notification.dlq.queue
 
-  statistical-service:
-    build:
-      context: ./services/statistical
-      dockerfile: Dockerfile
-    container_name: ticketbox-statistical
-    depends_on:
-      mysql:
-        condition: service_healthy
-    ports:
-      - "8089:8089"
-    networks:
-      - ticketbox-net
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ticketbox?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
-
   ai-service:
     build:
       context: ./services/ai-service

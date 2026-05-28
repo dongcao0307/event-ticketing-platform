@@ -63,19 +63,56 @@ public class AiToolConfig {
                         "Searches the TicketBox event database for real, published events matching the user's query. " +
                         "ALWAYS call this tool when the user asks about events, concerts, shows, sports, festivals, workshops, ticket prices, or schedules. " +
                         "NEVER fabricate event data - only use what this tool returns. " +
-                        "Input parameters (fill only what is present in query or can be inferred): " +
-                        "- keyword: free-text search query (e.g. name of singer, band, show). " +
-                        "- category: MUSIC/THEATER/SPORTS/WORKSHOP/FESTIVAL/COMEDY/EXHIBITION/OTHER. " +
-                        "- city: Hồ Chí Minh, Hà Nội, Đà Nẵng, etc. " +
-                        "- maxPrice: maximum price limit (as a raw double value, e.g. if user says 'dưới 500k' set to 500000.0, if 'tầm 1 triệu' set to 1000000.0). Leave null/empty if the user did not specify a price constraint. " +
-                        "- isFree: set to true if user specifically asks for free or zero-cost events (e.g. 'miễn phí', 'free', 'không tốn tiền'). Leave null/empty if not requested. " +
-                        "- startDate: start date of search window in ISO format YYYY-MM-DD (calculate the exact ISO date based on the current date provided in system prompt). " +
-                        "- endDate: end date of search window in ISO format YYYY-MM-DD. " +
+                        "IMPORTANT: OMIT parameters that are not specified or cannot be inferred. DO NOT pass null or empty string values. " +
+                        "Input parameters: " +
+                        "- keyword: free-text search query (e.g. name of singer, band, show). Omit if not specified. " +
+                        "- category: MUSIC/THEATER/SPORTS/WORKSHOP/FESTIVAL/COMEDY/EXHIBITION/OTHER. Omit if not specified. " +
+                        "- city: Hồ Chí Minh, Hà Nội, Đà Nẵng, etc. Omit if not specified. " +
+                        "- maxPrice: maximum price limit as a raw double value (e.g. if user says 'dưới 500k' set to 500000.0). Omit entirely if not specified. DO NOT pass null. " +
+                        "- isFree: set to true if user specifically asks for free or zero-cost events. Omit entirely if not requested. DO NOT pass null. " +
+                        "- startDate: start date of search window in ISO format YYYY-MM-DD. DO NOT guess or supply a start date unless the user explicitly requests events starting from/after a specific date or time range. Otherwise, omit this parameter. " +
+                        "- endDate: end date of search window in ISO format YYYY-MM-DD. DO NOT guess or supply an end date unless the user explicitly requests events ending at/before a specific date or time range. Otherwise, omit this parameter. " +
+                        "- location: location name or venue. Omit if not specified. " +
+                        "- organizer: organizer name or company. Omit if not specified. " +
                         "Returns JSON array with id, title, city, location, startTime, priceDisplay, and bookingUrl for each event."
                 )
                 .inputType(SearchEventRequest.class)
                 .build();
     }
+
+    @Bean
+    public FunctionCallback getTicketPolicyTool() {
+        Function<PolicyRequest, String> fn = request -> {
+            String topic = request.topic() != null ? request.topic().toLowerCase() : "";
+            if (topic.contains("hoàn") || topic.contains("đổi") || topic.contains("trả") || topic.contains("hủy")) {
+                return "Quy định hoàn tiền khi hủy vé:\n" +
+                       "- Nếu chọn hoàn vé trước 1 ngày: Hoàn 100%\n" +
+                       "- Nếu chọn hoàn vé trước 2 ngày: Hoàn 80%\n" +
+                       "- Nếu chọn hoàn vé trước 1 tuần: Hoàn 50%\n" +
+                       "- Nếu chọn hoàn vé trước 1 tháng: Hoàn 20%\n" +
+                       "- Nếu chọn hoàn vé sau 1 tháng: Không được hoàn lại\n" +
+                       "- Nếu đã qua thời gian bán vé: Không được hoàn lại";
+            }
+            if (topic.contains("tuổi") || topic.contains("trẻ em") || topic.contains("nhỏ") || topic.contains("quy định tuổi")) {
+                return "Quy định độ tuổi tham gia tùy thuộc vào từng sự kiện cụ thể. Thông thường, trẻ em dưới 12 tuổi cần có người lớn đi kèm và tự chịu trách nhiệm về an toàn.";
+            }
+            if (topic.contains("ăn") || topic.contains("uống") || topic.contains("đồ ăn") || topic.contains("nước")) {
+                return "Hầu hết các sự kiện không cho phép mang đồ ăn thức uống từ ngoài vào khu vực tổ chức. Khách hàng vui lòng sử dụng quầy ẩm thực phục vụ sẵn tại địa điểm.";
+            }
+            return "Quy định TicketBox: Vui lòng tuân thủ quy tắc ứng xử tại sự kiện và tuân thủ các quy định về an ninh, cấm mang vật dụng nguy hiểm. Đối với chính sách hủy/hoàn vé: " +
+                   "Hoàn 100% trước 1 ngày, hoàn 80% trước 2 ngày, hoàn 50% trước 1 tuần, hoàn 20% trước 1 tháng, sau 1 tháng hoặc khi qua thời gian bán vé sẽ không được hoàn lại.";
+        };
+
+        return FunctionCallback.builder()
+                .function("getTicketPolicyTool", fn)
+                .description(
+                        "Sử dụng công cụ này khi khách hàng hỏi về quy định hệ thống, chính sách hoàn/đổi/trả vé, độ tuổi tham gia, hoặc quy định mang đồ ăn thức uống vào sự kiện."
+                )
+                .inputType(PolicyRequest.class)
+                .build();
+    }
+
+    public record PolicyRequest(String topic) {}
 
     // ─────────────────────────────────────────────────────────────────────────
     // Explicit Function implementation
@@ -97,8 +134,8 @@ public class AiToolConfig {
 
         @Override
         public String apply(SearchEventRequest request) {
-            log.info("--- AI TOOL TRIGGERED: keyword = {}, maxPrice = {}, isFree = {}, startDate = {}, endDate = {} ---",
-                    request.getKeyword(), request.getMaxPrice(), request.getIsFree(), request.getStartDate(), request.getEndDate());
+            log.info("--- AI TOOL TRIGGERED: keyword = {}, maxPrice = {}, isFree = {}, startDate = {}, endDate = {}, location = {}, organizer = {} ---",
+                    request.getKeyword(), request.getMaxPrice(), request.getIsFree(), request.getStartDate(), request.getEndDate(), request.getLocation(), request.getOrganizer());
             try {
                 RestClient client = RestClient.builder().build();
 
@@ -125,6 +162,12 @@ public class AiToolConfig {
                 }
                 if (request.getEndDate() != null && !request.getEndDate().isBlank()) {
                     uri.queryParam("endDate", request.getEndDate());
+                }
+                if (request.getLocation() != null && !request.getLocation().isBlank()) {
+                    uri.queryParam("location", request.getLocation());
+                }
+                if (request.getOrganizer() != null && !request.getOrganizer().isBlank()) {
+                    uri.queryParam("organizer", request.getOrganizer());
                 }
 
                 uri.queryParam("page", 0).queryParam("size", 5);

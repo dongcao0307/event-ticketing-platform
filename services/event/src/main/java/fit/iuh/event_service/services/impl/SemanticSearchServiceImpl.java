@@ -43,6 +43,8 @@ public class SemanticSearchServiceImpl implements SemanticSearchService {
             Boolean isFree,
             String startDate,
             String endDate,
+            String location,
+            String organizer,
             int page,
             int size) {
         
@@ -124,6 +126,14 @@ public class SemanticSearchServiceImpl implements SemanticSearchService {
             } catch (Exception e) {
                 // ignore
             }
+        }
+        if (location != null && !location.isBlank()) {
+            sql.append("AND LOWER(e.location) LIKE LOWER(:location) ");
+            params.put("location", "%" + location.trim() + "%");
+        }
+        if (organizer != null && !organizer.isBlank()) {
+            sql.append("AND LOWER(e.organizer_name) LIKE LOWER(:organizer) ");
+            params.put("organizer", "%" + organizer.trim() + "%");
         }
 
         List<EventCandidate> candidates = jdbcTemplate.query(sql.toString(), params, (rs, rowNum) -> {

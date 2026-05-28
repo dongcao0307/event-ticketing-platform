@@ -51,4 +51,14 @@ public class SearchEventRequest {
      * End date of search window in ISO YYYY-MM-DD format.
      */
     private String endDate;
+
+    /**
+     * Location/venue query, e.g. "Sân vận động Mỹ Đình", "Nhà hát lớn".
+     */
+    private String location;
+
+    /**
+     * Organizer query, e.g. "SpaceSpeakers", "M-TP Entertainment".
+     */
+    private String organizer;
 }

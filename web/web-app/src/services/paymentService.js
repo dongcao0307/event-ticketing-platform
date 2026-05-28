@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-const VNPAY_BASE_URL = '/api/payment/vnpay';
-const MOMO_BASE_URL = '/api/payment/momo';
-const FREE_BASE_URL = '/api/payment/free';
-const PAYMENT_CALLBACK_BASE_URL = '/api/payment/callbacks';
+const VNPAY_BASE_URL = '/payment/vnpay';
+const MOMO_BASE_URL = '/payment/momo';
+const FREE_BASE_URL = '/payment/free';
+const PAYMENT_CALLBACK_BASE_URL = '/payment/callbacks';
 
 const toStableMockLong = (rawId, prefix) => {
   const safeId = String(rawId ?? '').trim();
@@ -143,6 +143,6 @@ export const serviceSavePaymentCallback = async (payload) => {
 };
 
 export const serviceRequestRefund = async (payload) => {
-  const response = await axios.post('/api/payment/refunds', payload);
+  const response = await axios.post('/payment/refunds', payload);
   return unwrapApiResponseBody(response);
 };

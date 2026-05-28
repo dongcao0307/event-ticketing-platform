@@ -16,6 +16,8 @@ public interface SemanticSearchService {
             Boolean isFree,
             String startDate,
             String endDate,
+            String location,
+            String organizer,
             int page,
             int size);
 }

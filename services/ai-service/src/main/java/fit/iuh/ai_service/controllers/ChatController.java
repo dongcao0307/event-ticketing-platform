@@ -53,17 +53,22 @@ public class ChatController {
     }
 
     @PostMapping(value = "/stream", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE)
-    public reactor.core.publisher.Flux<String> streamChat(@RequestBody ChatRequest request) {
+    public reactor.core.publisher.Flux<org.springframework.http.codec.ServerSentEvent<String>> streamChat(@RequestBody ChatRequest request) {
         if (request.getMessage() == null || request.getMessage().isBlank()) {
-            return reactor.core.publisher.Flux.just("Vui lòng nhập câu hỏi của bạn.");
+            return reactor.core.publisher.Flux.just(
+                org.springframework.http.codec.ServerSentEvent.builder("Vui lòng nhập câu hỏi của bạn.").build()
+            );
         }
 
         log.debug("Chat stream request received: '{}'", request.getMessage());
 
         return chatService.streamChat(request.getMessage())
+                .map(chunk -> org.springframework.http.codec.ServerSentEvent.builder(chunk).build())
                 .onErrorResume(ex -> {
                     log.error("LLM stream call failed for message '{}': {}", request.getMessage(), ex.getMessage(), ex);
-                    return reactor.core.publisher.Flux.just("⚠️ Xin lỗi, trợ lý AI gặp sự cố khi tải kết quả. Vui lòng thử lại sau ít phút.");
+                    return reactor.core.publisher.Flux.just(
+                        org.springframework.http.codec.ServerSentEvent.builder("⚠️ Xin lỗi, trợ lý AI gặp sự cố khi tải kết quả. Vui lòng thử lại sau ít phút.").build()
+                    );
                 });
     }
 }
