@@ -1,7 +1,7 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, MapPin, Clock, Info, Plus, Minus } from 'lucide-react';
-import { getDetailedEventById, serviceAddBookingItems, serviceCreateBooking } from '../services/bookingService';
+import { getDetailedEventById, serviceCreateBookingWithItems } from '../services/bookingService';
 import { buildFreeCheckoutPayload, serviceCreateFreeCheckout } from '../services/paymentService';
 import { useEvent } from '../hooks/useEvent';
 
@@ -54,6 +54,19 @@ const TicketSelectPage = () => {
       ...prev,
       [ttId]: Math.max(0, (prev[ttId] || 0) + delta),
     }));
+  };
+
+  const validateSelectedItems = () => {
+    for (const item of selectedItems) {
+      const min = Number(item.minTicketsPerUser ?? 0);
+      const max = Number(item.maxTicketsPerUser ?? 0);
+      if (min > 0 && item.quantity < min) {
+        throw new Error(`Phải chọn ít nhất ${min} vé cho ${item.label || item.name}`);
+      }
+      if (max > 0 && item.quantity > max) {
+        throw new Error(`Tối đa ${max} vé cho ${item.label || item.name}`);
+      }
+    }
   };
 
   const selectedItems = useMemo(() => {
@@ -116,19 +129,20 @@ const TicketSelectPage = () => {
         throw new Error('Khong co ve hop le de tao don hang.');
       }
 
-      const createdBooking = await serviceCreateBooking({
+      validateSelectedItems();
+
+      const createdBooking = await serviceCreateBookingWithItems({
         userId,
         idempotenceKey: `BOOK-${id}-${performanceId}-${Date.now()}`,
         discountAmount: 0,
+        items: orderItemsPayload,
       });
 
       const bookingId = createdBooking?.id;
       if (!bookingId) {
         throw new Error('Khong nhan duoc ma don hang tu backend.');
       }
-
-      const updatedBooking = await serviceAddBookingItems(bookingId, orderItemsPayload);
-      const finalBooking = updatedBooking ?? createdBooking;
+      const finalBooking = createdBooking;
 
       const showtimeContext = activePerformance
         ? { id: activePerformance.id, label: activePerformance.label, date: activePerformance.date }

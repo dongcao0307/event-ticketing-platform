@@ -138,6 +138,8 @@ public class EventGrpcServiceImpl extends EventGrpcServiceGrpc.EventGrpcServiceI
                         .setQuantity(tt.getTotalQuantity() != null ? tt.getTotalQuantity() : 0)
                         .setAvailableQuantity(calculateAvailableQuantity(tt))
                         .setSaleEnd(tt.getSaleEnd() != null ? tt.getSaleEnd().format(FORMATTER) : "")
+                        .setMinTicketsPerUser(tt.getMinTicketsPerUser() != null ? tt.getMinTicketsPerUser() : 0)
+                        .setMaxTicketsPerUser(tt.getMaxTicketsPerUser() != null ? tt.getMaxTicketsPerUser() : 0)
                         .build()
                 )
                 .toList();

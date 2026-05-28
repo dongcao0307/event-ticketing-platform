@@ -3,6 +3,7 @@ package fit.iuh.booking_service.services.impl;
 import fit.iuh.booking_service.dtos.BookingAdminProjection;
 import fit.iuh.booking_service.dtos.requests.AddBookingItemRequest;
 import fit.iuh.booking_service.dtos.requests.CreateBookingRequest;
+import fit.iuh.booking_service.dtos.requests.CreateBookingWithItemsRequest;
 import fit.iuh.booking_service.dtos.requests.UpdateBookingStatusRequest;
 import fit.iuh.booking_service.dtos.responses.*;
 import fit.iuh.booking_service.entities.Booking;
@@ -37,10 +38,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 @Slf4j
@@ -68,28 +71,32 @@ public class BookingServiceImpl implements BookingService {
             return bookingMapper.toBookingResponse(existed);
         }
 
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime expiredAt = now.plusMinutes(expireMinutes);
+        Booking saved = createPendingBooking(request.getUserId(), request.getIdempotenceKey(), request.getDiscountAmount());
+        return bookingMapper.toBookingResponse(saved);
+    }
 
-        BigDecimal discount = request.getDiscountAmount() == null ? BigDecimal.ZERO : request.getDiscountAmount();
-        if (discount.compareTo(BigDecimal.ZERO) < 0) {
-            throw new AppException(ErrorCode.INVALID_POST_REQUEST);
+    @Override
+    @Transactional
+    public BookingResponse createBookingWithItems(CreateBookingWithItemsRequest request) {
+        validateRequest(request);
+
+        Booking existed = bookingRepository.findByIdempotenceKey(request.getIdempotenceKey()).orElse(null);
+        if (existed != null) {
+            ensureExpiryKey(existed);
+            return bookingMapper.toBookingResponse(existed);
         }
 
-        Booking booking = Booking.builder()
-                .userId(request.getUserId())
-                .idempotenceKey(request.getIdempotenceKey())
-                .subtotal(BigDecimal.ZERO)
-                .discountAmount(discount)
-                .totalAmount(BigDecimal.ZERO)
-                .status(BookingStatus.PENDING)
-                .createdAt(now)
-                .expiredAt(expiredAt)
-                .version(1L)
-                .build();
+        validateTicketTypeLimits(request.getItems());
+
+        Booking booking = createPendingBookingEntity(request.getUserId(), request.getIdempotenceKey(), request.getDiscountAmount());
+        appendBookingItems(booking, request.getItems());
+
+        recomputeTotals(booking);
+        booking.setVersion(booking.getVersion() == null ? 1L : booking.getVersion() + 1);
 
         Booking saved = bookingRepository.save(booking);
-        bookingExpiryScheduler.schedule(saved.getId(), Duration.ofMinutes(expireMinutes));
+        ensureExpiryKey(saved);
+        bookingOutboxService.enqueueBookingCreated(toBookingCreatedEvent(saved));
 
         return bookingMapper.toBookingResponse(saved);
     }
@@ -106,20 +113,7 @@ public class BookingServiceImpl implements BookingService {
 
         boolean hadItems = booking.getItems() != null && !booking.getItems().isEmpty();
 
-        for (AddBookingItemRequest request : requests) {
-            if (request.getUnitPrice() != null && request.getUnitPrice().compareTo(BigDecimal.ZERO) < 0) {
-                throw new AppException(ErrorCode.INVALID_POST_REQUEST);
-            }
-
-            BookingItem item = BookingItem.builder()
-                    .booking(booking)
-                    .ticketTypeId(request.getTicketTypeId())
-                    .quantity(request.getQuantity())
-                    .unitPrice(request.getUnitPrice())
-                    .build();
-
-            booking.getItems().add(item);
-        }
+        appendBookingItems(booking, requests);
 
         recomputeTotals(booking);
         booking.setVersion(booking.getVersion() == null ? 1L : booking.getVersion() + 1);
@@ -308,6 +302,104 @@ public class BookingServiceImpl implements BookingService {
         bookingExpiryScheduler.schedule(booking.getId(), ttl);
     }
 
+    private Booking createPendingBooking(Long userId, String idempotenceKey, BigDecimal discountAmount) {
+        Booking booking = createPendingBookingEntity(userId, idempotenceKey, discountAmount);
+        Booking saved = bookingRepository.save(booking);
+        bookingExpiryScheduler.schedule(saved.getId(), Duration.ofMinutes(expireMinutes));
+        return saved;
+    }
+
+    private Booking createPendingBookingEntity(Long userId, String idempotenceKey, BigDecimal discountAmount) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime expiredAt = now.plusMinutes(expireMinutes);
+
+        BigDecimal discount = normalizeDiscount(discountAmount);
+
+        return Booking.builder()
+                .userId(userId)
+                .idempotenceKey(idempotenceKey)
+                .subtotal(BigDecimal.ZERO)
+                .discountAmount(discount)
+                .totalAmount(BigDecimal.ZERO)
+                .status(BookingStatus.PENDING)
+                .createdAt(now)
+                .expiredAt(expiredAt)
+                .version(1L)
+                .build();
+    }
+
+    private BigDecimal normalizeDiscount(BigDecimal discountAmount) {
+        BigDecimal discount = discountAmount == null ? BigDecimal.ZERO : discountAmount;
+        if (discount.compareTo(BigDecimal.ZERO) < 0) {
+            throw new AppException(ErrorCode.INVALID_POST_REQUEST);
+        }
+        return discount;
+    }
+
+    private void appendBookingItems(Booking booking, List<AddBookingItemRequest> requests) {
+        if (booking.getItems() == null) {
+            booking.setItems(new ArrayList<>());
+        }
+
+        for (AddBookingItemRequest request : requests) {
+            if (request.getUnitPrice() != null && request.getUnitPrice().compareTo(BigDecimal.ZERO) < 0) {
+                throw new AppException(ErrorCode.INVALID_POST_REQUEST);
+            }
+
+            BookingItem item = BookingItem.builder()
+                    .booking(booking)
+                    .ticketTypeId(request.getTicketTypeId())
+                    .quantity(request.getQuantity())
+                    .unitPrice(request.getUnitPrice())
+                    .build();
+
+            booking.getItems().add(item);
+        }
+    }
+
+    private void validateTicketTypeLimits(List<AddBookingItemRequest> requests) {
+        Map<Long, Integer> quantitiesByTicketType = new LinkedHashMap<>();
+        for (AddBookingItemRequest request : requests) {
+            quantitiesByTicketType.merge(request.getTicketTypeId(), request.getQuantity(), Integer::sum);
+        }
+
+        for (Map.Entry<Long, Integer> entry : quantitiesByTicketType.entrySet()) {
+            Long ticketTypeId = entry.getKey();
+            Integer totalQuantity = entry.getValue();
+
+            GetEventAndPerformanceResponse response;
+            try {
+                response = eventGrpcClient.getEventDetailsByTicketTypeId(ticketTypeId);
+            } catch (Exception ex) {
+                throw new RuntimeException("Unable to validate ticket limits for ticketTypeId " + ticketTypeId, ex);
+            }
+
+            if (response == null || response.getTicketTypesList() == null || response.getTicketTypesList().isEmpty()) {
+                throw new RuntimeException("Unable to validate ticket limits for ticketTypeId " + ticketTypeId);
+            }
+
+            fit.iuh.event_service.grpc.generated.TicketTypeDto ticketType = response.getTicketTypesList().stream()
+                    .filter(item -> Objects.equals(item.getId(), ticketTypeId))
+                    .findFirst()
+                    .orElse(null);
+
+            if (ticketType == null) {
+                throw new RuntimeException("Ticket type " + ticketTypeId + " was not found in event details");
+            }
+
+            Integer minTicketsPerUser = ticketType.getMinTicketsPerUser();
+            Integer maxTicketsPerUser = ticketType.getMaxTicketsPerUser();
+
+            if (minTicketsPerUser != null && totalQuantity < minTicketsPerUser) {
+                throw new RuntimeException("Quantity for ticketTypeId " + ticketTypeId + " must be at least " + minTicketsPerUser);
+            }
+
+            if (maxTicketsPerUser != null && totalQuantity > maxTicketsPerUser) {
+                throw new RuntimeException("Quantity for ticketTypeId " + ticketTypeId + " must be at most " + maxTicketsPerUser);
+            }
+        }
+    }
+
     private BookingPaidEvent toBookingPaidEvent(Booking booking) {
         List<BookingPaidEvent.BookingPaidItem> paidItems = booking.getItems().stream()
             .map(item -> BookingPaidEvent.BookingPaidItem.builder()
@@ -388,7 +480,7 @@ public class BookingServiceImpl implements BookingService {
         });
     }
 
-        private BookingCreatedEvent toBookingCreatedEvent(Booking booking) {
+    private BookingCreatedEvent toBookingCreatedEvent(Booking booking) {
         List<BookingCreatedEvent.BookingCreatedItem> items = booking.getItems().stream()
             .map(item -> BookingCreatedEvent.BookingCreatedItem.builder()
                 .ticketTypeId(item.getTicketTypeId())
@@ -405,17 +497,17 @@ public class BookingServiceImpl implements BookingService {
             .expiredAt(booking.getExpiredAt())
             .items(items)
             .build();
-        }
+    }
 
-        private BookingCancelledEvent toBookingCancelledEvent(Booking booking, String reason) {
-            List<BookingCancelledEvent.BookingCancelledItem> items = booking.getItems().stream()
-                .map(item -> BookingCancelledEvent.BookingCancelledItem.builder()
-                    .ticketTypeId(item.getTicketTypeId())
-                    .quantity(item.getQuantity())
-                    .unitPrice(item.getUnitPrice())
-                    .ticketTypeName(resolveTicketTypeName(item.getTicketTypeId()))
-                    .build())
-                .toList();
+    private BookingCancelledEvent toBookingCancelledEvent(Booking booking, String reason) {
+        List<BookingCancelledEvent.BookingCancelledItem> items = booking.getItems().stream()
+            .map(item -> BookingCancelledEvent.BookingCancelledItem.builder()
+                .ticketTypeId(item.getTicketTypeId())
+                .quantity(item.getQuantity())
+                .unitPrice(item.getUnitPrice())
+                .ticketTypeName(resolveTicketTypeName(item.getTicketTypeId()))
+                .build())
+            .toList();
 
         return BookingCancelledEvent.builder()
             .bookingId(booking.getId())
@@ -423,7 +515,7 @@ public class BookingServiceImpl implements BookingService {
             .status(booking.getStatus().name())
             .reason(reason)
             .cancelledAt(LocalDateTime.now())
-                .items(items)
+            .items(items)
             .build();
-        }
+    }
 }

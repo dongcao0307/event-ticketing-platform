@@ -1,7 +1,7 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, MapPin, Clock } from 'lucide-react';
-import { getDetailedEventById, serviceAddBookingItems, serviceCreateBooking } from '../services/bookingService';
+import { getDetailedEventById, serviceCreateBookingWithItems } from '../services/bookingService';
 import { buildFreeCheckoutPayload, serviceCreateFreeCheckout } from '../services/paymentService';
 import { serviceGetBookedSeats } from '../services/ticketService';
 import { useEvent } from '../hooks/useEvent';
@@ -134,6 +134,20 @@ const SeatSelectionPage = () => {
 
   const formatPrice = (p) => (Number(p) || 0).toLocaleString('vi-VN') + 'đ';
 
+  const validateSeatQuantityLimit = () => {
+    const min = Number(defaultTicketType?.minTicketsPerUser ?? 0);
+    const max = Number(defaultTicketType?.maxTicketsPerUser ?? 0);
+    const quantity = selectedSeats.length;
+
+    if (min > 0 && quantity < min) {
+      throw new Error(`Phải chọn ít nhất ${min} ghế cho ${defaultTicketType?.label || defaultTicketType?.name || 'loại vé này'}`);
+    }
+
+    if (max > 0 && quantity > max) {
+      throw new Error(`Tối đa ${max} ghế cho ${defaultTicketType?.label || defaultTicketType?.name || 'loại vé này'}`);
+    }
+  };
+
   const resolveMockUserId = () => {
     try {
       const userDataRaw = localStorage.getItem('user_data');
@@ -181,19 +195,20 @@ const SeatSelectionPage = () => {
         unitPrice: Number(defaultTicketType.price) || 0,
       }];
 
-      const createdBooking = await serviceCreateBooking({
+      validateSeatQuantityLimit();
+
+      const createdBooking = await serviceCreateBookingWithItems({
         userId,
         idempotenceKey: `BOOK-${id}-${performanceId}-${Date.now()}`,
         discountAmount: 0,
+        items: orderItemsPayload,
       });
 
       const bookingId = createdBooking?.id;
       if (!bookingId) {
         throw new Error('Khong nhan duoc ma don hang tu backend.');
       }
-
-      const updatedBooking = await serviceAddBookingItems(bookingId, orderItemsPayload);
-      const finalBooking = updatedBooking ?? createdBooking;
+      const finalBooking = createdBooking;
 
       const showtimeContext = activePerformance
         ? { id: activePerformance.id, label: activePerformance.label, date: activePerformance.date }
