@@ -52,6 +52,11 @@ export default defineConfig({
         secure: false,
         changeOrigin: true,
       },
+      '/api/chat': {
+        target: 'http://localhost:8091',
+        secure: false,
+        changeOrigin: true,
+      },
     },
   },
   resolve: {

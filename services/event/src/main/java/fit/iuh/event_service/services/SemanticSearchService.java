@@ -12,6 +12,10 @@ public interface SemanticSearchService {
             String category,
             String city,
             String status,
+            Double maxPrice,
+            Boolean isFree,
+            String startDate,
+            String endDate,
             int page,
             int size);
 }

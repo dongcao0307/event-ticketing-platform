@@ -1,8 +1,27 @@
 server:
   port: 8091
+
 spring:
   application:
     name: ai-service
+  ai:
+    openai:
+      # Groq's OpenAI-compatible endpoint
+      base-url: https://api.groq.com/openai
+      api-key: ${GROQ_API_KEY}
+      chat:
+        options:
+          model: llama-3.3-70b-versatile
+          temperature: 0.2
+      # Disable Spring AI's embedding auto-config – we use a custom Gemini embedder
+      embedding:
+        enabled: false
+
 openai:
   embedding:
     model: text-embedding-3-small
+
+# Internal service URLs (Docker network hostnames)
+services:
+  event:
+    base-url: ${EVENT_SERVICE_BASE_URL:http://event-service:8082}

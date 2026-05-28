@@ -23,9 +23,14 @@ public class SemanticEventController {
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String city,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) Double maxPrice,
+            @RequestParam(required = false) Boolean isFree,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        List<EventResponse> result = semanticSearchService.search(keyword, category, city, status, page, size);
+        List<EventResponse> result = semanticSearchService.search(
+                keyword, category, city, status, maxPrice, isFree, startDate, endDate, page, size);
 
         PageResponse<EventResponse> pageResponse = PageResponse.<EventResponse>builder()
                 .content(result)
