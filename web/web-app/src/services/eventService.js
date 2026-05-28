@@ -188,3 +188,20 @@ export const getLatestEvents = async () => {
     return [];
   }
 };
+
+// ==================== Favorite Events API ====================
+
+export const toggleFavoriteEvent = async (eventId) => {
+  const res = await post(`/events/${eventId}/favorite/toggle`, {});
+  return res.data;
+};
+
+export const getFavoriteEvents = async () => {
+  const res = await get('/events/favorites');
+  return (res.data || []).map(normalizeEvent);
+};
+
+export const getFavoriteStatus = async (eventId) => {
+  const res = await get(`/events/${eventId}/favorite/status`);
+  return res.data;
+};

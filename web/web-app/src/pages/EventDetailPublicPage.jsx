@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Calendar, MapPin, ChevronRight, Clock, Building2, Share2, Heart } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { getTrendingEvents } from '../services/eventService';
+import { getTrendingEvents, getFavoriteStatus, toggleFavoriteEvent } from '../services/eventService';
 import { getDetailedEventById } from '../services/bookingService';
 
 const EventDetailPublicPage = () => {
@@ -23,6 +23,16 @@ const EventDetailPublicPage = () => {
         setEvent(data);
         const related = await getTrendingEvents();
         setRelatedEvents(related || []);
+
+        const token = localStorage.getItem('jwt_token');
+        if (token) {
+          try {
+            const isFav = await getFavoriteStatus(id);
+            setLiked(!!isFav);
+          } catch (err) {
+            console.error('Lỗi khi tải trạng thái yêu thích:', err);
+          }
+        }
       } catch (err) {
         console.error('Lỗi khi tải chi tiết sự kiện:', err);
         setEvent(null);
@@ -52,6 +62,11 @@ const EventDetailPublicPage = () => {
   const isSeatEvent = (event?.category || '').toUpperCase() === 'THEATER';
 
   const handlePurchase = (performanceId) => {
+    const token = localStorage.getItem('jwt_token');
+    if (!token) {
+      window.dispatchEvent(new CustomEvent('openLoginModal'));
+      return;
+    }
     const params = new URLSearchParams({ showtime: performanceId });
     const nextPath = isSeatEvent ? 'seats' : 'tickets';
     navigate(`/event/${id}/${nextPath}?${params.toString()}`);
@@ -59,6 +74,20 @@ const EventDetailPublicPage = () => {
 
   const togglePerformance = (performanceId) => {
     setExpandedPerformanceId((prev) => (prev === performanceId ? null : performanceId));
+  };
+
+  const handleToggleFavorite = async () => {
+    const token = localStorage.getItem('jwt_token');
+    if (!token) {
+      window.dispatchEvent(new CustomEvent('openLoginModal'));
+      return;
+    }
+    try {
+      const isFav = await toggleFavoriteEvent(id);
+      setLiked(isFav);
+    } catch (err) {
+      console.error('Lỗi khi thay đổi trạng thái yêu thích:', err);
+    }
   };
 
   if (loading) {
@@ -104,7 +133,7 @@ const EventDetailPublicPage = () => {
                   </span>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => setLiked(!liked)}
+                      onClick={handleToggleFavorite}
                       className={`p-2 rounded-full border transition ${liked ? 'bg-red-500/10 border-red-500/30 text-red-500' : 'border-white/10 text-gray-400 hover:border-[#26bc71] hover:text-[#26bc71]'}`}
                     >
                       <Heart size={16} fill={liked ? 'currentColor' : 'none'} />

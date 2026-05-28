@@ -9,6 +9,7 @@ import SearchPage from './pages/SearchPage'
 import MyAccountPage from './pages/MyAccountPage'
 import AccountSettings from './pages/account/AccountSettings'
 import MyTickets from './pages/account/MyTickets'
+import FavoriteEventsPage from './pages/account/FavoriteEventsPage'
 import TicketDetailPage from './pages/TicketDetailPage'
 import CategoryPage from './pages/CategoryPage'
 
@@ -65,6 +66,7 @@ function App() {
             <Route index element={<AccountSettings />} />
             <Route path="settings" element={<AccountSettings />} />
             <Route path="tickets" element={<MyTickets />} />
+            <Route path="favorites" element={<FavoriteEventsPage />} />
           </Route>
           <Route path="/ticket/:id" element={<TicketDetailPage />} />
 

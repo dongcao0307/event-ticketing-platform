@@ -81,36 +81,41 @@ const AdminEventDetail = () => {
   const mapEventData = (apiData) => ({
     ...apiData,
     name: apiData.title,
-    status: apiData.status === 'PUBLISHED' ? 'Approved' : apiData.status === 'DRAFT' ? 'Pending' : 'Rejected',
+    status: apiData.status === 'PUBLISHED' ? 'Approved' : (apiData.status === 'DRAFT' || apiData.status === 'PENDING') ? 'Pending' : 'Rejected',
     category: apiData.category || 'Chưa phân loại',
     type: apiData.type ? (apiData.type.includes('Online') ? 'Online' : 'Offline') : 'Offline',
     startDate: apiData.startDate || 'N/A',
     endDate: apiData.endDate || 'N/A',
     location: apiData.location || 'N/A',
     organizer: {
-      name: apiData.organizerName || 'Unknown',
-      email: 'organizer@email.com',
-      phone: '0901234567',
-      logo: null,
-      description: 'Organization description',
-      bankAccountName: 'Bank Account',
-      bankAccountNumber: '0000000000',
-      bankName: 'Bank Name',
-      bankBranch: 'Branch',
-      businessType: 'Business Type',
-      taxId: 'TAX-ID',
+      name: apiData.organizer?.name || apiData.organizerName || 'Unknown',
+      email: apiData.organizer?.email || 'organizer@email.com',
+      phone: apiData.organizer?.phone || '0901234567',
+      logo: apiData.organizer?.logo || apiData.organizerLogo || null,
+      description: apiData.organizer?.description || apiData.organizerInfo || 'Organization description',
+      bankAccountName: apiData.organizer?.bankAccountName || 'Bank Account',
+      bankAccountNumber: apiData.organizer?.bankAccountNumber || '0000000000',
+      bankName: apiData.organizer?.bankName || 'Bank Name',
+      bankBranch: apiData.organizer?.bankBranch || 'Branch',
+      businessType: apiData.organizer?.businessType || 'Business Type',
+      taxId: apiData.organizer?.taxId || 'TAX-ID',
       invoiceName: 'Invoice Name',
       invoiceAddress: 'Address',
     },
-    tickets: apiData.tickets || [],
+    tickets: (apiData.tickets || []).map(t => ({
+      type: t.type,
+      qty: t.quantity,
+      price: t.price,
+      sold: t.sold
+    })),
     eventId: apiData.eventId || `EVT-${apiData.id}`,
     createdDate: apiData.createdAt || new Date().toLocaleDateString('vi-VN'),
     updatedDate: apiData.updatedAt || new Date().toLocaleDateString('vi-VN'),
     views: apiData.viewCount || 0,
-    eventUrl: `https://ticketbox.vn/events/${apiData.id}`,
+    eventUrl: apiData.eventUrl || `https://ticketbox.vn/events/${apiData.id}`,
     customSlug: `event-${apiData.id}`,
-    privacy: 'Public',
-    accessNotes: 'Open to all',
+    privacy: apiData.privacy || 'Public',
+    accessNotes: apiData.accessNotes || 'Open to all',
   });
 
   const displayEvent = event ? mapEventData(event) : null;
@@ -269,15 +274,25 @@ const AdminEventDetail = () => {
         </div>
 
         {/* Event banner */}
-        <div className="w-full h-64 bg-[#222] rounded-xl border border-white/5 mb-8 flex flex-col items-center justify-center gap-3 overflow-hidden">
-          <div className="w-14 h-14 rounded-full bg-[#1a1a1a] flex items-center justify-center">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="text-gray-600">
-              <rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="1.5"/>
-              <circle cx="8.5" cy="8.5" r="1.5" stroke="currentColor" strokeWidth="1.5"/>
-              <path d="M21 15l-5-5L5 21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-          <p className="text-gray-600 text-sm">Ảnh bìa sự kiện</p>
+        <div className="w-full h-64 bg-[#222] rounded-xl border border-white/5 mb-8 flex flex-col items-center justify-center gap-3 overflow-hidden relative">
+          {displayEvent.posterUrl || displayEvent.thumbnailUrl ? (
+            <img
+              src={displayEvent.posterUrl || displayEvent.thumbnailUrl}
+              alt={displayEvent.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <>
+              <div className="w-14 h-14 rounded-full bg-[#1a1a1a] flex items-center justify-center">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="text-gray-600">
+                  <rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="1.5"/>
+                  <circle cx="8.5" cy="8.5" r="1.5" stroke="currentColor" strokeWidth="1.5"/>
+                  <path d="M21 15l-5-5L5 21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <p className="text-gray-600 text-sm">Ảnh bìa sự kiện</p>
+            </>
+          )}
         </div>
 
         {/* Reject Modal */}
@@ -394,9 +409,9 @@ const AdminEventDetail = () => {
                       return (
                         <tr key={i} className="hover:bg-white/[0.02] transition-colors">
                           <td className="px-4 py-4 text-white font-medium">{t.type}</td>
-                          <td className="px-4 py-4 text-gray-400">{t.qty.toLocaleString()}</td>
+                          <td className="px-4 py-4 text-gray-400">{(t.qty || 0).toLocaleString()}</td>
                           <td className="px-4 py-4 text-[#26bc71] font-medium">{formatPrice(t.price)}</td>
-                          <td className="px-4 py-4 text-gray-400">{t.sold.toLocaleString()}</td>
+                          <td className="px-4 py-4 text-gray-400">{(t.sold || 0).toLocaleString()}</td>
                           <td className="px-4 py-4">
                             <div className="flex items-center gap-3">
                               <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">

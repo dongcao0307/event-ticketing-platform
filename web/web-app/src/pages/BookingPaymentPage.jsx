@@ -297,17 +297,17 @@ const BookingPaymentPage = () => {
         const returnUrl = `${window.location.origin}/payment/call-back`;
         const checkout = selectedPaymentMethod === 'MOMO'
           ? await createMomoCheckout({
-              order,
-              event,
-              showtime,
-              returnUrl,
-            })
+            order,
+            event,
+            showtime,
+            returnUrl,
+          })
           : await createVnPayCheckout({
-              order,
-              event,
-              showtime,
-              returnUrl,
-            });
+            order,
+            event,
+            showtime,
+            returnUrl,
+          });
 
         if (checkout?.paymentId) {
           localStorage.setItem(
@@ -328,10 +328,10 @@ const BookingPaymentPage = () => {
       } catch (error) {
         setPaymentError(
           error?.response?.data?.message
-            || error?.message
-            || (selectedPaymentMethod === 'MOMO'
-              ? 'Tao giao dich MoMo that bai.'
-              : 'Tao giao dich VNPay that bai.')
+          || error?.message
+          || (selectedPaymentMethod === 'MOMO'
+            ? 'Tao giao dich MoMo that bai.'
+            : 'Tao giao dich VNPay that bai.')
         );
       } finally {
         setPaying(false);
@@ -416,15 +416,15 @@ const BookingPaymentPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
           <div className="space-y-4">
             <section className="bg-[#2f313b] rounded-xl p-4 border border-[#3d404b]">
-              <h3 className="font-semibold text-[#26bc71] mb-2">Thong tin nhan ve</h3>
+              <h3 className="font-semibold text-[#26bc71] mb-2">Thông tin nhận vé</h3>
               <p className="text-sm text-gray-200">
-                Ve dien tu se duoc hien thi trong muc "Ve cua toi" cua tai khoan.
+                Vé điện tử sẽ được hiển thị trong mục "Vé của tôi" của tài khoản.
               </p>
-              <p className="text-sm text-gray-300 mt-1">{bookingCheckoutContext?.buyer?.email || 'Ban chua nhap email'}</p>
+              <p className="text-sm text-gray-300 mt-1">{bookingCheckoutContext?.buyer?.email || 'Bạn chưa nhập email'}</p>
             </section>
 
             <section className="bg-[#2f313b] rounded-xl p-4 border border-[#3d404b]">
-              <h3 className="font-semibold text-[#26bc71] mb-3">Phuong thuc thanh toan</h3>
+              <h3 className="font-semibold text-[#26bc71] mb-3">Phương thức thanh toán</h3>
               <div className="space-y-3">
                 {PAYMENT_METHODS.map((method) => (
                   <label key={method.value} className="flex items-center gap-3 cursor-pointer text-gray-100">
@@ -451,18 +451,18 @@ const BookingPaymentPage = () => {
           <aside className="space-y-3">
             <section className="bg-white rounded-xl p-4 text-[#1f2937]">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-bold">Thong tin dat ve</h3>
+                <h3 className="font-bold">Thông tin đặt vé</h3>
                 <button
                   onClick={() => navigate(`/event/${id}`)}
                   className="text-[#3b82f6] text-sm hover:underline"
                 >
-                  Chon lai ve
+                  Chọn lại vé
                 </button>
               </div>
 
               <div className="grid grid-cols-[1fr_auto] text-xs font-semibold text-gray-500 uppercase mb-2">
-                <span>Loai ve</span>
-                <span>So luong</span>
+                <span>Loại vé</span>
+                <span>Số lượng</span>
               </div>
 
               <div className="space-y-2">
@@ -481,7 +481,7 @@ const BookingPaymentPage = () => {
             </section>
 
             <section className="bg-white rounded-xl p-4 text-[#1f2937]">
-              <h3 className="font-bold mb-2">Thong tin don hang</h3>
+              <h3 className="font-bold mb-2">Thông tin đơn hàng</h3>
               {bookingPayment?.response?.paymentId && (
                 <div className="text-xs text-gray-500 mb-2">
                   Payment ID: {bookingPayment.response.paymentId}
@@ -495,37 +495,37 @@ const BookingPaymentPage = () => {
               )}
 
               {checkingPaymentStatus && (
-                <div className="text-xs text-blue-600 mb-2">Dang dong bo trang thai thanh toan...</div>
+                <div className="text-xs text-blue-600 mb-2">Đang đồng bộ trạng thái thanh toán...</div>
               )}
 
               {paymentStatus?.status === 'COMPLETED' && (
                 <div className="mt-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-                  Thanh toan thanh cong.
+                  Thanh toán thành công.
                 </div>
               )}
 
               {paymentStatus?.status === 'FAILED' && (
                 <div className="mt-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                  Thanh toan that bai. Vui long thu lai.
+                  Thanh toán thất bại. Vui lòng thử lại.
                 </div>
               )}
               <div className="flex justify-between text-sm py-1">
-                <span className="text-gray-600">Tam tinh</span>
+                <span className="text-gray-600">Tạm tính</span>
                 <span>{formatPrice(order.subtotal)}</span>
               </div>
               <div className="flex justify-between text-sm py-1">
-                <span className="text-gray-600">Giam gia</span>
+                <span className="text-gray-600">Giảm giá</span>
                 <span>{formatPrice(order.discountAmount)}</span>
               </div>
               <div className="border-t border-dashed my-2" />
               <div className="flex justify-between text-base font-bold py-1">
-                <span>Tong tien</span>
+                <span>Tổng tiền</span>
                 <span className="text-[#26bc71]">{formatPrice(order.totalAmount)}</span>
               </div>
 
               {isExpired && (
                 <div className="mt-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                  Don hang da het han thanh toan.
+                  Đơn hàng đã hết hạn thanh toán.
                 </div>
               )}
 
@@ -542,10 +542,10 @@ const BookingPaymentPage = () => {
               >
                 <Ticket size={16} />
                 {paying
-                  ? `Dang chuyen den ${selectedPaymentMethod === 'MOMO' ? 'MoMo' : 'VNPay'}...`
+                  ? `Đang chuyển đến ${selectedPaymentMethod === 'MOMO' ? 'MoMo' : 'VNPay'}...`
                   : paymentStatus?.status === 'COMPLETED'
-                    ? 'Da thanh toan'
-                    : 'Thanh toan'}
+                    ? 'Đã thanh toán'
+                    : 'Thanh toán'}
               </button>
             </section>
           </aside>

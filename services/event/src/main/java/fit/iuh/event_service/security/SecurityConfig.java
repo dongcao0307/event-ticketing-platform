@@ -39,6 +39,11 @@ public class SecurityConfig {
 
                 // 3. Phân quyền Endpoint
                 .authorizeHttpRequests(auth -> auth
+                        // ===== PROTECTED FAVORITES ENDPOINTS (BẮT BUỘC ĐĂNG NHẬP) =====
+                        // Đặt lên trên cùng để tránh bị permitAll của rule /events/** nhận diện nhầm
+                        .requestMatchers(HttpMethod.POST, "/events/*/favorite/toggle", "/api/events/*/favorite/toggle").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/events/favorites", "/api/events/favorites").authenticated()
+
                         // ===== PUBLIC ENDPOINTS (KHÁCH VÃNG LAI) =====
                         // Bao lô cả /events và /api/events đề phòng Nginx bẻ lái
                         .requestMatchers(HttpMethod.GET, "/events/**", "/api/events/**").permitAll()

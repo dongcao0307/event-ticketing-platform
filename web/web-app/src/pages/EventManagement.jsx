@@ -27,6 +27,7 @@ const PAGE_SIZE = 10;
 const mapStatusToDisplay = (apiStatus) => {
   switch (apiStatus) {
     case 'DRAFT':
+    case 'PENDING':
       return 'Pending';
     case 'PUBLISHED':
       return 'Approved';

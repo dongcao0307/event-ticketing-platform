@@ -29,6 +29,14 @@ const MyAccountPage = () => {
                 >
                   Vé của tôi
                 </NavLink>
+                <NavLink
+                  to="favorites"
+                  className={({ isActive }) =>
+                    `px-4 py-2 rounded-lg font-medium text-sm ${isActive ? 'bg-[#26bc71] text-black' : 'bg-[#1f2b25] text-gray-200 hover:bg-[#25342f]'}`
+                  }
+                >
+                  Sự kiện yêu thích
+                </NavLink>
               </nav>
             </aside>
 
