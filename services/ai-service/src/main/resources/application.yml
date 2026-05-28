@@ -1,8 +1,27 @@
 server:
   port: 8091
+
 spring:
   application:
     name: ai-service
+  ai:
+    openai:
+      # Gemini's OpenAI-compatible endpoint
+      base-url: https://generativelanguage.googleapis.com/v1beta/openai
+      api-key: ${GEMINI_API_KEY}
+      chat:
+        options:
+          model: gemini-2.5-flash
+          temperature: 0.2
+      # Disable Spring AI's embedding auto-config – we use a custom Gemini embedder
+      embedding:
+        enabled: false
+
 openai:
   embedding:
     model: text-embedding-3-small
+
+# Internal service URLs (Docker network hostnames)
+services:
+  event:
+    base-url: ${EVENT_SERVICE_BASE_URL:http://event-service:8082}

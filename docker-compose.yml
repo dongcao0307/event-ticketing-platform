@@ -96,6 +96,7 @@ services:
       - booking-service
       - payment-service
       - ticket-service
+      - statistical-service
     ports:
       - "8443:443"
       - "8080:80"
@@ -325,6 +326,8 @@ services:
       - ticketbox-net
     environment:
       GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      EVENT_SERVICE_BASE_URL: http://event-service:8082
 
   # ═══════════════════════════════════════════════════════════
   # WEB APPLICATION (React + Vite)

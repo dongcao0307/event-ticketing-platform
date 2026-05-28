@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import ChatbotWidget from './components/ChatbotWidget'
 import Home from './pages/Home'
 import { ToastProvider, ToastContainer } from './context/ToastContext'
 import OrganizerPage from './pages/OrganizerPage'
@@ -81,6 +82,9 @@ function App() {
 
         {/* ToastContainer phải nằm trong BrowserRouter và ToastProvider */}
         <ToastContainer />
+
+        {/* AI Chatbot – hiển thị trên tất cả các trang */}
+        <ChatbotWidget />
       </BrowserRouter>
     </ToastProvider>
   )
