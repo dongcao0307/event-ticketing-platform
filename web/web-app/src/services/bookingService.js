@@ -223,6 +223,7 @@ const normalizeTicketType = (ticket) => ({
   name: ticket.name || ticket.label || '',
   price: toNumber(ticket.price),
   totalQuantity: ticket.totalQuantity,
+  minTicketsPerUser: ticket.minTicketsPerUser,
   maxTicketsPerUser: ticket.maxTicketsPerUser,
   performanceId: ticket.performanceId != null ? String(ticket.performanceId) : undefined,
   description: ticket.description,
@@ -454,6 +455,11 @@ const unwrapApiResponseBody = (response) => response?.data?.body;
 
 export const serviceCreateBooking = async (payload) => {
   const response = await axios.post(BOOKING_SERVICE_BASE_URL, payload);
+  return unwrapApiResponseBody(response);
+};
+
+export const serviceCreateBookingWithItems = async (payload) => {
+  const response = await axios.post(`${BOOKING_SERVICE_BASE_URL}/with-items`, payload);
   return unwrapApiResponseBody(response);
 };
 
