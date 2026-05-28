@@ -20,11 +20,11 @@ export const detailedEvents = [
       { id: 'st-2', label: '15:00 – 17:30', date: '25 Tháng 02, 2026' },
     ],
     ticketZones: [
-      { id: 'vip', label: 'VIP', color: '#f97316', price: 750000, rows: ['A','B','C','D'], seatsPerRow: 22, tag: 'Tốt nhất', tip: 'Hàng ghế A–D ngay sát sân khấu, tầm nhìn không bị cản, trải nghiệm âm thanh đỉnh cao.' },
-      { id: 'thuong', label: 'VÉ THƯỜNG', color: '#3b82f6', price: 550000, rows: ['E','F','G','H','I','J'], seatsPerRow: 22, tag: 'Phổ biến', tip: 'Vị trí trung tâm, cân bằng giữa giá thành và tầm nhìn. Lựa chọn được nhiều khán giả yêu thích nhất.' },
-      { id: 'tren-lau', label: 'VÉ THƯỜNG (PHIÊN LẦU)', color: '#0ea5e9', price: 350000, rows: ['K','L','M','N'], seatsPerRow: 22, tag: 'Tiết kiệm', tip: 'Góc nhìn tổng thể từ trên cao, không gian thoáng đãng. Phù hợp cho ngân sách tiết kiệm.' },
+      { id: 'vip', label: 'VIP', color: '#f97316', price: 750000, rows: ['A', 'B', 'C', 'D'], seatsPerRow: 22, tag: 'Tốt nhất', tip: 'Hàng ghế A–D ngay sát sân khấu, tầm nhìn không bị cản, trải nghiệm âm thanh đỉnh cao.' },
+      { id: 'thuong', label: 'VÉ THƯỜNG', color: '#3b82f6', price: 550000, rows: ['E', 'F', 'G', 'H', 'I', 'J'], seatsPerRow: 22, tag: 'Phổ biến', tip: 'Vị trí trung tâm, cân bằng giữa giá thành và tầm nhìn. Lựa chọn được nhiều khán giả yêu thích nhất.' },
+      { id: 'tren-lau', label: 'VÉ THƯỜNG (PHIÊN LẦU)', color: '#0ea5e9', price: 350000, rows: ['K', 'L', 'M', 'N'], seatsPerRow: 22, tag: 'Tiết kiệm', tip: 'Góc nhìn tổng thể từ trên cao, không gian thoáng đãng. Phù hợp cho ngân sách tiết kiệm.' },
     ],
-    occupiedSeats: ['A-3','A-4','A-5','B-7','B-8','C-10','C-11','C-12','D-1','D-2','E-15','E-16','F-3','G-8','H-5','H-6','I-12','J-18','K-2','L-9','M-4'],
+    occupiedSeats: ['A-3', 'A-4', 'A-5', 'B-7', 'B-8', 'C-10', 'C-11', 'C-12', 'D-1', 'D-2', 'E-15', 'E-16', 'F-3', 'G-8', 'H-5', 'H-6', 'I-12', 'J-18', 'K-2', 'L-9', 'M-4'],
   },
   {
     id: 'rec-1',
@@ -45,11 +45,11 @@ export const detailedEvents = [
       { id: 'st-3', label: '15:00 – 17:00', date: '17 Tháng 03, 2026' },
     ],
     ticketZones: [
-      { id: 'vip', label: 'VIP', color: '#f97316', price: 500000, rows: ['A','B','C'], seatsPerRow: 18, tag: 'Tốt nhất', tip: 'Hàng ghế đầu gần sân khấu nhất, trải nghiệm vở kịch sống động và rõ nét nhất.' },
-      { id: 'thuong', label: 'VÉ THƯỜNG', color: '#3b82f6', price: 350000, rows: ['D','E','F','G','H'], seatsPerRow: 18, tag: 'Phổ biến', tip: 'Vị trí lý tưởng ở giữa khán phòng, tầm nhìn rộng và âm thanh cân bằng.' },
-      { id: 'tren-lau', label: 'VÉ THƯỜNG (PHIÊN LẦU)', color: '#0ea5e9', price: 250000, rows: ['I','J','K'], seatsPerRow: 18, tag: 'Tiết kiệm', tip: 'Khu vực trên lầu, nhìn toàn bộ sân khấu từ trên cao, phù hợp cho ngân sách tiết kiệm.' },
+      { id: 'vip', label: 'VIP', color: '#f97316', price: 500000, rows: ['A', 'B', 'C'], seatsPerRow: 18, tag: 'Tốt nhất', tip: 'Hàng ghế đầu gần sân khấu nhất, trải nghiệm vở kịch sống động và rõ nét nhất.' },
+      { id: 'thuong', label: 'VÉ THƯỜNG', color: '#3b82f6', price: 350000, rows: ['D', 'E', 'F', 'G', 'H'], seatsPerRow: 18, tag: 'Phổ biến', tip: 'Vị trí lý tưởng ở giữa khán phòng, tầm nhìn rộng và âm thanh cân bằng.' },
+      { id: 'tren-lau', label: 'VÉ THƯỜNG (PHIÊN LẦU)', color: '#0ea5e9', price: 250000, rows: ['I', 'J', 'K'], seatsPerRow: 18, tag: 'Tiết kiệm', tip: 'Khu vực trên lầu, nhìn toàn bộ sân khấu từ trên cao, phù hợp cho ngân sách tiết kiệm.' },
     ],
-    occupiedSeats: ['A-2','A-5','B-3','B-9','C-1','C-11','D-7','E-4','F-12','G-6','H-2','I-8','J-5','K-3'],
+    occupiedSeats: ['A-2', 'A-5', 'B-3', 'B-9', 'C-1', 'C-11', 'D-7', 'E-4', 'F-12', 'G-6', 'H-2', 'I-8', 'J-5', 'K-3'],
   },
   {
     id: 'w1',
@@ -310,41 +310,41 @@ const normalizeDetailedEvent = (eventData, performancesRaw, fallbackEvent) => {
 
   const baseEvent = eventData
     ? {
-        id: String(eventData.id),
-        title: eventData.title,
-        description: eventData.description,
-        image: eventData.imageUrl,
-        imageUrl: eventData.imageUrl,
-        category: eventData.category,
-        location: eventData.location || eventData.city || '',
-        city: eventData.city || '',
-        date: eventData.formattedDate || formatDateLabel(eventData.startTime),
-        startTime: eventData.startTime,
-        endTime: eventData.endTime,
-        minPrice: eventData.minPrice,
-        maxPrice: eventData.maxPrice,
-        priceDisplay: eventData.priceDisplay,
-        totalTickets: eventData.totalTickets,
-        availableTickets: eventData.availableTickets,
-        status: eventData.status,
-        organizerName: eventData.organizerName,
-        organizerLogo: eventData.organizerLogo,
-        isFeatured: eventData.isFeatured,
-        viewCount: eventData.viewCount,
-      }
+      id: String(eventData.id),
+      title: eventData.title,
+      description: eventData.description,
+      image: eventData.imageUrl,
+      imageUrl: eventData.imageUrl,
+      category: eventData.category,
+      location: eventData.location || eventData.city || '',
+      city: eventData.city || '',
+      date: eventData.formattedDate || formatDateLabel(eventData.startTime),
+      startTime: eventData.startTime,
+      endTime: eventData.endTime,
+      minPrice: eventData.minPrice,
+      maxPrice: eventData.maxPrice,
+      priceDisplay: eventData.priceDisplay,
+      totalTickets: eventData.totalTickets,
+      availableTickets: eventData.availableTickets,
+      status: eventData.status,
+      organizerName: eventData.organizerName,
+      organizerLogo: eventData.organizerLogo,
+      isFeatured: eventData.isFeatured,
+      viewCount: eventData.viewCount,
+    }
     : {
-        id: String(fallbackEvent.id),
-        title: fallbackEvent.title,
-        description: fallbackEvent.description,
-        image: fallbackEvent.image,
-        imageUrl: fallbackEvent.image,
-        category: fallbackEvent.category,
-        location: fallbackEvent.location,
-        address: fallbackEvent.address,
-        date: fallbackEvent.date,
-        priceDisplay: fallbackEvent.price,
-        organizerName: fallbackEvent.organizer,
-      };
+      id: String(fallbackEvent.id),
+      title: fallbackEvent.title,
+      description: fallbackEvent.description,
+      image: fallbackEvent.image,
+      imageUrl: fallbackEvent.image,
+      category: fallbackEvent.category,
+      location: fallbackEvent.location,
+      address: fallbackEvent.address,
+      date: fallbackEvent.date,
+      priceDisplay: fallbackEvent.price,
+      organizerName: fallbackEvent.organizer,
+    };
 
   let performances = Array.isArray(performancesRaw) && performancesRaw.length
     ? performancesRaw.map(normalizePerformance)
@@ -411,7 +411,7 @@ export const getDetailedEventById = async (id) => {
 
     // 2. 🚀 LẤY LUÔN PERFORMANCES TỪ ĐÂY (NẾU CÓ) - KHÔNG CẦN GỌI API NỮA
     if (eventData && eventData.performances) {
-        performancesRaw = eventData.performances;
+      performancesRaw = eventData.performances;
     }
   } catch (err) {
     console.warn('[BookingService] Cannot load event detail from gateway:', err.message);
@@ -484,17 +484,16 @@ export const submitBooking = async (bookingData) => {
   });
 };
 
-// ====== THÊM 2 HÀM NÀY VÀO CUỐI FILE CỦA HẬU ======
-
+const ADMIN_BOOKING_BASE_URL = '/bookings';
 export const serviceSearchBookingsByAdmin = async (page = 0, size = 8, status, keyword) => {
   const token = getAccessToken();
   const params = { page, size };
-  
+
   if (status) params.status = status;
   // Bỏ isNaN đi để nhận cả chuỗi văn bản (Tên, Sự kiện)
   if (keyword && keyword.trim() !== '') params.keyword = keyword.trim();
 
-  const response = await axios.get(`${BOOKING_SERVICE_BASE_URL}/admin/search`, {
+  const response = await axios.get(`${ADMIN_BOOKING_BASE_URL}/admin/search`, {
     params,
     headers: { Authorization: `Bearer ${token}` }
   });
@@ -502,7 +501,7 @@ export const serviceSearchBookingsByAdmin = async (page = 0, size = 8, status, k
 };
 export const serviceUpdateBookingStatusAdmin = async (bookingId, status) => {
   const token = getAccessToken(); // Sửa lại dòng này
-  const response = await axios.put(`${BOOKING_SERVICE_BASE_URL}/${bookingId}/status`, 
+  const response = await axios.put(`${ADMIN_BOOKING_BASE_URL}/${bookingId}/status`,
     { status },
     { headers: { Authorization: `Bearer ${token}` } }
   );
