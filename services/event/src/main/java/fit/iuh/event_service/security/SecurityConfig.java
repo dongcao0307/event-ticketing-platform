@@ -30,10 +30,10 @@ public class SecurityConfig {
                 // 2. Cấu hình CORS tối ưu (Lấy từ file 1 của Hậu)
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration config = new CorsConfiguration();
-                    config.setAllowedOriginPatterns(List.of("*"));
+                    config.setAllowedOrigins(List.of("https://localhost:8443", "http://localhost:5000", "http://localhost:3000"));
                     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
                     config.setAllowedHeaders(List.of("*"));
-                    config.setAllowCredentials(false);
+                    config.setAllowCredentials(true);
                     return config;
                 }))
 

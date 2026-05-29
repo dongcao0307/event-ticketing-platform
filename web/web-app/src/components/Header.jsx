@@ -6,17 +6,17 @@ import RegisterModal from './RegisterModal';
 import SearchOverlay from './SearchOverlay';
 import { authService } from '../services/authService';
 import { useEvent } from '../hooks/useEvent';
+import { useAuth } from '../context/AuthContext';
 
 const Header = () => {
   const navigate = useNavigate();
+  const { user, isLoggedIn, logout } = useAuth();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
-  const [user, setUser] = useState(() => authService.getCurrentUser());
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('jwt_token'));
   const isAdmin = user?.role === 'ADMIN';
 
   const { bookingOrder, clearBookingOrderData } = useEvent();
@@ -73,9 +73,7 @@ const Header = () => {
     }
 
     // 2. Perform logout
-    await authService.logout();
-    setIsLoggedIn(false);
-    setUser(null);
+    await logout();
     setIsDropdownOpen(false);
 
     // 3. Navigate to homepage
@@ -253,7 +251,7 @@ const Header = () => {
                   <ChevronDown size={13} style={{ transition: 'transform 0.2s', transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
                 </button>
 
-                <DropDownMenu isDropdownOpen={isDropdownOpen} handleLogout={handleLogout} onClose={() => setIsDropdownOpen(false)} />
+                <DropDownMenu isDropdownOpen={isDropdownOpen} handleLogout={handleLogout} onClose={() => setIsDropdownOpen(false)} user={user} />
               </div>
             )}
 
@@ -299,8 +297,7 @@ const accountMenuItems = [
   { icon: Heart, label: 'Sự kiện yêu thích', to: '/my-account/favorites' },
 ];
 
-const DropDownMenu = ({ isDropdownOpen, handleLogout, onClose }) => {
-  const user = authService.getCurrentUser();
+const DropDownMenu = ({ isDropdownOpen, handleLogout, onClose, user }) => {
   const userRole = user?.role || 'USER';
   const roleLabel = userRole === 'ADMIN' ? '👨‍💼 Quản trị viên' : '👤 Người dùng';
 

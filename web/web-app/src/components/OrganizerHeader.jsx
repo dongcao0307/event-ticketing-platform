@@ -1,15 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, ChevronDown, User, LogOut } from 'lucide-react';
-import { authService } from '../services/authService'; // Đảm bảo đường dẫn này đúng
+import { useAuth } from '../context/AuthContext';
 
 const OrganizerHeader = () => {
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
   
-  // Khởi tạo state đăng nhập trực tiếp từ localStorage để tránh render 2 lần
-  const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('jwt_token'));
-  const [userEmail, setUserEmail] = useState(() => localStorage.getItem('user_email') || '');
+  const { isLoggedIn, user, logout } = useAuth();
+  const userEmail = user?.email || '';
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Xử lý đóng menu khi click ra ngoài
@@ -24,10 +23,8 @@ const OrganizerHeader = () => {
   }, []);
 
   // Hàm xử lý Đăng xuất
-  const handleLogout = () => {
-    authService.logout();
-    setIsLoggedIn(false);
-    setUserEmail('');
+  const handleLogout = async () => {
+    await logout();
     setIsDropdownOpen(false);
     navigate('/'); // Sau khi đăng xuất thì đẩy về trang chủ
   };

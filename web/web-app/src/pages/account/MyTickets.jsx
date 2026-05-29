@@ -7,6 +7,7 @@ import { serviceGetBookingsByUser } from "../../services/bookingService";
 import { getFeaturedEvents } from "../../services/eventService";
 import { useEvent } from "../../hooks/useEvent";
 import { useToast } from "../../context/ToastContext";
+import { authService } from "../../services/authService";
 
 const PER_PAGE = 4;
 
@@ -48,8 +49,7 @@ const MyTickets = () => {
       try {
         setLoading(true);
 
-        const userDataRaw = localStorage.getItem('user_data');
-        const userData = userDataRaw ? JSON.parse(userDataRaw) : null;
+        const userData = authService.getCurrentUser();
         const userId = userData?.userId || 1;
 
         const [bookings, featured] = await Promise.all([
@@ -237,7 +237,7 @@ const MyTickets = () => {
           date: formatDateLabel(booking.eventPerformance?.startTime),
         },
         buyer: {
-          email: localStorage.getItem('user_email') || '',
+          email: authService.getCurrentUser()?.email || '',
         },
         tickets: [],
       },

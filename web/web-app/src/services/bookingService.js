@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { get, request, getAccessToken } from './apiClient';
+import { get, request } from './apiClient';
 
 export const detailedEvents = [
   {
@@ -492,7 +492,6 @@ export const submitBooking = async (bookingData) => {
 
 const ADMIN_BOOKING_BASE_URL = '/bookings';
 export const serviceSearchBookingsByAdmin = async (page = 0, size = 8, status, keyword) => {
-  const token = getAccessToken();
   const params = { page, size };
 
   if (status) params.status = status;
@@ -500,16 +499,13 @@ export const serviceSearchBookingsByAdmin = async (page = 0, size = 8, status, k
   if (keyword && keyword.trim() !== '') params.keyword = keyword.trim();
 
   const response = await axios.get(`${ADMIN_BOOKING_BASE_URL}/admin/search`, {
-    params,
-    headers: { Authorization: `Bearer ${token}` }
+    params
   });
   return unwrapApiResponseBody(response);
 };
 export const serviceUpdateBookingStatusAdmin = async (bookingId, status) => {
-  const token = getAccessToken(); // Sửa lại dòng này
   const response = await axios.put(`${ADMIN_BOOKING_BASE_URL}/${bookingId}/status`,
-    { status },
-    { headers: { Authorization: `Bearer ${token}` } }
+    { status }
   );
   return unwrapApiResponseBody(response);
 };

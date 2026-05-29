@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, MapPin, Clock, Info, Plus, Minus } from 'luc
 import { getDetailedEventById, serviceCreateBookingWithItems } from '../services/bookingService';
 import { buildFreeCheckoutPayload, serviceCreateFreeCheckout } from '../services/paymentService';
 import { useEvent } from '../hooks/useEvent';
+import { authService } from '../services/authService';
 
 const EMPTY_ARRAY = [];
 
@@ -81,15 +82,14 @@ const TicketSelectPage = () => {
 
   const resolveMockUserId = () => {
     try {
-      const userDataRaw = localStorage.getItem('user_data');
-      if (!userDataRaw) return 1;
+      const userData = authService.getCurrentUser();
+      if (!userData) return 1;
 
-      const userData = JSON.parse(userDataRaw);
-      if (Number.isFinite(Number(userData?.userId))) {
+      if (Number.isFinite(Number(userData.userId))) {
         return Number(userData.userId);
       }
 
-      if (userData?.email) {
+      if (userData.email) {
         let hash = 0;
         for (let i = 0; i < userData.email.length; i += 1) {
           hash = (hash * 31 + userData.email.charCodeAt(i)) % 100000;

@@ -30,10 +30,10 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(request -> {
             CorsConfiguration config = new CorsConfiguration();
-            config.setAllowedOriginPatterns(List.of("*"));
+            config.setAllowedOrigins(List.of("https://localhost:8443", "http://localhost:5000", "http://localhost:3000"));
             config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
             config.setAllowedHeaders(List.of("*"));
-            config.setAllowCredentials(false);
+            config.setAllowCredentials(true);
             return config;
         }))
                 // --- THÊM 3 DÒNG NÀY ĐỂ XỬ LÝ LỖI REDIRECT ---

@@ -2,10 +2,12 @@
 // Đã chuyển đổi sang dùng apiClient tập trung để tự động xử lý JWT Token & Auto-Refresh
 
 import { get, post, put, del } from './apiClient';
+import { authService } from './authService';
 
-// Hàm lấy User ID của Organizer từ localStorage
+// Hàm lấy User ID của Organizer từ in-memory authService
 const getOrganizerId = () => {
-    return localStorage.getItem('userId') || '1'; 
+    const user = authService.getCurrentUser();
+    return user?.userId || '1'; 
 };
 
 // Cấu hình các header đặc thù bắt buộc theo Business Logic của Backend ngoài Bearer Token

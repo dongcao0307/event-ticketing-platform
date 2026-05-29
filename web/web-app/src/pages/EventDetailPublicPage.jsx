@@ -5,6 +5,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { getTrendingEvents, getFavoriteStatus, toggleFavoriteEvent } from '../services/eventService';
 import { getDetailedEventById } from '../services/bookingService';
+import { authService } from '../services/authService';
 
 const EventDetailPublicPage = () => {
   const { id } = useParams();
@@ -24,8 +25,7 @@ const EventDetailPublicPage = () => {
         const related = await getTrendingEvents();
         setRelatedEvents(related || []);
 
-        const token = localStorage.getItem('jwt_token');
-        if (token) {
+        if (authService.isLoggedIn()) {
           try {
             const isFav = await getFavoriteStatus(id);
             setLiked(!!isFav);
@@ -62,8 +62,7 @@ const EventDetailPublicPage = () => {
   const isSeatEvent = (event?.category || '').toUpperCase() === 'THEATER';
 
   const handlePurchase = (performanceId) => {
-    const token = localStorage.getItem('jwt_token');
-    if (!token) {
+    if (!authService.isLoggedIn()) {
       window.dispatchEvent(new CustomEvent('openLoginModal'));
       return;
     }
@@ -77,8 +76,7 @@ const EventDetailPublicPage = () => {
   };
 
   const handleToggleFavorite = async () => {
-    const token = localStorage.getItem('jwt_token');
-    if (!token) {
+    if (!authService.isLoggedIn()) {
       window.dispatchEvent(new CustomEvent('openLoginModal'));
       return;
     }

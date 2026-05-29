@@ -10,6 +10,7 @@ import TicketOrderTable from "../components/account/TicketOrderTable";
 import { getTicketById } from "../services/ticketService";
 import { serviceGetBookingById } from "../services/bookingService";
 import { useEvent } from "../hooks/useEvent";
+import { authService } from "../services/authService";
 
 const formatDateParts = (dateStr) => {
   if (!dateStr) return "";
@@ -45,16 +46,8 @@ const convertBookingToTicket = (booking) => {
   console.log("perf:", perf);
   console.log("startTime:", startTime, "endTime:", endTime);
   
-  // Lấy user data từ localStorage
-  let userData = null;
-  try {
-    const userDataStr = localStorage.getItem('user_data');
-    if (userDataStr) {
-      userData = JSON.parse(userDataStr);
-    }
-  } catch (e) {
-    console.error("Error parsing user_data:", e);
-  }
+  // Lấy user data từ in-memory authService
+  const userData = authService.getCurrentUser();
   
   // Xác định payment status dựa vào totalAmount
   const payment = booking.totalAmount === 0 ? "Miễn phí" : "Thanh toán điện tử";

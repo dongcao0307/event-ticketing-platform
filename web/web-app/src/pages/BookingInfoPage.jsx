@@ -9,6 +9,7 @@ import {
     serviceCreateBooking,
 } from '../services/bookingService';
 import { useEvent } from '../hooks/useEvent';
+import { authService } from '../services/authService';
 
 const BookingInfoPage = () => {
   const { id } = useParams();
@@ -85,15 +86,18 @@ const BookingInfoPage = () => {
 
   const resolveMockUserId = () => {
     try {
-      const userDataRaw = localStorage.getItem('user_data');
-      if (!userDataRaw) return 1;
+      const userData = authService.getCurrentUser();
+      if (!userData) return 1;
 
-      const userData = JSON.parse(userDataRaw);
-      if (Number.isFinite(Number(userData?.id))) {
+      if (Number.isFinite(Number(userData.userId))) {
+        return Number(userData.userId);
+      }
+
+      if (Number.isFinite(Number(userData.id))) {
         return Number(userData.id);
       }
 
-      if (userData?.email) {
+      if (userData.email) {
         let hash = 0;
         for (let i = 0; i < userData.email.length; i += 1) {
           hash = (hash * 31 + userData.email.charCodeAt(i)) % 100000;

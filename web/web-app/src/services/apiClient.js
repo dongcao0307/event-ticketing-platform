@@ -3,25 +3,18 @@
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
-const getAccessToken = () => localStorage.getItem('jwt_token');
-const getRefreshToken = () => localStorage.getItem('refresh_token');
-const setTokens = (accessToken, refreshToken) => {
-  localStorage.setItem('jwt_token', accessToken);
-  if (refreshToken) localStorage.setItem('refresh_token', refreshToken);
-};
-const clearTokens = () => {
-  localStorage.removeItem('jwt_token');
-  localStorage.removeItem('refresh_token');
-  localStorage.removeItem('user_data');
-};
+const getAccessToken = () => null;
+const getRefreshToken = () => null;
+const setTokens = () => {};
+const clearTokens = () => {};
 
 let isRefreshing = false;
 let refreshSubscribers = [];
 
-const onRefreshed = (token, error) => {
+const onRefreshed = (user, error) => {
   refreshSubscribers.forEach(({ resolve, reject }) => {
     if (error) reject(error);
-    else resolve(token);
+    else resolve(user);
   });
   refreshSubscribers = [];
 };
@@ -31,25 +24,19 @@ const addRefreshSubscriber = () => new Promise((resolve, reject) => {
 });
 
 const doRefresh = async () => {
-  const refreshToken = getRefreshToken();
-  if (!refreshToken) throw new Error('No refresh token');
-
   const res = await fetch(`${BASE_URL}/auth/refresh`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken }),
+    credentials: 'include'
   });
 
   if (!res.ok) {
-    clearTokens();
     throw new Error('Refresh failed');
   }
 
   const json = await res.json();
-  const { accessToken, refreshToken: newRefreshToken, user } = json.data;
-  setTokens(accessToken, newRefreshToken);
-  if (user) localStorage.setItem('user_data', JSON.stringify(user));
-  return accessToken;
+  const { user } = json.data;
+  return user;
 };
 
 // Thêm danh sách các đường dẫn không cần Token
@@ -63,15 +50,9 @@ const PUBLIC_ENDPOINTS = [
 
 export const request = async (endpoint, options = {}) => {
   const url = `${BASE_URL}${endpoint}`;
-  // 1. Chỉ lấy Token nếu endpoint không nằm trong danh sách PUBLIC_ENDPOINTS
   const isPublic = PUBLIC_ENDPOINTS.some(path => endpoint.startsWith(path));
-  
-  // KHAI BÁO LẦN ĐẦU
-  let token = isPublic ? null : getAccessToken();
 
-  // 1. Khởi tạo headers cơ bản và đính kèm Bearer Token nếu có
   const headers = {
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers || {}),
   };
 
@@ -82,37 +63,33 @@ export const request = async (endpoint, options = {}) => {
     headers['Content-Type'] = headers['Content-Type'] || 'application/json';
   }
 
-  let response = await fetch(url, { ...options, headers });
+  let response = await fetch(url, { 
+    ...options, 
+    headers,
+    credentials: 'include' 
+  });
 
  if (response.status === 401 && !isPublic) {
-    const refresh = getRefreshToken();
-    if (!refresh) {
-      clearTokens();
-      throw new Error('Phiên đăng nhập đã hết hạn');
-    }
-
     if (!isRefreshing) {
       isRefreshing = true;
       try {
-        const newToken = await doRefresh();
+        const user = await doRefresh();
         isRefreshing = false;
-        onRefreshed(newToken, null);
+        onRefreshed(user, null);
       } catch (err) {
         isRefreshing = false;
         onRefreshed(null, err);
-        clearTokens();
         throw new Error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại');
       }
     } else {
       await addRefreshSubscriber();
     }
 
-    const newToken = getAccessToken();
-    const retryHeaders = {
-      ...headers,
-      Authorization: `Bearer ${newToken}`,
-    };
-    response = await fetch(url, { ...options, headers: retryHeaders });
+    response = await fetch(url, { 
+      ...options, 
+      headers,
+      credentials: 'include' 
+    });
   }
 
   if (!response.ok) {

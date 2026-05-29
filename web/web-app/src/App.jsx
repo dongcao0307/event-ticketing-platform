@@ -31,10 +31,13 @@ import BookingInfoPage from './pages/BookingInfoPage'
 import BookingPaymentPage from './pages/BookingPaymentPage'
 import EventsPage from './pages/EventsPage'
 
+import { AuthProvider } from './context/AuthContext'
+
 function App() {
   return (
-    <ToastProvider>
-      <BrowserRouter>
+    <AuthProvider>
+      <ToastProvider>
+        <BrowserRouter>
         <Routes>
           {/* ==================== Public Routes ==================== */}
           <Route path="/" element={<Home />} />
@@ -87,6 +90,7 @@ function App() {
         <ChatbotWidget />
       </BrowserRouter>
     </ToastProvider>
+    </AuthProvider>
   )
 }
 
