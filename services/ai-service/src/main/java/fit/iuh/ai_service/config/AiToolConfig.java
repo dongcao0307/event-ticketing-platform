@@ -199,31 +199,36 @@ public class AiToolConfig {
 
                 if (content == null || !content.isArray() || content.isEmpty()) {
                     log.info("--- EVENT SERVICE RETURNED 0 RESULTS ---");
-                    return mapper.writeValueAsString(
-                            List.of("No events found matching your query."));
+                    return "Không tìm thấy sự kiện nào phù hợp với yêu cầu.";
                 }
 
-                List<EventSummary> summaries = new ArrayList<>();
+                List<String> formattedEvents = new ArrayList<>();
                 for (JsonNode node : content) {
-                    EventSummary s = new EventSummary();
-                    s.setId(node.path("id").asLong());
-                    s.setTitle(node.path("title").asText(""));
-                    s.setCity(node.path("city").asText(""));
-                    s.setLocation(node.path("location").asText(""));
-                    s.setStartTime(node.path("startTime").asText(""));
-                    s.setPriceDisplay(node.path("priceDisplay").asText("Free"));
+                    long id = node.path("id").asLong();
+                    String title = node.path("title").asText("");
+                    String city = node.path("city").asText("");
+                    String location = node.path("location").asText("");
+                    String startTime = node.path("startTime").asText("");
+                    String priceDisplay = node.path("priceDisplay").asText("Miễn phí");
 
-                    JsonNode minPriceNode = node.path("minPrice");
-                    if (!minPriceNode.isMissingNode() && !minPriceNode.isNull()) {
-                        s.setMinPrice(new BigDecimal(minPriceNode.asText()));
+                    String fullLocation = location;
+                    if (city != null && !city.isBlank() && !location.toLowerCase().contains(city.toLowerCase())) {
+                        fullLocation = location + ", " + city;
                     }
 
-                    // Deep link to the event booking page
-                    s.setBookingUrl("https://localhost:8443/event/" + s.getId());
-                    summaries.add(s);
+                    String item = String.format(
+                        "**%s**\n- 📍 Địa điểm: %s\n- ⏰ Thời gian: %s\n- 💵 Giá vé: %s\n👉 **[🎫 Xem chi tiết & Đặt vé](/events/%d)**\n",
+                        title,
+                        fullLocation,
+                        startTime,
+                        priceDisplay,
+                        id
+                    );
+                    formattedEvents.add(item);
                 }
 
-                return mapper.writeValueAsString(summaries);
+                String formattedResult = String.join("\n", formattedEvents);
+                return "Dưới đây là các sự kiện tìm thấy:\n\n" + formattedResult;
 
             } catch (Exception ex) {
                 return "{\"error\": \"Cannot reach event search service: "

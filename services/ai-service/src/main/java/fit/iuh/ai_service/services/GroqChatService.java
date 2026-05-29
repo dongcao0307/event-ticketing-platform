@@ -56,25 +56,47 @@ public class GroqChatService implements ChatService {
 
         this.chatClient = builder
                 .defaultSystem(systemPrompt)
-                .defaultFunctions("searchEventTool", "getTicketPolicyTool")
                 .build();
+    }
+
+    private boolean isSimpleGreeting(String message) {
+        if (message == null) {
+            return false;
+        }
+        String trimmed = message.trim().toLowerCase();
+        return trimmed.equals("hello") || 
+               trimmed.equals("hi") || 
+               trimmed.equals("xin chào") || 
+               trimmed.equals("xinchao") || 
+               trimmed.equals("chào bạn") || 
+               trimmed.equals("chaoban") || 
+               trimmed.equals("chào") || 
+               trimmed.equals("chao") || 
+               trimmed.equals("bắt đầu") || 
+               trimmed.equals("bat dau") || 
+               trimmed.equals("greetings");
     }
 
     @Override
     public String chat(String userMessage) {
-        return chatClient
-                .prompt()
-                .user(userMessage)
-                .call()
-                .content();
+        var spec = chatClient.prompt().user(userMessage);
+        if (!isSimpleGreeting(userMessage)) {
+            spec = spec.functions("searchEventTool", "getTicketPolicyTool");
+        }
+        return spec.call().content();
     }
 
     @Override
     public reactor.core.publisher.Flux<String> streamChat(String userMessage) {
-        return chatClient
-                .prompt()
-                .user(userMessage)
-                .stream()
-                .content();
+        try {
+            var spec = chatClient.prompt().user(userMessage);
+            if (!isSimpleGreeting(userMessage)) {
+                spec = spec.functions("searchEventTool", "getTicketPolicyTool");
+            }
+            String content = spec.call().content();
+            return reactor.core.publisher.Flux.just(content != null ? content : "");
+        } catch (Exception e) {
+            return reactor.core.publisher.Flux.error(e);
+        }
     }
 }
