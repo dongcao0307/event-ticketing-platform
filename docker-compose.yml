@@ -324,6 +324,8 @@ services:
       - "8091:8091"
     networks:
       - ticketbox-net
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       GROQ_API_KEY: ${GROQ_API_KEY}

@@ -20,8 +20,8 @@ const QUICK_QUESTIONS = [
   'Sự kiện nào có vé dưới 200k?',
 ];
 
-// URL regex — matches https?:// links, stopping at whitespace or trailing punctuation
-const URL_REGEX = /(https?:\/\/[^\s<>"{}|\\^`[\]]+)/g;
+// Regex to match Markdown links like [Text](Url) or standalone HTTP/HTTPS URLs
+const LINK_OR_URL_REGEX = /\[([^\]]+)\]\(([^)]+)\)|(https?:\/\/[^\s<>"{}|\\^`[\]]+)/g;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Link parser — splits text into text/url tokens
@@ -31,15 +31,29 @@ function parseMessageParts(text) {
   const parts = [];
   let lastIndex = 0;
   let match;
-  const regex = new RegExp(URL_REGEX.source, 'g');
+  const regex = new RegExp(LINK_OR_URL_REGEX.source, 'g');
 
   while ((match = regex.exec(text)) !== null) {
     if (match.index > lastIndex) {
       parts.push({ type: 'text', value: text.slice(lastIndex, match.index) });
     }
-    // Strip trailing punctuation and markdown characters that are unlikely part of the URL
-    const url = match[0].replace(/[.,;:!?)*~_\/]+$/, '');
-    parts.push({ type: 'url', value: url });
+
+    if (match[1] && match[2]) {
+      // It's a Markdown link [text](url)
+      parts.push({
+        type: 'url',
+        label: match[1],
+        value: match[2]
+      });
+    } else {
+      // It's a standalone URL
+      const url = match[3].replace(/[.,;:!?)*~_\/]+$/, '');
+      parts.push({
+        type: 'url',
+        label: null,
+        value: url
+      });
+    }
     lastIndex = match.index + match[0].length;
   }
 
@@ -73,11 +87,15 @@ function AiMessageContent({ text }) {
     <span className="block">
       {parts.map((part, i) => {
         if (part.type === 'url') {
-          // Extract eventId from deep link for the button label
-          const eventIdMatch = part.value.match(/\/event\/(\d+)/);
-          const label = eventIdMatch
-            ? `🎫 Xem chi tiết & Đặt vé – Sự kiện #${eventIdMatch[1]}`
-            : '🎫 Xem chi tiết & Đặt vé';
+          // Extract eventId from deep link (supports /event/id and /events/id)
+          const eventIdMatch = part.value.match(/\/events?\/(\d+)/);
+          
+          let label = part.label;
+          if (!label) {
+            label = eventIdMatch
+              ? `🎫 Xem chi tiết & Đặt vé – Sự kiện #${eventIdMatch[1]}`
+              : '🎫 Xem chi tiết & Đặt vé';
+          }
 
           return (
             <a
@@ -309,7 +327,7 @@ export default function ChatbotWidget() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-white leading-tight">TicketBox AI</p>
             <p className="text-[11px] text-green-400 leading-tight">
-              {isLoading ? '● Đang xử lý...' : '● Trực tuyến · Gemini 2.5 Flash'}
+              {isLoading ? '● Đang xử lý...' : '● Trực tuyến · Ollama (Local Llama 3.2)'}
             </p>
           </div>
 
@@ -410,7 +428,7 @@ export default function ChatbotWidget() {
           </div>
 
           <p className="text-center text-[10px] text-gray-600 mt-1.5 select-none">
-            Powered by <span className="text-gray-500">Gemini 2.5 Flash</span> · TicketBox AI
+            Powered by <span className="text-gray-500">Ollama (Local Llama 3.2)</span> · TicketBox AI
           </p>
         </div>
       </div>
