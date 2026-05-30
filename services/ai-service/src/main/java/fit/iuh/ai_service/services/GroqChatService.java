@@ -63,22 +63,73 @@ public class GroqChatService implements ChatService {
                 """.formatted(formattedDateTime);
     }
 
-    private boolean isSimpleGreeting(String message) {
-        if (message == null) {
-            return false;
+    private boolean isGeneralQuery(String message) {
+        if (message == null || message.isBlank()) {
+            return true;
         }
+        
         String trimmed = message.trim().toLowerCase();
-        return trimmed.equals("hello") || 
-               trimmed.equals("hi") || 
-               trimmed.equals("xin chào") || 
-               trimmed.equals("xinchao") || 
-               trimmed.equals("chào bạn") || 
-               trimmed.equals("chaoban") || 
-               trimmed.equals("chào") || 
-               trimmed.equals("chao") || 
-               trimmed.equals("bắt đầu") || 
-               trimmed.equals("bat dau") || 
-               trimmed.equals("greetings");
+        
+        // 1. Check if it is a simple greeting
+        if (trimmed.equals("hello") || 
+            trimmed.equals("hi") || 
+            trimmed.equals("xin chào") || 
+            trimmed.equals("xinchao") || 
+            trimmed.equals("chào bạn") || 
+            trimmed.equals("chaoban") || 
+            trimmed.equals("chào") || 
+            trimmed.equals("chao") || 
+            trimmed.equals("bắt đầu") || 
+            trimmed.equals("bat dau") || 
+            trimmed.equals("greetings")) {
+            return true;
+        }
+        
+        // 2. Catch simple questions like "mấy giờ", "bạn là ai", "tên gì", "làm được gì"
+        if (trimmed.contains("mấy giờ") || 
+            trimmed.contains("may gio") || 
+            trimmed.contains("bạn là ai") || 
+            trimmed.contains("ban la ai") || 
+            trimmed.contains("ai đó") || 
+            trimmed.contains("ai do") || 
+            trimmed.contains("tên gì") || 
+            trimmed.contains("ten gi") || 
+            trimmed.contains("làm được gì") || 
+            trimmed.contains("lam duoc gi") || 
+            trimmed.contains("chào cả nhà") ||
+            trimmed.contains("hôm nay thế nào")) {
+            return true;
+        }
+        
+        // 3. Catch very short inputs (e.g. less than 5 words)
+        String[] words = trimmed.split("\\s+");
+        if (words.length < 5) {
+            // Functional keywords: "tìm", "sự kiện", "vé", "mua", "hủy", "hoàn", "đổi", "trả", "show", "concert", "lịch"
+            boolean hasFunctionalKeyword = trimmed.contains("tìm") || 
+                                           trimmed.contains("tim") ||
+                                           trimmed.contains("sự kiện") || 
+                                           trimmed.contains("su kien") ||
+                                           trimmed.contains("vé") || 
+                                           trimmed.contains("ve") ||
+                                           trimmed.contains("mua") ||
+                                           trimmed.contains("hủy") || 
+                                           trimmed.contains("huy") ||
+                                           trimmed.contains("hoàn") || 
+                                           trimmed.contains("hoan") ||
+                                           trimmed.contains("đổi") || 
+                                           trimmed.contains("doi") ||
+                                           trimmed.contains("trả") || 
+                                           trimmed.contains("tra") ||
+                                           trimmed.contains("show") || 
+                                           trimmed.contains("concert") || 
+                                           trimmed.contains("lịch") || 
+                                           trimmed.contains("lich");
+            if (!hasFunctionalKeyword) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     @Override
@@ -86,7 +137,7 @@ public class GroqChatService implements ChatService {
         var spec = chatClient.prompt()
                 .system(getSystemPrompt())
                 .user(userMessage);
-        if (!isSimpleGreeting(userMessage)) {
+        if (!isGeneralQuery(userMessage)) {
             spec = spec.functions("searchEventTool", "getTicketPolicyTool");
         }
         return spec.call().content();
@@ -98,7 +149,7 @@ public class GroqChatService implements ChatService {
             var spec = chatClient.prompt()
                     .system(getSystemPrompt())
                     .user(userMessage);
-            if (!isSimpleGreeting(userMessage)) {
+            if (!isGeneralQuery(userMessage)) {
                 spec = spec.functions("searchEventTool", "getTicketPolicyTool");
             }
             return spec.stream().content();
