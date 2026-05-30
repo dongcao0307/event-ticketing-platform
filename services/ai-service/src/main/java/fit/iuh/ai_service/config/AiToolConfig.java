@@ -17,6 +17,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -67,9 +68,9 @@ public class AiToolConfig {
                         "Input parameters: " +
                         "- keyword: free-text search query (e.g. name of singer, band, show). Omit if not specified. " +
                         "- category: MUSIC/THEATER/SPORTS/WORKSHOP/FESTIVAL/COMEDY/EXHIBITION/OTHER. Omit if not specified. " +
-                        "- city: Hồ Chí Minh, Hà Nội, Đà Nẵng, etc. Omit if not specified. " +
-                        "- maxPrice: maximum price limit as a raw double value (e.g. if user says 'dưới 500k' set to 500000.0). Omit entirely if not specified. DO NOT pass null. " +
-                        "- isFree: set to true if user specifically asks for free or zero-cost events. Omit entirely if not requested. DO NOT pass null. " +
+                        "- city: The city to filter events by (e.g. 'Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng'). Omit if not specified. " +
+                        "- maxPrice: maximum price limit in VND as a double value. Omit if not specified. " +
+                        "- isFree: set to true if user specifically asks for free or zero-cost events. Omit if not requested. " +
                         "- startDate: start date of search window in ISO format YYYY-MM-DD. DO NOT guess or supply a start date unless the user explicitly requests events starting from/after a specific date or time range. Otherwise, omit this parameter. " +
                         "- endDate: end date of search window in ISO format YYYY-MM-DD. DO NOT guess or supply an end date unless the user explicitly requests events ending at/before a specific date or time range. Otherwise, omit this parameter. " +
                         "- location: location name or venue. Omit if not specified. " +
@@ -112,7 +113,39 @@ public class AiToolConfig {
                 .build();
     }
 
-    public record PolicyRequest(String topic) {}
+    public static class PolicyRequest {
+        private String topic;
+
+        public PolicyRequest() {}
+
+        public PolicyRequest(String topic) {
+            this.topic = topic;
+        }
+
+        public String getTopic() {
+            return topic;
+        }
+
+        public void setTopic(Object topic) {
+            if (topic instanceof String) {
+                this.topic = (String) topic;
+            } else if (topic != null) {
+                if (topic instanceof java.util.Map) {
+                    java.util.Map<?, ?> map = (java.util.Map<?, ?>) topic;
+                    Object val = map.get("value");
+                    if (val == null) val = map.get("type");
+                    if (val == null) val = map.get("topic");
+                    this.topic = val != null ? val.toString() : topic.toString();
+                } else {
+                    this.topic = topic.toString();
+                }
+            }
+        }
+
+        public String topic() {
+            return topic;
+        }
+    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Explicit Function implementation
@@ -202,7 +235,7 @@ public class AiToolConfig {
                     return "Không tìm thấy sự kiện nào phù hợp với yêu cầu.";
                 }
 
-                List<String> formattedEvents = new ArrayList<>();
+                List<Map<String, Object>> eventsList = new ArrayList<>();
                 for (JsonNode node : content) {
                     long id = node.path("id").asLong();
                     String title = node.path("title").asText("");
@@ -216,19 +249,18 @@ public class AiToolConfig {
                         fullLocation = location + ", " + city;
                     }
 
-                    String item = String.format(
-                        "**%s**\n- 📍 Địa điểm: %s\n- ⏰ Thời gian: %s\n- 💵 Giá vé: %s\n👉 **[🎫 Xem chi tiết & Đặt vé](/events/%d)**\n",
-                        title,
-                        fullLocation,
-                        startTime,
-                        priceDisplay,
-                        id
-                    );
-                    formattedEvents.add(item);
+                    Map<String, Object> eventMap = new java.util.LinkedHashMap<>();
+                    eventMap.put("id", id);
+                    eventMap.put("title", title);
+                    eventMap.put("city", city);
+                    eventMap.put("location", fullLocation);
+                    eventMap.put("startTime", startTime);
+                    eventMap.put("priceDisplay", priceDisplay);
+                    eventMap.put("bookingUrl", "https://localhost:8443/event/" + id);
+                    eventsList.add(eventMap);
                 }
 
-                String formattedResult = String.join("\n", formattedEvents);
-                return "Dưới đây là các sự kiện tìm thấy:\n\n" + formattedResult;
+                return mapper.writeValueAsString(eventsList);
 
             } catch (Exception ex) {
                 return "{\"error\": \"Cannot reach event search service: "

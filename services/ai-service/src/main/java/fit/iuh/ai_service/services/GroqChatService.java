@@ -27,12 +27,20 @@ public class GroqChatService implements ChatService {
     private final ChatClient chatClient;
 
     public GroqChatService(ChatClient.Builder builder) {
-        String systemPrompt = """
+        this.chatClient = builder.build();
+    }
+
+    private String getSystemPrompt() {
+        java.time.ZonedDateTime nowICT = java.time.ZonedDateTime.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss, 'ngày' dd/MM/yyyy");
+        String formattedDateTime = nowICT.format(formatter);
+
+        return """
                 Bạn là TicketBox AI Agent – trợ lý thông minh có khả năng suy luận (Reasoning) và hành động (Acting - ReAct).
                 Nhiệm vụ của bạn là hỗ trợ khách hàng tìm kiếm sự kiện và giải đáp các thắc mắc về chính sách.
 
-                ### THỜI GIAN HIỆN TẠI (DÙNG ĐỂ TÍNH CÁC NGÀY KHÁC):
-                Hôm nay là ngày: %s.
+                ### THỜI GIAN HIỆN TẠI (DÙNG ĐỂ TÍNH CÁC NGÀY KHÁC VÀ TRẢ LỜI KHÁCH HÀNG):
+                Thời gian hiện tại ở Việt Nam là: %s (Múi giờ Việt Nam, ICT).
 
                 ### CÔNG CỤ HIỆN CÓ:
                 1. `searchEventTool`: Dùng để tìm kiếm sự kiện theo từ khóa, danh mục, thành phố, giá vé, khoảng thời gian, địa điểm cụ thể và nhà tổ chức.
@@ -52,11 +60,7 @@ public class GroqChatService implements ChatService {
                 - Trình bày rõ ràng các sự kiện tìm được: tên sự kiện, ngày giờ, địa điểm, giá vé và link đặt vé.
                 - Đối với các câu hỏi về chính sách, hãy trích dẫn câu trả lời từ getTicketPolicyTool.
                 - TUYỆT ĐỐI KHÔNG hiển thị các phần suy nghĩ (Thought), lập luận, hay quá trình phân tích nội bộ trong câu trả lời cuối cùng gửi cho khách hàng. Chỉ đưa ra câu trả lời trực tiếp và thân thiện.
-                """.formatted(java.time.LocalDate.now().toString());
-
-        this.chatClient = builder
-                .defaultSystem(systemPrompt)
-                .build();
+                """.formatted(formattedDateTime);
     }
 
     private boolean isSimpleGreeting(String message) {
@@ -79,7 +83,9 @@ public class GroqChatService implements ChatService {
 
     @Override
     public String chat(String userMessage) {
-        var spec = chatClient.prompt().user(userMessage);
+        var spec = chatClient.prompt()
+                .system(getSystemPrompt())
+                .user(userMessage);
         if (!isSimpleGreeting(userMessage)) {
             spec = spec.functions("searchEventTool", "getTicketPolicyTool");
         }
@@ -89,12 +95,13 @@ public class GroqChatService implements ChatService {
     @Override
     public reactor.core.publisher.Flux<String> streamChat(String userMessage) {
         try {
-            var spec = chatClient.prompt().user(userMessage);
+            var spec = chatClient.prompt()
+                    .system(getSystemPrompt())
+                    .user(userMessage);
             if (!isSimpleGreeting(userMessage)) {
                 spec = spec.functions("searchEventTool", "getTicketPolicyTool");
             }
-            String content = spec.call().content();
-            return reactor.core.publisher.Flux.just(content != null ? content : "");
+            return spec.stream().content();
         } catch (Exception e) {
             return reactor.core.publisher.Flux.error(e);
         }

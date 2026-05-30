@@ -100,8 +100,25 @@ public class SemanticSearchServiceImpl implements SemanticSearchService {
             params.put("category", cat.name());
         }
         if (city != null && !city.isBlank()) {
-            sql.append("AND LOWER(e.city) LIKE LOWER(:city) ");
-            params.put("city", "%" + city.trim() + "%");
+            String[] cities = city.split(",");
+            List<String> validCities = new ArrayList<>();
+            for (String c : cities) {
+                String trimmed = c.trim();
+                if (!trimmed.isBlank() && !trimmed.toLowerCase().equals("etc") && !trimmed.toLowerCase().equals("etc.")) {
+                    validCities.add(trimmed);
+                }
+            }
+            if (!validCities.isEmpty()) {
+                sql.append("AND (");
+                for (int i = 0; i < validCities.size(); i++) {
+                    if (i > 0) {
+                        sql.append(" OR ");
+                    }
+                    sql.append("LOWER(e.city) LIKE LOWER(:city").append(i).append(") ");
+                    params.put("city" + i, "%" + validCities.get(i) + "%");
+                }
+                sql.append(") ");
+            }
         }
         if (isFree != null && isFree) {
             sql.append("AND (e.min_price IS NULL OR e.min_price = 0) ");

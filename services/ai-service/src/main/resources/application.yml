@@ -5,22 +5,14 @@ spring:
   application:
     name: ai-service
   ai:
-    ollama:
-      base-url: http://host.docker.internal:11434
+    openai:
+      base-url: ${OLLAMA_BASE_URL:http://host.docker.internal:11434}
+      api-key: ollama
       chat:
         options:
-          model: ticketbox-ai
-    # openai:
-    #   # Gemini's OpenAI-compatible endpoint
-    #   base-url: https://generativelanguage.googleapis.com/v1beta/openai
-    #   api-key: ${GEMINI_API_KEY}
-    #   chat:
-    #     options:
-    #       model: gemini-2.5-flash
-    #       temperature: 0.2
-    #   # Disable Spring AI's embedding auto-config – we use a custom Gemini embedder
-    #   embedding:
-    #     enabled: false
+          model: ${OLLAMA_MODEL:ticketbox-ai}
+      embedding:
+        enabled: false
 
 openai:
   embedding:
