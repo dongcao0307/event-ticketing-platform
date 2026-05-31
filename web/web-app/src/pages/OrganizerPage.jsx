@@ -4,6 +4,7 @@ import Sidebar from '../components/Sidebar';
 import OrganizerHeader from '../components/OrganizerHeader'; 
 import { organizerEventService } from '../services/organizerEventService';
 import { authService } from '../services/authService'; 
+import SuccessModal from '../components/SuccessModal';
 
 import Step1EventInfo from './organizer/Step1EventInfo';
 import Step2TimeTicket from './organizer/Step2TimeTicket'; 
@@ -18,6 +19,7 @@ const OrganizerPage = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [successModalOpen, setSuccessModalOpen] = useState(false);
   
   // Check authentication on component mount
   useEffect(() => {
@@ -162,19 +164,22 @@ const OrganizerPage = () => {
 
       if (isEditMode) {
         await organizerEventService.updateEvent(id, payload);
-        alert("Sự kiện đã được cập nhật thành công!");
       } else {
         await organizerEventService.createFullEvent(payload);
-        alert("Chúc mừng! Sự kiện đã được tạo thành công.");
       }
       
-      navigate('/organizer/my-events');
+      setSuccessModalOpen(true);
     } catch (error) {
       console.error("Lỗi lưu sự kiện:", error);
       alert("Có lỗi xảy ra khi lưu sự kiện. Vui lòng kiểm tra lại dữ liệu.");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSuccessModalConfirm = () => {
+    setSuccessModalOpen(false);
+    navigate('/organizer/my-events');
   };
 
   const handleNextStep = () => {
@@ -307,6 +312,15 @@ const OrganizerPage = () => {
 
         </main>
       </div>
+
+      <SuccessModal
+        isOpen={successModalOpen}
+        onClose={handleSuccessModalConfirm}
+        onConfirm={handleSuccessModalConfirm}
+        title={isEditMode ? "Cập nhật thành công!" : "Tạo sự kiện thành công!"}
+        message={isEditMode ? "Sự kiện của bạn đã được cập nhật thành công." : "Chúc mừng! Sự kiện của bạn đã được tạo thành công."}
+        buttonText="Xem danh sách sự kiện"
+      />
     </div>
   );
 };

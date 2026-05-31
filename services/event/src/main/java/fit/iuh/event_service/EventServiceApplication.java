@@ -2,6 +2,7 @@ package fit.iuh.event_service;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration; // Import thêm cái này
 import net.devh.boot.grpc.server.autoconfigure.GrpcServerSecurityAutoConfiguration; // Import thêm cái này
 import org.springframework.cache.annotation.EnableCaching;
