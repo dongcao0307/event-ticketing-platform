@@ -15,6 +15,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/Sidebar'; 
 import OrganizerHeader from '../../components/OrganizerHeader'; 
 import appImage from '../../assets/hinh-anh-app.png';
+import { getPublicSiteUrl } from '../../config/runtime';
 
 // Import service API
 import { organizerEventService } from '../../services/organizerEventService';
@@ -62,6 +63,8 @@ const MyEvents = () => {
   const handleSearchClick = () => {
     fetchEvents();
   };
+
+  const publicSiteUrl = getPublicSiteUrl();
 
   // --- LOGIC LỌC THEO TAB ---
   const filteredEvents = useMemo(() => {
@@ -223,7 +226,7 @@ const MyEvents = () => {
                     <p className="text-sm font-bold text-white mb-4 text-center">Tải ứng dụng Ticketbox Event Manager</p>
                     <div className="flex w-full gap-4 justify-center items-center">
                       <div className="w-[84px] h-[84px] bg-white p-1.5 rounded-lg shrink-0 flex items-center justify-center">
-                         <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://ticketbox.vn" alt="QR Code" className="w-full h-full object-contain" />
+                         <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(publicSiteUrl)}`} alt="QR Code" className="w-full h-full object-contain" />
                       </div>
                       <div className="flex flex-col gap-2.5">
                         <a href="#" className="block hover:opacity-80 transition">

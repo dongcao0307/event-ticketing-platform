@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import AdminSidebar from '../components/AdminSidebar';
 import { useToast } from '../context/ToastContext';
+import { getPublicSiteUrl } from '../config/runtime';
 import {
   getAdminEventDetail,
   approveEvent,
@@ -112,7 +113,7 @@ const AdminEventDetail = () => {
     createdDate: apiData.createdAt || new Date().toLocaleDateString('vi-VN'),
     updatedDate: apiData.updatedAt || new Date().toLocaleDateString('vi-VN'),
     views: apiData.viewCount || 0,
-    eventUrl: apiData.eventUrl || `https://ticketbox.vn/events/${apiData.id}`,
+    eventUrl: apiData.eventUrl || `${getPublicSiteUrl()}/events/${apiData.id}`,
     customSlug: `event-${apiData.id}`,
     privacy: apiData.privacy || 'Public',
     accessNotes: apiData.accessNotes || 'Open to all',

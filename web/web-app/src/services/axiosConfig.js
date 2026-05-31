@@ -1,9 +1,10 @@
 // src/services/axiosConfig.js
 import axios from 'axios';
 import { getAccessToken, clearTokens } from './apiClient';
+import { getApiBaseUrl } from '../config/runtime';
 
 // Configure defaults
-axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL || '/api';
+axios.defaults.baseURL = getApiBaseUrl();
 
 // Request Interceptor: Attach JWT Token to every outgoing request
 axios.interceptors.request.use(

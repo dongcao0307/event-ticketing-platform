@@ -1,7 +1,9 @@
 // src/services/apiClient.js
 // Centralized API client with JWT token handling and auto-refresh
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+import { getApiBaseUrl } from '../config/runtime';
+
+const BASE_URL = getApiBaseUrl();
 
 const getAccessToken = () => localStorage.getItem('jwt_token');
 const getRefreshToken = () => localStorage.getItem('refresh_token');

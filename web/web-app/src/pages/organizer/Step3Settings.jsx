@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Lock, Users, User, Mail } from 'lucide-react';
+import { getPublicSiteUrl } from '../../config/runtime';
 
 // Nhận eventData và setEventData từ component cha (OrganizerPage)
 const Step3Settings = ({ eventData, setEventData }) => {
@@ -73,7 +74,7 @@ const Step3Settings = ({ eventData, setEventData }) => {
     }
   };
 
-  const baseUrl = 'https://ticketbox.vn/';
+  const baseUrl = `${getPublicSiteUrl()}/`;
   const eventId = eventData?.id || '25598'; 
 
   return (
