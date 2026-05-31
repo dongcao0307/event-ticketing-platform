@@ -23,6 +23,20 @@ export const sendChatMessage = async (message) => {
 };
 
 /**
+ * Checks the status of the AI chat service.
+ *
+ * @returns {Promise<boolean>} True if online, false if offline
+ */
+export const checkChatStatus = async () => {
+  try {
+    const { data } = await chatApi.get('/status', { timeout: 3000 });
+    return !!data.online;
+  } catch (err) {
+    return false;
+  }
+};
+
+/**
  * Streams the user message to the AI chat endpoint and calls callbacks on chunks.
  *
  * @param {string} message The user's query
@@ -68,10 +82,7 @@ export const streamChat = async (message, onChunk, onDone, onError) => {
 
         for (const line of lines) {
           if (line.startsWith('data:')) {
-            let content = line.slice(5);
-            if (content.startsWith(' ')) {
-              content = content.slice(1);
-            }
+            const content = line.slice(5);
             dataLines.push(content);
           }
         }
@@ -88,10 +99,7 @@ export const streamChat = async (message, onChunk, onDone, onError) => {
       const dataLines = [];
       for (const line of lines) {
         if (line.startsWith('data:')) {
-          let content = line.slice(5);
-          if (content.startsWith(' ')) {
-            content = content.slice(1);
-          }
+          const content = line.slice(5);
           dataLines.push(content);
         }
       }

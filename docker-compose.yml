@@ -315,6 +315,143 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
 
+  ollama-cpu:
+    image: ollama/ollama:latest
+    container_name: ticketbox-ollama-cpu
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+      - .:/workspace
+    networks:
+      - ticketbox-net
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    environment:
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-ticketbox-ai}
+    entrypoint: |
+      /bin/sh -c '
+      pull_with_retry() {
+        MODEL_TO_PULL="$$1"
+        ATTEMPTS=0
+        while [ $$ATTEMPTS -lt 5 ]; do
+          echo "Attempt $$(($$ATTEMPTS+1)) to pull $$MODEL_TO_PULL..."
+          if ollama pull "$$MODEL_TO_PULL"; then
+            return 0
+          else
+            echo "Pull failed for $$MODEL_TO_PULL. Retrying in 5 seconds..."
+            ATTEMPTS=$$(($$ATTEMPTS+1))
+            sleep 5
+          fi
+        done
+        return 1
+      }
+
+      /bin/ollama serve &
+      PID=$$!
+      echo "Waiting for Ollama to start..."
+      while ! ollama list >/dev/null 2>&1; do
+        sleep 1
+      done
+      echo "Ollama is ready."
+      MODEL_NAME="$$OLLAMA_MODEL"
+      if [ -z "$$MODEL_NAME" ]; then
+        MODEL_NAME="ticketbox-ai"
+      fi
+      if [ "$$MODEL_NAME" = "ticketbox-ai" ]; then
+        if [ -f "/workspace/Modelfile" ]; then
+          BASE_MODEL=$$(grep -i "^FROM" /workspace/Modelfile | cut -d" " -f2)
+          if [ -n "$$BASE_MODEL" ]; then
+            echo "Base model is $$BASE_MODEL. Pulling it first..."
+            pull_with_retry "$$BASE_MODEL"
+            echo "Creating custom model ticketbox-ai..."
+            ollama create ticketbox-ai -f /workspace/Modelfile
+          else
+            echo "Error: No base model found in Modelfile"
+          fi
+        else
+          echo "Error: Modelfile not found"
+        fi
+      else
+        pull_with_retry "$$MODEL_NAME"
+      fi
+      wait $$PID
+      '
+    restart: always
+
+  ollama-gpu:
+    image: ollama/ollama:latest
+    container_name: ticketbox-ollama-gpu
+    ports:
+      - "11435:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+      - .:/workspace
+    networks:
+      - ticketbox-net
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    environment:
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-ticketbox-ai}
+    entrypoint: |
+      /bin/sh -c '
+      pull_with_retry() {
+        MODEL_TO_PULL="$$1"
+        ATTEMPTS=0
+        while [ $$ATTEMPTS -lt 5 ]; do
+          echo "Attempt $$(($$ATTEMPTS+1)) to pull $$MODEL_TO_PULL..."
+          if ollama pull "$$MODEL_TO_PULL"; then
+            return 0
+          else
+            echo "Pull failed for $$MODEL_TO_PULL. Retrying in 5 seconds..."
+            ATTEMPTS=$$(($$ATTEMPTS+1))
+            sleep 5
+          fi
+        done
+        return 1
+      }
+
+      /bin/ollama serve &
+      PID=$$!
+      echo "Waiting for Ollama to start..."
+      while ! ollama list >/dev/null 2>&1; do
+        sleep 1
+      done
+      echo "Ollama is ready."
+      MODEL_NAME="$$OLLAMA_MODEL"
+      if [ -z "$$MODEL_NAME" ]; then
+        MODEL_NAME="ticketbox-ai"
+      fi
+      if [ "$$MODEL_NAME" = "ticketbox-ai" ]; then
+        if [ -f "/workspace/Modelfile" ]; then
+          BASE_MODEL=$$(grep -i "^FROM" /workspace/Modelfile | cut -d" " -f2)
+          if [ -n "$$BASE_MODEL" ]; then
+            echo "Base model is $$BASE_MODEL. Pulling it first..."
+            pull_with_retry "$$BASE_MODEL"
+            echo "Creating custom model ticketbox-ai..."
+            ollama create ticketbox-ai -f /workspace/Modelfile
+          else
+            echo "Error: No base model found in Modelfile"
+          fi
+        else
+          echo "Error: Modelfile not found"
+        fi
+      else
+        pull_with_retry "$$MODEL_NAME"
+      fi
+      wait $$PID
+      '
+    restart: always
+
   ai-service:
     build:
       context: ./services/ai-service
@@ -330,6 +467,8 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       GROQ_API_KEY: ${GROQ_API_KEY}
       EVENT_SERVICE_BASE_URL: http://event-service:8082
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama-cpu:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-ticketbox-ai}
 
   # ═══════════════════════════════════════════════════════════
   # WEB APPLICATION (React + Vite)
@@ -353,6 +492,7 @@ volumes:
   mongodb_data:
   mongodb_config:
   rabbitmq_data:
+  ollama_data:
 
 networks:
   ticketbox-net:

@@ -22,6 +22,8 @@ import { authService } from '../../services/authService';
 
 const MyEvents = () => {
   const [activeTab, setActiveTab] = useState('pending');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
   
   // --- STATE QUẢN LÝ DỮ LIỆU API ---
   const [events, setEvents] = useState([]);
@@ -74,6 +76,34 @@ const MyEvents = () => {
     });
   }, [events, activeTab]);
 
+  // --- LOGIC PHÂN TRANG ---
+  const totalPages = Math.ceil(filteredEvents.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedEvents = filteredEvents.slice(startIndex, endIndex);
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePageClick = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  // Reset page khi đổi tab
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setCurrentPage(1);
+  };
+
   return (
     <div className="flex h-screen w-full bg-[#0e0e0e] text-gray-200 font-sans overflow-hidden">
       
@@ -124,10 +154,10 @@ const MyEvents = () => {
                     </div>
 
                     <div className="flex flex-1 bg-white rounded-md overflow-hidden h-10">
-                      <button onClick={() => setActiveTab('upcoming')} className={`flex-1 py-2 text-sm font-medium transition ${activeTab === 'upcoming' ? 'bg-[#00b14f] text-white' : 'text-gray-600 hover:text-black'}`}>Sắp tới</button>
-                      <button onClick={() => setActiveTab('past')} className={`flex-1 py-2 text-sm font-medium border-l border-gray-200 transition ${activeTab === 'past' ? 'bg-[#00b14f] text-white border-transparent' : 'text-gray-600 hover:text-black'}`}>Đã qua</button>
-                      <button onClick={() => setActiveTab('pending')} className={`flex-1 py-2 text-sm font-medium border-l border-gray-200 transition ${activeTab === 'pending' ? 'bg-[#00b14f] text-white border-transparent' : 'text-gray-600 hover:text-black'}`}>Chờ duyệt</button>
-                      <button onClick={() => setActiveTab('draft')} className={`flex-1 py-2 text-sm font-medium border-l border-gray-200 transition ${activeTab === 'draft' ? 'bg-[#00b14f] text-white border-transparent' : 'text-gray-600 hover:text-black'}`}>Nháp</button>
+                      <button onClick={() => handleTabChange('upcoming')} className={`flex-1 py-2 text-sm font-medium transition ${activeTab === 'upcoming' ? 'bg-[#00b14f] text-white' : 'text-gray-600 hover:text-black'}`}>Sắp tới</button>
+                      <button onClick={() => handleTabChange('past')} className={`flex-1 py-2 text-sm font-medium border-l border-gray-200 transition ${activeTab === 'past' ? 'bg-[#00b14f] text-white border-transparent' : 'text-gray-600 hover:text-black'}`}>Đã qua</button>
+                      <button onClick={() => handleTabChange('pending')} className={`flex-1 py-2 text-sm font-medium border-l border-gray-200 transition ${activeTab === 'pending' ? 'bg-[#00b14f] text-white border-transparent' : 'text-gray-600 hover:text-black'}`}>Chờ duyệt</button>
+                      <button onClick={() => handleTabChange('draft')} className={`flex-1 py-2 text-sm font-medium border-l border-gray-200 transition ${activeTab === 'draft' ? 'bg-[#00b14f] text-white border-transparent' : 'text-gray-600 hover:text-black'}`}>Nháp</button>
                     </div>
                   </div>
 
@@ -144,7 +174,7 @@ const MyEvents = () => {
                   )}
 
                   {/* RENDER DANH SÁCH SỰ KIỆN TỪ API */}
-                  {!loading && !error && filteredEvents.map((event) => (
+                  {!loading && !error && paginatedEvents.map((event) => (
                     <div key={event.id} className="bg-[#222328] rounded-lg overflow-hidden border border-gray-800 mt-4">
                       <div className="p-4 flex flex-col sm:flex-row gap-5">
                         <div className="w-full sm:w-[200px] h-[115px] bg-gray-700 rounded-md overflow-hidden shrink-0">
@@ -192,11 +222,38 @@ const MyEvents = () => {
                     </div>
                   ))}
 
-                  {filteredEvents.length > 0 && (
-                    <div className="flex justify-end items-center gap-2 pt-2">
-                      <button className="w-8 h-8 flex items-center justify-center rounded bg-[#2a2b31] text-gray-400 hover:bg-gray-700 transition"><ChevronLeft size={16} /></button>
-                      <button className="w-8 h-8 flex items-center justify-center rounded bg-white text-black font-medium">1</button>
-                      <button className="w-8 h-8 flex items-center justify-center rounded bg-[#2a2b31] text-gray-400 hover:bg-gray-700 transition"><ChevronRight size={16} /></button>
+                  {filteredEvents.length > 0 && totalPages > 0 && (
+                    <div className="flex justify-end items-center gap-2 pt-4">
+                      <button 
+                        onClick={handlePreviousPage}
+                        disabled={currentPage === 1}
+                        className={`w-8 h-8 flex items-center justify-center rounded transition ${currentPage === 1 ? 'bg-gray-600 text-gray-500 cursor-not-allowed' : 'bg-[#2a2b31] text-gray-400 hover:bg-gray-700'}`}
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      
+                      {/* Hiển thị các nút trang */}
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (
+                        <button 
+                          key={pageNumber}
+                          onClick={() => handlePageClick(pageNumber)}
+                          className={`w-8 h-8 flex items-center justify-center rounded text-sm font-medium transition ${
+                            currentPage === pageNumber 
+                              ? 'bg-white text-black' 
+                              : 'bg-[#2a2b31] text-gray-400 hover:bg-gray-700'
+                          }`}
+                        >
+                          {pageNumber}
+                        </button>
+                      ))}
+                      
+                      <button 
+                        onClick={handleNextPage}
+                        disabled={currentPage === totalPages}
+                        className={`w-8 h-8 flex items-center justify-center rounded transition ${currentPage === totalPages ? 'bg-gray-600 text-gray-500 cursor-not-allowed' : 'bg-[#2a2b31] text-gray-400 hover:bg-gray-700'}`}
+                      >
+                        <ChevronRight size={16} />
+                      </button>
                     </div>
                   )}
                 </div>
