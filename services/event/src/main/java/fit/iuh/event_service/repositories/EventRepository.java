@@ -66,7 +66,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
      * và giá cao nhất (MAX) của sự kiện, sau đó ghi đè ngược lại vào bảng events (bảng cha).
      * Hàm này sẽ gọi khi Admin bấm nút "Duyệt sự kiện" hoặc khi có bất kỳ thay đổi nào về vé.
      */
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Transactional
     @Query(value = "UPDATE events e SET " +
             "e.min_price = (SELECT COALESCE(MIN(t.price), 0) FROM ticket_types t JOIN event_performances p ON t.performance_id = p.id WHERE p.event_id = :eventId), " +

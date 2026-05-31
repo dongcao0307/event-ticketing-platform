@@ -47,7 +47,8 @@ public class SecurityConfig {
                         // ===== PUBLIC ENDPOINTS (KHÁCH VÃNG LAI) =====
                         // Bao lô cả /events và /api/events đề phòng Nginx bẻ lái
                         .requestMatchers(HttpMethod.GET, "/events/**", "/api/events/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/events/reindex").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/cqrs/public/**", "/api/cqrs/public/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/events/reindex", "/events/cqrs/sync-all", "/api/events/cqrs/sync-all", "/cqrs/public/sync-all", "/api/cqrs/public/sync-all").permitAll()
 
                         // Mở cửa cho Swagger UI và Actuator (Monitor)
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/actuator/**").permitAll()

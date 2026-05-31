@@ -50,40 +50,32 @@ const tryApi = async (apiFn, fallbackValue) => {
 // ==================== Public Events API ====================
 
 export const getFeaturedEvents = async () =>
-  tryApi(async () => {
-    const res = await get('/events/featured');
-    return (res.data || []).map(normalizeEvent);
-  }, []);
+  getPublicEventsCQRS({ type: 'featured' });
 
-export const getTrendingEvents = async () =>
-  tryApi(async () => {
-    const res = await get('/events/trending');
-    return (res.data || []).map((e, i) => ({ ...normalizeEvent(e), badge: String(i + 1) }));
-  }, []);
+export const getTrendingEvents = async () => {
+  const events = await getPublicEventsCQRS({ type: 'trending' });
+  return events.map((e, i) => ({ ...e, badge: String(i + 1) }));
+};
 
-export const getRecommendedEvents = async () =>
-  tryApi(async () => {
-    const res = await get('/events/latest');
-    return (res.data || []).slice(0, 6).map(normalizeEvent);
-  }, []);
+export const getRecommendedEvents = async () => {
+  const events = await getPublicEventsCQRS({ type: 'latest' });
+  return events.slice(0, 6);
+};
 
-export const getResaleEvents = async () =>
-  tryApi(async () => {
-    const res = await get('/events/search', { size: 6 });
-    return (res.data?.content || []).map(normalizeEvent);
-  }, []);
+export const getResaleEvents = async () => {
+  const events = await getPublicEventsCQRS();
+  return events.slice(0, 6);
+};
 
-export const getWeekendEvents = async () =>
-  tryApi(async () => {
-    const res = await get('/events/category/FESTIVAL');
-    return (res.data || []).slice(0, 3).map(normalizeEvent);
-  }, []);
+export const getWeekendEvents = async () => {
+  const events = await getPublicEventsCQRS({ category: 'FESTIVAL' });
+  return events.slice(0, 3);
+};
 
-export const getMonthEvents = async () =>
-  tryApi(async () => {
-    const res = await get('/events/category/WORKSHOP');
-    return (res.data || []).slice(0, 3).map(normalizeEvent);
-  }, []);
+export const getMonthEvents = async () => {
+  const events = await getPublicEventsCQRS({ category: 'WORKSHOP' });
+  return events.slice(0, 3);
+};
 
 export const searchEvents = async (keyword, filters = {}, page = 0, size = 20) =>
   tryApi(async () => {
@@ -172,21 +164,20 @@ export const searchAdminEvents = async (query, status = null) => {
 };
 
 export const getEventsByCategory = async (categoryEnum) => {
-  return tryApi(async () => {
-    const res = await get(`/events/category/${categoryEnum}`);
-    return (res.data || []).map(normalizeEvent); 
-  }, []);
+  return getPublicEventsCQRS({ category: categoryEnum });
 };
 
 export const getLatestEvents = async () => {
-  try {
-    const res = await get('/events/latest');
-    const rawEvents = res.data || [];
+  return getPublicEventsCQRS({ type: 'latest' });
+};
+
+export const getPublicEventsCQRS = async (params = {}) => {
+  console.log("[FRONTEND] Calling CQRS Mongo API for Home Page...");
+  return tryApi(async () => {
+    const res = await get('/events/cqrs/public/events', params);
+    const rawEvents = Array.isArray(res) ? res : (res.data || []);
     return rawEvents.map(normalizeEvent);
-  } catch (error) {
-    console.error("Lỗi lấy sự kiện mới nhất:", error);
-    return [];
-  }
+  }, []);
 };
 
 // ==================== Favorite Events API ====================

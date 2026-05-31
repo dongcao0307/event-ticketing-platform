@@ -58,7 +58,9 @@ const PUBLIC_ENDPOINTS = [
   '/events/latest',
   '/events/trending',
   '/events/search',
-  '/events/category'
+  '/events/category',
+  '/events/cqrs',
+  '/cqrs/public'
 ];
 
 export const request = async (endpoint, options = {}) => {

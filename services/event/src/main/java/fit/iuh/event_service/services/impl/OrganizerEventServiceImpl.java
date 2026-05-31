@@ -19,6 +19,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import fit.iuh.event_service.services.EmbeddingUpsertService;
+import fit.iuh.event_service.events.EventCreatedEvent;
+import fit.iuh.event_service.events.EventUpdatedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,6 +36,7 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
     private final OrganizerPaymentInfoRepository organizerPaymentInfoRepository;
     private final ObjectMapper objectMapper;
     private final fit.iuh.event_service.services.EmbeddingUpsertService embeddingUpsertService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public Event createEvent(Long organizerId, EventReq req) {
@@ -45,9 +49,10 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
                 .categoryId(req.getCategoryId())
                 .status(EventStatus.DRAFT) // Mặc định là Nháp khi mới tạo
                 .build();
-        return eventRepository.save(event);
-        // Note: No cache annotation needed for CREATE - cache is populated on first
-        // READ
+        Event savedEvent = eventRepository.save(event);
+        System.out.println("[CQRS-WRITE] Event saved to MySQL. Publishing sync event...");
+        eventPublisher.publishEvent(new EventCreatedEvent(savedEvent));
+        return savedEvent;
     }
 
     @Override
@@ -217,6 +222,8 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
             embeddingUpsertService.upsertEventEmbedding(finalEvent);
         } catch (Exception ignored) {
         }
+        System.out.println("[CQRS-WRITE] Event saved to MySQL. Publishing sync event...");
+        eventPublisher.publishEvent(new EventUpdatedEvent(finalEvent));
 
         return finalEvent;
     }
@@ -492,6 +499,8 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
             embeddingUpsertService.upsertEventEmbedding(finalEvent);
         } catch (Exception ignored) {
         }
+        System.out.println("[CQRS-WRITE] Event saved to MySQL. Publishing sync event...");
+        eventPublisher.publishEvent(new EventCreatedEvent(finalEvent));
 
         return finalEvent;
     }
