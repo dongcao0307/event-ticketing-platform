@@ -17,6 +17,7 @@ import lombok.Data;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.cache.annotation.Cacheable;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -33,6 +34,7 @@ public class SemanticSearchServiceImpl implements SemanticSearchService {
     private final NerService nerService;
 
     @Override
+    @Cacheable(value = "ai_event_searches", key = "{#keyword, #city, #maxPrice, #category}")
     public List<EventResponse> search(
             String keyword,
             String category,
@@ -94,7 +96,7 @@ public class SemanticSearchServiceImpl implements SemanticSearchService {
         List<Event> candidates = eventRepository.findAll(spec, sort);
 
         if (candidates.isEmpty()) {
-            return List.of();
+            return new ArrayList<>();
         }
 
         List<Long> topIds = new ArrayList<>();
@@ -122,12 +124,12 @@ public class SemanticSearchServiceImpl implements SemanticSearchService {
 
             scored.sort((a, b) -> Double.compare(b.score(), a.score()));
             if (scored.isEmpty())
-                return List.of();
+                return new ArrayList<>();
 
             int from = page * size;
             int to = Math.min(scored.size(), from + size);
             if (from >= scored.size())
-                return List.of();
+                return new ArrayList<>();
 
             topIds = scored.subList(from, to).stream().map(Scored::eventId).toList();
         } else {
@@ -135,7 +137,7 @@ public class SemanticSearchServiceImpl implements SemanticSearchService {
             int from = page * size;
             int to = Math.min(candidates.size(), from + size);
             if (from >= candidates.size())
-                return List.of();
+                return new ArrayList<>();
 
             topIds = candidates.subList(from, to).stream().map(Event::getId).toList();
         }

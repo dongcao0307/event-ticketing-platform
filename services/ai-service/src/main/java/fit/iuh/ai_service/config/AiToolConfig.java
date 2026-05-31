@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fit.iuh.ai_service.dtos.EventSummary;
 import fit.iuh.ai_service.dtos.SearchEventRequest;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.InMemoryChatMemory;
 import org.springframework.ai.model.function.FunctionCallback;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -55,29 +57,28 @@ public class AiToolConfig {
      * via reflection when building the JSON schema for the LLM tool manifest.
      */
     @Bean
+    public ChatMemory chatMemory() {
+        return new InMemoryChatMemory();
+    }
+
+    @Bean
     public FunctionCallback searchEventTool() {
         // Explicit Function implementation — avoids type-erasure issues with lambdas
         Function<SearchEventRequest, String> fn = new EventSearchFunction(eventServiceBaseUrl, objectMapper);
 
+        String currentDate = java.time.LocalDate.now().toString();
+        String toolDescription = "Công cụ tìm kiếm sự kiện TicketBox Database.\n" +
+            "SYSTEM INFO: Hôm nay là " + currentDate + ". BẮT BUỘC dùng ngày này làm mốc để tính toán 'ngày mai', 'cuối tuần này', 'tháng sau'.\n\n" +
+            "QUY TẮC SUY LUẬN SÂU (BẮT BUỘC):\n" +
+            "1. GIÁ VÉ: Nếu user nói 'rẻ', 'sinh viên', 'tiết kiệm', tự set maxPrice = 300000.\n" +
+            "2. ĐỊA ĐIỂM NGỮ NGHĨA (SEMANTIC LOCATION): Nếu user mô tả cảm xúc/thời tiết (VD: 'nóng', 'gần biển', 'tắm biển', 'trốn nóng', 'mát mẻ', 'lạnh'), BẠN PHẢI TỰ ĐỘNG SUY LUẬN ra 1 thành phố phù hợp ở Việt Nam.\n" +
+            "   - VD: 'biển' / 'nóng' -> city = 'Nha Trang', 'Đà Nẵng', hoặc 'Vũng Tàu'.\n" +
+            "   - VD: 'lạnh' / 'mát' -> city = 'Đà Lạt' hoặc 'Sapa'.\n\n" +
+            "Chỉ truyền tham số nếu suy luận được. Kết quả trả về phải là String format Markdown kèm Deep Link đặt vé.";
+
         return FunctionCallback.builder()
                 .function("searchEventTool", fn)
-                .description(
-                        "Searches the TicketBox event database for real, published events matching the user's query. " +
-                        "ALWAYS call this tool when the user asks about events, concerts, shows, sports, festivals, workshops, ticket prices, or schedules. " +
-                        "NEVER fabricate event data - only use what this tool returns. " +
-                        "IMPORTANT: OMIT parameters that are not specified or cannot be inferred. DO NOT pass null or empty string values. " +
-                        "Input parameters: " +
-                        "- keyword: free-text search query (e.g. name of singer, band, show). Omit if not specified. " +
-                        "- category: MUSIC/THEATER/SPORTS/WORKSHOP/FESTIVAL/COMEDY/EXHIBITION/OTHER. Omit if not specified. " +
-                        "- city: The city to filter events by (e.g. 'Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng'). Omit if not specified. " +
-                        "- maxPrice: maximum price limit in VND as a double value. Omit if not specified. " +
-                        "- isFree: set to true if user specifically asks for free or zero-cost events. Omit if not requested. " +
-                        "- startDate: start date of search window in ISO format YYYY-MM-DD. DO NOT guess or supply a start date unless the user explicitly requests events starting from/after a specific date or time range. Otherwise, omit this parameter. " +
-                        "- endDate: end date of search window in ISO format YYYY-MM-DD. DO NOT guess or supply an end date unless the user explicitly requests events ending at/before a specific date or time range. Otherwise, omit this parameter. " +
-                        "- location: location name or venue. Omit if not specified. " +
-                        "- organizer: organizer name or company. Omit if not specified. " +
-                        "Returns JSON array with id, title, city, location, startTime, priceDisplay, and bookingUrl for each event."
-                )
+                .description(toolDescription)
                 .inputType(SearchEventRequest.class)
                 .build();
     }

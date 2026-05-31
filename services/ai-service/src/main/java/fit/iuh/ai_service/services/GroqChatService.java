@@ -1,6 +1,8 @@
 package fit.iuh.ai_service.services;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.stereotype.Service;
 
 /**
@@ -26,8 +28,10 @@ public class GroqChatService implements ChatService {
 
     private final ChatClient chatClient;
 
-    public GroqChatService(ChatClient.Builder builder) {
-        this.chatClient = builder.build();
+    public GroqChatService(ChatClient.Builder builder, ChatMemory chatMemory) {
+        this.chatClient = builder
+                .defaultAdvisors(new MessageChatMemoryAdvisor(chatMemory))
+                .build();
     }
 
     private String getSystemPrompt() {
