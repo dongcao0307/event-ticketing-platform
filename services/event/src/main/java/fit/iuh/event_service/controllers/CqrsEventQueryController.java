@@ -4,14 +4,17 @@ import fit.iuh.event_service.models.*;
 import fit.iuh.event_service.models.enums.EventCategory;
 import fit.iuh.event_service.models.enums.EventStatus;
 import fit.iuh.event_service.repositories.EventRepository;
+import fit.iuh.event_service.repositories.TicketTypeRepository;
 import fit.iuh.event_service.repositories.mongo.EventDocumentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @RestController
@@ -21,6 +24,8 @@ public class CqrsEventQueryController {
 
     private final EventDocumentRepository eventDocumentRepository;
     private final EventRepository eventRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final TicketTypeRepository ticketTypeRepository;
 
     @GetMapping({
         "/api/events/cqrs",
@@ -71,15 +76,39 @@ public class CqrsEventQueryController {
 
     @GetMapping({
         "/api/events/cqrs/{id}",
-        "/events/cqrs/{id}"
+        "/events/cqrs/{id}",
+        "/api/events/cqrs/public/events/{id}",
+        "/events/cqrs/public/events/{id}"
     })
     public ResponseEntity<EventDocument> getEventById(@PathVariable String id) {
-        log.info("[CQRS-READ] Fetching event data ultra-fast from MongoDB.");
-        System.out.println("[CQRS-READ] Fetching event data ultra-fast from MongoDB.");
+        String redisKey = "event:detail:" + id;
+        try {
+            EventDocument cachedEvent = (EventDocument) redisTemplate.opsForValue().get(redisKey);
+            if (cachedEvent != null) {
+                log.info("[REDIS] Cache HIT for event {}", id);
+                System.out.println("[REDIS] Cache HIT for event " + id);
+                return ResponseEntity.ok(cachedEvent);
+            }
+        } catch (Exception e) {
+            log.error("Failed to fetch event detail from Redis cache for ID: " + id, e);
+        }
 
         return eventDocumentRepository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .map(eventDoc -> {
+                    try {
+                        redisTemplate.opsForValue().set(redisKey, eventDoc, 1, TimeUnit.HOURS);
+                        log.info("[REDIS] Cache MISS for event {}. Data fetched from DB and saved to Redis", id);
+                        System.out.println("[REDIS] Cache MISS for event " + id + ". Data fetched from DB and saved to Redis");
+                    } catch (Exception e) {
+                        log.error("Failed to save event detail to Redis cache for ID: " + id, e);
+                    }
+                    return ResponseEntity.ok(eventDoc);
+                })
+                .orElseGet(() -> {
+                    log.info("[REDIS] Cache MISS for event {}. Event not found in DB", id);
+                    System.out.println("[REDIS] Cache MISS for event " + id + ". Event not found in DB");
+                    return ResponseEntity.notFound().build();
+                });
     }
 
     @PostMapping({
@@ -169,8 +198,19 @@ public class CqrsEventQueryController {
     private List<EventDocument.PerformanceDocument> mapPerformances(List<EventPerformance> performances) {
         if (performances == null) return new ArrayList<>();
         return performances.stream().map(perf -> {
-            List<EventDocument.TicketTypeDocument> tickets = perf.getTickets() == null ? new ArrayList<>() :
-                    perf.getTickets().stream().map(ticket -> EventDocument.TicketTypeDocument.builder()
+            List<TicketType> ticketTypeList = perf.getTickets();
+            if (ticketTypeList == null || ticketTypeList.isEmpty()) {
+                try {
+                    ticketTypeList = ticketTypeRepository.findByPerformanceId(perf.getId());
+                } catch (Exception e) {
+                    log.error("Failed to fetch tickets for performance ID: " + perf.getId(), e);
+                }
+            }
+            if (ticketTypeList == null) {
+                ticketTypeList = new ArrayList<>();
+            }
+
+            List<EventDocument.TicketTypeDocument> tickets = ticketTypeList.stream().map(ticket -> EventDocument.TicketTypeDocument.builder()
                             .id(ticket.getId())
                             .performanceId(ticket.getPerformanceId())
                             .name(ticket.getName())

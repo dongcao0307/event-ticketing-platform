@@ -121,8 +121,9 @@ export const searchSemanticEvents = async (keyword, filters = {}, page = 0, size
 
 export const getEventById = async (id) =>
   tryApi(async () => {
-    const res = await get(`/events/${id}`);
-    return normalizeEvent(res.data);
+    const res = await get(`/events/cqrs/public/events/${id}`);
+    const eventData = res && res.id ? res : (res?.data || null);
+    return normalizeEvent(eventData);
   }, null);
 
 // ==================== Admin Event API Functions ====================

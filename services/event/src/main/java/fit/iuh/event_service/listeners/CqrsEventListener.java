@@ -3,10 +3,13 @@ package fit.iuh.event_service.listeners;
 import fit.iuh.event_service.events.EventCreatedEvent;
 import fit.iuh.event_service.events.EventUpdatedEvent;
 import fit.iuh.event_service.models.*;
+import fit.iuh.event_service.repositories.EventRepository;
+import fit.iuh.event_service.repositories.TicketTypeRepository;
 import fit.iuh.event_service.repositories.mongo.EventDocumentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
@@ -20,6 +23,9 @@ import java.util.stream.Collectors;
 public class CqrsEventListener {
 
     private final EventDocumentRepository eventDocumentRepository;
+    private final EventRepository eventRepository;
+    private final TicketTypeRepository ticketTypeRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @Async
     @EventListener
@@ -37,8 +43,11 @@ public class CqrsEventListener {
         saveOrUpdateReadModel(event.getEvent());
     }
 
-    private void saveOrUpdateReadModel(Event event) {
-        if (event == null || event.getId() == null) return;
+    private void saveOrUpdateReadModel(Event eventArg) {
+        if (eventArg == null || eventArg.getId() == null) return;
+        
+        // Fetch full event from MySQL with performances and venue
+        Event event = eventRepository.findFullEventById(eventArg.getId()).orElse(eventArg);
         
         EventDocument doc = EventDocument.builder()
                 .id(event.getId().toString())
@@ -74,6 +83,15 @@ public class CqrsEventListener {
                 .build();
 
         eventDocumentRepository.save(doc);
+        
+        try {
+            String redisKey = "event:detail:" + event.getId();
+            redisTemplate.delete(redisKey);
+            log.info("[REDIS] Cache evicted for event {} due to update.", event.getId());
+            System.out.println("[REDIS] Cache evicted for event " + event.getId() + " due to update.");
+        } catch (Exception e) {
+            log.error("Failed to evict Redis cache for event ID: " + event.getId(), e);
+        }
     }
 
     private EventDocument.VenueDocument mapVenue(Venue venue) {
@@ -101,8 +119,19 @@ public class CqrsEventListener {
     private List<EventDocument.PerformanceDocument> mapPerformances(List<EventPerformance> performances) {
         if (performances == null) return new ArrayList<>();
         return performances.stream().map(perf -> {
-            List<EventDocument.TicketTypeDocument> tickets = perf.getTickets() == null ? new ArrayList<>() :
-                    perf.getTickets().stream().map(ticket -> EventDocument.TicketTypeDocument.builder()
+            List<TicketType> ticketTypeList = perf.getTickets();
+            if (ticketTypeList == null || ticketTypeList.isEmpty()) {
+                try {
+                    ticketTypeList = ticketTypeRepository.findByPerformanceId(perf.getId());
+                } catch (Exception e) {
+                    log.error("Failed to fetch tickets for performance ID: " + perf.getId(), e);
+                }
+            }
+            if (ticketTypeList == null) {
+                ticketTypeList = new ArrayList<>();
+            }
+
+            List<EventDocument.TicketTypeDocument> tickets = ticketTypeList.stream().map(ticket -> EventDocument.TicketTypeDocument.builder()
                             .id(ticket.getId())
                             .performanceId(ticket.getPerformanceId())
                             .name(ticket.getName())

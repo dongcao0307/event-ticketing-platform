@@ -4,6 +4,7 @@ import fit.iuh.event_service.models.*;
 import fit.iuh.event_service.models.enums.EventCategory;
 import fit.iuh.event_service.models.enums.EventStatus;
 import fit.iuh.event_service.repositories.EventRepository;
+import fit.iuh.event_service.repositories.TicketTypeRepository;
 import fit.iuh.event_service.repositories.mongo.EventDocumentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ public class CqrsDataSyncRunner implements CommandLineRunner {
 
     private final EventRepository eventRepository;
     private final EventDocumentRepository eventDocumentRepository;
+    private final TicketTypeRepository ticketTypeRepository;
 
     @Override
     public void run(String... args) throws Exception {
@@ -107,8 +109,19 @@ public class CqrsDataSyncRunner implements CommandLineRunner {
     private List<EventDocument.PerformanceDocument> mapPerformances(List<EventPerformance> performances) {
         if (performances == null) return new ArrayList<>();
         return performances.stream().map(perf -> {
-            List<EventDocument.TicketTypeDocument> tickets = perf.getTickets() == null ? new ArrayList<>() :
-                    perf.getTickets().stream().map(ticket -> EventDocument.TicketTypeDocument.builder()
+            List<TicketType> ticketTypeList = perf.getTickets();
+            if (ticketTypeList == null || ticketTypeList.isEmpty()) {
+                try {
+                    ticketTypeList = ticketTypeRepository.findByPerformanceId(perf.getId());
+                } catch (Exception e) {
+                    log.error("Failed to fetch tickets for performance ID: " + perf.getId(), e);
+                }
+            }
+            if (ticketTypeList == null) {
+                ticketTypeList = new ArrayList<>();
+            }
+
+            List<EventDocument.TicketTypeDocument> tickets = ticketTypeList.stream().map(ticket -> EventDocument.TicketTypeDocument.builder()
                             .id(ticket.getId())
                             .performanceId(ticket.getPerformanceId())
                             .name(ticket.getName())
