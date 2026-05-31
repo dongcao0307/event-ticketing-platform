@@ -1,8 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Camera } from "lucide-react";
 import { authService } from "../../services/authService";
-
-const USER_DATA_KEY = "user_data";
 
 const DEFAULT_USER_DATA = {
   email: "",
@@ -14,24 +12,34 @@ const DEFAULT_USER_DATA = {
 };
 
 const AccountSettings = () => {
-  const initialData = () => {
-    const raw = localStorage.getItem(USER_DATA_KEY);
-    if (!raw) return { ...DEFAULT_USER_DATA };
-    try {
-      const parsed = JSON.parse(raw);
-      return {
-        ...DEFAULT_USER_DATA,
-        ...parsed,
-        fullName: parsed.fullName || parsed.name || "",
-        user_avatar: parsed.user_avatar || parsed.avatarUrl || "",
-      };
-    } catch {
-      return { ...DEFAULT_USER_DATA };
-    }
-  };
+  const [userData, setUserData] = useState(DEFAULT_USER_DATA);
+  const [avatar, setAvatar] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const [userData, setUserData] = useState(initialData);
-  const [avatar, setAvatar] = useState(userData.user_avatar || "");
+  // Fetch user profile data from API on mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await authService.getProfile();
+        if (response.data) {
+          const profileData = {
+            ...DEFAULT_USER_DATA,
+            ...response.data,
+            fullName: response.data.fullName || response.data.name || "",
+            user_avatar: response.data.avatarUrl || response.data.user_avatar || "",
+          };
+          setUserData(profileData);
+          setAvatar(profileData.user_avatar || "");
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   const handleChange = (field, value) => {
     setUserData({
@@ -57,7 +65,7 @@ const AccountSettings = () => {
           user_avatar: response.data.avatarUrl || response.data.user_avatar || "",
         };
         setUserData(normalized);
-        localStorage.setItem(USER_DATA_KEY, JSON.stringify(normalized));
+        setAvatar(normalized.user_avatar || "");
         alert("Cập nhật thông tin thành công!");
       } else {
         alert("Cập nhật thất bại, thử lại sau.");
@@ -80,7 +88,6 @@ const AccountSettings = () => {
         ...prev,
         user_avatar: base64,
       }));
-      localStorage.setItem(USER_DATA_KEY, JSON.stringify({ ...userData, user_avatar: base64 }));
     };
     reader.readAsDataURL(file);
   };
@@ -95,7 +102,6 @@ const AccountSettings = () => {
             <img
               src={
                 avatar ||
-                localStorage.getItem("user_avatar") ||
                 "https://i.imgur.com/2DhmtJ4.png"
               }
               alt="Avatar"

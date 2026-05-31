@@ -11,18 +11,41 @@ const Header = () => {
   const navigate = useNavigate();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
-  const [user, setUser] = useState(() => authService.getCurrentUser());
+  const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('jwt_token'));
+  const [userRole, setUserRole] = useState('USER');
+  const [userName, setUserName] = useState('User');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('jwt_token'));
-  const isAdmin = user?.role === 'ADMIN';
+  const isAdmin = userRole === 'ADMIN';
 
   const { bookingOrder, clearBookingOrderData } = useEvent();
 
   const dropdownRef = useRef(null);
   const searchRef = useRef(null);
+
+  // Fetch user profile on mount or when logged in changes
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (isLoggedIn) {
+        try {
+          const profile = await authService.getUserProfile();
+          setUserRole(profile?.role || 'USER');
+          setUserName(profile?.userName || 'User');
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
+          setUserRole('USER');
+          setUserName('User');
+        }
+      } else {
+        setUserRole('USER');
+        setUserName('User');
+      }
+    };
+
+    fetchUserProfile();
+  }, [isLoggedIn]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -75,7 +98,7 @@ const Header = () => {
     // 2. Perform logout
     await authService.logout();
     setIsLoggedIn(false);
-    setUser(null);
+    setUserRole('USER');
     setIsDropdownOpen(false);
 
     // 3. Navigate to homepage
@@ -253,7 +276,7 @@ const Header = () => {
                   <ChevronDown size={13} style={{ transition: 'transform 0.2s', transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
                 </button>
 
-                <DropDownMenu isDropdownOpen={isDropdownOpen} handleLogout={handleLogout} onClose={() => setIsDropdownOpen(false)} />
+                <DropDownMenu isDropdownOpen={isDropdownOpen} handleLogout={handleLogout} onClose={() => setIsDropdownOpen(false)} userRole={userRole} userName={userName} />
               </div>
             )}
 
@@ -299,9 +322,7 @@ const accountMenuItems = [
   { icon: Heart, label: 'Sự kiện yêu thích', to: '/my-account/favorites' },
 ];
 
-const DropDownMenu = ({ isDropdownOpen, handleLogout, onClose }) => {
-  const user = authService.getCurrentUser();
-  const userRole = user?.role || 'USER';
+const DropDownMenu = ({ isDropdownOpen, handleLogout, onClose, userRole, userName }) => {
   const roleLabel = userRole === 'ADMIN' ? '👨‍💼 Quản trị viên' : '👤 Người dùng';
 
   if (!isDropdownOpen) return null;
@@ -326,7 +347,7 @@ const DropDownMenu = ({ isDropdownOpen, handleLogout, onClose }) => {
       }}>
         <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>Tài khoản hiện tại</p>
         <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', margin: '2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {user?.email || 'User'}
+          {userName}
         </p>
         <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>{roleLabel}</p>
       </div>

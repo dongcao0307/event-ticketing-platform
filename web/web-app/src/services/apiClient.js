@@ -12,7 +12,6 @@ const setTokens = (accessToken, refreshToken) => {
 const clearTokens = () => {
   localStorage.removeItem('jwt_token');
   localStorage.removeItem('refresh_token');
-  localStorage.removeItem('user_data');
 };
 
 let isRefreshing = false;
@@ -46,9 +45,8 @@ const doRefresh = async () => {
   }
 
   const json = await res.json();
-  const { accessToken, refreshToken: newRefreshToken, user } = json.data;
+  const { accessToken, refreshToken: newRefreshToken } = json.data;
   setTokens(accessToken, newRefreshToken);
-  if (user) localStorage.setItem('user_data', JSON.stringify(user));
   return accessToken;
 };
 

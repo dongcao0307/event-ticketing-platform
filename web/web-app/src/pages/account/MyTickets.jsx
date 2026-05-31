@@ -7,6 +7,7 @@ import { serviceGetBookingsByUser } from "../../services/bookingService";
 import { getFeaturedEvents } from "../../services/eventService";
 import { useEvent } from "../../hooks/useEvent";
 import { useToast } from "../../context/ToastContext";
+import { getUserIdFromToken } from "../../utils/tokenUtils";
 
 const PER_PAGE = 4;
 
@@ -48,9 +49,7 @@ const MyTickets = () => {
       try {
         setLoading(true);
 
-        const userDataRaw = localStorage.getItem('user_data');
-        const userData = userDataRaw ? JSON.parse(userDataRaw) : null;
-        const userId = userData?.userId || 1;
+        const userId = getUserIdFromToken() || 1;
 
         const [bookings, featured] = await Promise.all([
           serviceGetBookingsByUser(userId),

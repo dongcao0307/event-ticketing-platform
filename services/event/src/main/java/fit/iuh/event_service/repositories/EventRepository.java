@@ -5,18 +5,22 @@ import fit.iuh.event_service.models.enums.EventStatus;
 import fit.iuh.event_service.models.Event;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional; // 🌟 Thêm import này để chạy @Modifying native query
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface EventRepository extends JpaRepository<Event, Long> {
+public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecificationExecutor<Event> {
 
     // ==================== Các method từ branch feat/login ====================
     @Query("SELECT e FROM Event e WHERE " +
@@ -73,6 +77,14 @@ public interface EventRepository extends JpaRepository<Event, Long> {
             "e.max_price = (SELECT COALESCE(MAX(t.price), 0) FROM ticket_types t JOIN event_performances p ON t.performance_id = p.id WHERE p.event_id = :eventId) " +
             "WHERE e.id = :eventId", nativeQuery = true)
     void syncPriceOnApproval(@Param("eventId") Long eventId);
+
+    // ==================== CRITERIA API & SPECIFICATION-BASED QUERIES ====================
+    /**
+     * Fetches events using Specification with eager loading of performances and venue.
+     * Solves N+1 query problem using @EntityGraph.
+     */
+    @EntityGraph(attributePaths = {"performances", "venue"})
+    List<Event> findAll(Specification<Event> spec, Sort sort);
 
     @Query("SELECT e FROM Event e WHERE e.id IN (SELECT f.eventId FROM FavoriteEvent f WHERE f.userId = :userId)")
     List<Event> findFavoriteEventsByUserId(@Param("userId") Long userId);

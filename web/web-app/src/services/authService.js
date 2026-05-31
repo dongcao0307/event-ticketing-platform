@@ -1,16 +1,12 @@
 // src/services/authService.js
 import { post, put, get, setTokens, clearTokens } from './apiClient';
+import { decodeToken } from '../utils/tokenUtils';
 
 export const authService = {
   register: async (userName, email, password, fullName, phone, role = 'USER') => {
     const res = await post('/auth/register', { userName, email, password, fullName, phone, role });
     if (res.data) {
       setTokens(res.data.accessToken, res.data.refreshToken);
-      if (res.data.user) {
-        // Đảm bảo role được lưu
-        const userData = { ...res.data.user, role: res.data.user.role || role };
-        localStorage.setItem('user_data', JSON.stringify(userData));
-      }
     }
     return res;
   },
@@ -33,9 +29,6 @@ export const authService = {
     const res = await post('/auth/login', payload);
     if (res.data) {
       setTokens(res.data.accessToken, res.data.refreshToken);
-      if (res.data.user) {
-        localStorage.setItem('user_data', JSON.stringify(res.data.user));
-      }
     }
     return res;
   },
@@ -52,40 +45,54 @@ export const authService = {
 
   getProfile: async () => {
     const res = await get('/auth/me');
-    if (res.data) {
-      localStorage.setItem('user_data', JSON.stringify(res.data));
-    }
     return res;
   },
 
   updateProfile: async (userData) => {
     const res = await put('/auth/me', userData);
-    if (res.data) {
-      localStorage.setItem('user_data', JSON.stringify(res.data));
-    }
     return res;
   },
 
-  getCurrentUser: () => {
-    const raw = localStorage.getItem('user_data');
-    if (!raw) return null;
-    try { return JSON.parse(raw); } catch (_) { return null; }
+  isLoggedIn: () => !!localStorage.getItem('jwt_token'),
+
+  /**
+   * Get user profile from API /auth/me
+   * @returns {object} - User profile with role, username, email, etc.
+   */
+  getUserProfile: async () => {
+    try {
+      if (!authService.isLoggedIn()) return { role: 'USER', userName: 'User' };
+      const res = await get('/auth/me');
+      return res.data || { role: 'USER', userName: 'User' };
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      return { role: 'USER', userName: 'User' };
+    }
   },
 
-  getUserRole: () => {
-    const user = authService.getCurrentUser();
-    return user?.role || 'USER';
+  /**
+   * Get user role from API /auth/me
+   * Falls back to JWT token if API fails
+   * @returns {string} - User role or 'USER' as default
+   */
+  getUserRole: async () => {
+    try {
+      const profile = await authService.getUserProfile();
+      return profile?.role || 'USER';
+    } catch (error) {
+      // Fallback to token decode if API fails
+      const token = localStorage.getItem('jwt_token');
+      const decoded = decodeToken(token);
+      return decoded?.role || 'USER';
+    }
   },
 
-  isAdmin: () => {
-    const role = authService.getUserRole();
+  /**
+   * Check if user is admin by fetching from API
+   * @returns {boolean}
+   */
+  isAdmin: async () => {
+    const role = await authService.getUserRole();
     return role === 'ADMIN';
   },
-
-  isUser: () => {
-    const role = authService.getUserRole();
-    return role === 'USER';
-  },
-
-  isLoggedIn: () => !!localStorage.getItem('jwt_token'),
 };

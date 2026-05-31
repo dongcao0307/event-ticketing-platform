@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * AiToolConfig registers all Spring AI function-calling tools into the
@@ -232,7 +233,7 @@ public class AiToolConfig {
 
                 if (content == null || !content.isArray() || content.isEmpty()) {
                     log.info("--- EVENT SERVICE RETURNED 0 RESULTS ---");
-                    return "Không tìm thấy sự kiện nào phù hợp với yêu cầu.";
+                    return "Không tìm thấy sự kiện nào khớp với yêu cầu của bạn. Hãy thử đổi từ khóa hoặc địa điểm nhé.";
                 }
 
                 List<Map<String, Object>> eventsList = new ArrayList<>();
@@ -256,11 +257,28 @@ public class AiToolConfig {
                     eventMap.put("location", fullLocation);
                     eventMap.put("startTime", startTime);
                     eventMap.put("priceDisplay", priceDisplay);
-                    eventMap.put("bookingUrl", "https://localhost:8443/event/" + id);
                     eventsList.add(eventMap);
                 }
 
-                return mapper.writeValueAsString(eventsList);
+                // Generate markdown response with deep links to event booking page
+                return eventsList.stream().map(event -> {
+                    String title = (String) event.get("title");
+                    String city = (String) event.get("city");
+                    if (city == null || city.isBlank()) {
+                        city = "Đang cập nhật";
+                    }
+                    String price = (String) event.get("priceDisplay");
+                    if (price == null || price.isBlank()) {
+                        price = "Liên hệ";
+                    }
+                    String eventId = event.get("id").toString();
+
+                    // Constructing the Markdown CTA block with deep link
+                    return String.format(
+                        "- **%s** | 📍 %s | 💵 %s\n  👉 **[🎟️ Xem sơ đồ & Đặt vé ngay](/events/%s)**",
+                        title, city, price, eventId
+                    );
+                }).collect(Collectors.joining("\n\n---\n\n"));
 
             } catch (Exception ex) {
                 return "{\"error\": \"Cannot reach event search service: "
