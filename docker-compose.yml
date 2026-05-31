@@ -102,6 +102,8 @@ services:
       - "8080:80"
     volumes:
       - ./gateway/certs:/etc/nginx/certs:ro
+    environment:
+      GATEWAY_CORS_ALLOW_ORIGIN: ${GATEWAY_CORS_ALLOW_ORIGIN}
     networks:
       - ticketbox-net
     restart: on-failure
