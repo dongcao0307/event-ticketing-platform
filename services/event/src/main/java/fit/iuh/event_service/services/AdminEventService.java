@@ -11,6 +11,8 @@ import fit.iuh.event_service.models.TicketType;
 import fit.iuh.event_service.models.OrganizerPaymentInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import fit.iuh.event_service.events.EventUpdatedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,7 @@ import java.util.stream.Collectors;
 public class AdminEventService {
     private final EventRepository eventRepository;
     private final EventPerformanceRepository performanceRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * Lấy danh sách events theo trạng thái
@@ -62,14 +65,18 @@ public class AdminEventService {
         }
 
         event.setStatus(EventStatus.PUBLISHED);
-        Event saved = eventRepository.save(event);
+        Event saved = eventRepository.saveAndFlush(event);
 
         // 🔥 CHÈN VŨ KHÍ TỰ ĐỘNG ĐỒNG BỘ GIÁ VÀO ĐÂY:
         // Ngay khi bấm Duyệt, Backend tự động lội xuống tính MIN/MAX từ bảng vé và đồng bộ ra Home!
         eventRepository.syncPriceOnApproval(eventId);
 
+        Event updatedEvent = eventRepository.findById(eventId).orElse(saved);
+        System.out.println("[CQRS-WRITE] Event saved to MySQL. Publishing sync event...");
+        eventPublisher.publishEvent(new EventUpdatedEvent(updatedEvent));
+
         log.info("Event approved successfully and price synced: {}", eventId);
-        return convertToDetailDTO(saved);
+        return convertToDetailDTO(updatedEvent);
     }
 
     /**
@@ -86,6 +93,8 @@ public class AdminEventService {
 
         event.setStatus(EventStatus.CANCELLED);
         Event saved = eventRepository.save(event);
+        System.out.println("[CQRS-WRITE] Event saved to MySQL. Publishing sync event...");
+        eventPublisher.publishEvent(new EventUpdatedEvent(saved));
         log.info("Event rejected successfully: {}", eventId);
         return convertToDetailDTO(saved);
     }
@@ -100,6 +109,8 @@ public class AdminEventService {
 
         event.setStatus(EventStatus.CANCELLED);
         Event saved = eventRepository.save(event);
+        System.out.println("[CQRS-WRITE] Event saved to MySQL. Publishing sync event...");
+        eventPublisher.publishEvent(new EventUpdatedEvent(saved));
         log.info("Event locked successfully: {}", eventId);
         return convertToDetailDTO(saved);
     }

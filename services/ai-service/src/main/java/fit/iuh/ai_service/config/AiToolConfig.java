@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fit.iuh.ai_service.dtos.EventSummary;
 import fit.iuh.ai_service.dtos.SearchEventRequest;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.InMemoryChatMemory;
 import org.springframework.ai.model.function.FunctionCallback;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -17,7 +19,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * AiToolConfig registers all Spring AI function-calling tools into the
@@ -53,29 +57,28 @@ public class AiToolConfig {
      * via reflection when building the JSON schema for the LLM tool manifest.
      */
     @Bean
+    public ChatMemory chatMemory() {
+        return new InMemoryChatMemory();
+    }
+
+    @Bean
     public FunctionCallback searchEventTool() {
         // Explicit Function implementation — avoids type-erasure issues with lambdas
         Function<SearchEventRequest, String> fn = new EventSearchFunction(eventServiceBaseUrl, objectMapper);
 
+        String currentDate = java.time.LocalDate.now().toString();
+        String toolDescription = "Công cụ tìm kiếm sự kiện TicketBox Database.\n" +
+            "SYSTEM INFO: Hôm nay là " + currentDate + ". BẮT BUỘC dùng ngày này làm mốc để tính toán 'ngày mai', 'cuối tuần này', 'tháng sau'.\n\n" +
+            "QUY TẮC SUY LUẬN SÂU (BẮT BUỘC):\n" +
+            "1. GIÁ VÉ: Nếu user nói 'rẻ', 'sinh viên', 'tiết kiệm', tự set maxPrice = 300000.\n" +
+            "2. ĐỊA ĐIỂM NGỮ NGHĨA (SEMANTIC LOCATION): Nếu user mô tả cảm xúc/thời tiết (VD: 'nóng', 'gần biển', 'tắm biển', 'trốn nóng', 'mát mẻ', 'lạnh'), BẠN PHẢI TỰ ĐỘNG SUY LUẬN ra 1 thành phố phù hợp ở Việt Nam.\n" +
+            "   - VD: 'biển' / 'nóng' -> city = 'Nha Trang', 'Đà Nẵng', hoặc 'Vũng Tàu'.\n" +
+            "   - VD: 'lạnh' / 'mát' -> city = 'Đà Lạt' hoặc 'Sapa'.\n\n" +
+            "Chỉ truyền tham số nếu suy luận được. Kết quả trả về phải là String format Markdown kèm Deep Link đặt vé.";
+
         return FunctionCallback.builder()
                 .function("searchEventTool", fn)
-                .description(
-                        "Searches the TicketBox event database for real, published events matching the user's query. " +
-                        "ALWAYS call this tool when the user asks about events, concerts, shows, sports, festivals, workshops, ticket prices, or schedules. " +
-                        "NEVER fabricate event data - only use what this tool returns. " +
-                        "IMPORTANT: OMIT parameters that are not specified or cannot be inferred. DO NOT pass null or empty string values. " +
-                        "Input parameters: " +
-                        "- keyword: free-text search query (e.g. name of singer, band, show). Omit if not specified. " +
-                        "- category: MUSIC/THEATER/SPORTS/WORKSHOP/FESTIVAL/COMEDY/EXHIBITION/OTHER. Omit if not specified. " +
-                        "- city: Hồ Chí Minh, Hà Nội, Đà Nẵng, etc. Omit if not specified. " +
-                        "- maxPrice: maximum price limit as a raw double value (e.g. if user says 'dưới 500k' set to 500000.0). Omit entirely if not specified. DO NOT pass null. " +
-                        "- isFree: set to true if user specifically asks for free or zero-cost events. Omit entirely if not requested. DO NOT pass null. " +
-                        "- startDate: start date of search window in ISO format YYYY-MM-DD. DO NOT guess or supply a start date unless the user explicitly requests events starting from/after a specific date or time range. Otherwise, omit this parameter. " +
-                        "- endDate: end date of search window in ISO format YYYY-MM-DD. DO NOT guess or supply an end date unless the user explicitly requests events ending at/before a specific date or time range. Otherwise, omit this parameter. " +
-                        "- location: location name or venue. Omit if not specified. " +
-                        "- organizer: organizer name or company. Omit if not specified. " +
-                        "Returns JSON array with id, title, city, location, startTime, priceDisplay, and bookingUrl for each event."
-                )
+                .description(toolDescription)
                 .inputType(SearchEventRequest.class)
                 .build();
     }
@@ -112,7 +115,39 @@ public class AiToolConfig {
                 .build();
     }
 
-    public record PolicyRequest(String topic) {}
+    public static class PolicyRequest {
+        private String topic;
+
+        public PolicyRequest() {}
+
+        public PolicyRequest(String topic) {
+            this.topic = topic;
+        }
+
+        public String getTopic() {
+            return topic;
+        }
+
+        public void setTopic(Object topic) {
+            if (topic instanceof String) {
+                this.topic = (String) topic;
+            } else if (topic != null) {
+                if (topic instanceof java.util.Map) {
+                    java.util.Map<?, ?> map = (java.util.Map<?, ?>) topic;
+                    Object val = map.get("value");
+                    if (val == null) val = map.get("type");
+                    if (val == null) val = map.get("topic");
+                    this.topic = val != null ? val.toString() : topic.toString();
+                } else {
+                    this.topic = topic.toString();
+                }
+            }
+        }
+
+        public String topic() {
+            return topic;
+        }
+    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Explicit Function implementation
@@ -199,10 +234,10 @@ public class AiToolConfig {
 
                 if (content == null || !content.isArray() || content.isEmpty()) {
                     log.info("--- EVENT SERVICE RETURNED 0 RESULTS ---");
-                    return "Không tìm thấy sự kiện nào phù hợp với yêu cầu.";
+                    return "Không tìm thấy sự kiện nào khớp với yêu cầu của bạn. Hãy thử đổi từ khóa hoặc địa điểm nhé.";
                 }
 
-                List<String> formattedEvents = new ArrayList<>();
+                List<Map<String, Object>> eventsList = new ArrayList<>();
                 for (JsonNode node : content) {
                     long id = node.path("id").asLong();
                     String title = node.path("title").asText("");
@@ -216,19 +251,35 @@ public class AiToolConfig {
                         fullLocation = location + ", " + city;
                     }
 
-                    String item = String.format(
-                        "**%s**\n- 📍 Địa điểm: %s\n- ⏰ Thời gian: %s\n- 💵 Giá vé: %s\n👉 **[🎫 Xem chi tiết & Đặt vé](/events/%d)**\n",
-                        title,
-                        fullLocation,
-                        startTime,
-                        priceDisplay,
-                        id
-                    );
-                    formattedEvents.add(item);
+                    Map<String, Object> eventMap = new java.util.LinkedHashMap<>();
+                    eventMap.put("id", id);
+                    eventMap.put("title", title);
+                    eventMap.put("city", city);
+                    eventMap.put("location", fullLocation);
+                    eventMap.put("startTime", startTime);
+                    eventMap.put("priceDisplay", priceDisplay);
+                    eventsList.add(eventMap);
                 }
 
-                String formattedResult = String.join("\n", formattedEvents);
-                return "Dưới đây là các sự kiện tìm thấy:\n\n" + formattedResult;
+                // Generate markdown response with deep links to event booking page
+                return eventsList.stream().map(event -> {
+                    String title = (String) event.get("title");
+                    String city = (String) event.get("city");
+                    if (city == null || city.isBlank()) {
+                        city = "Đang cập nhật";
+                    }
+                    String price = (String) event.get("priceDisplay");
+                    if (price == null || price.isBlank()) {
+                        price = "Liên hệ";
+                    }
+                    String eventId = event.get("id").toString();
+
+                    // Constructing the Markdown CTA block with deep link
+                    return String.format(
+                        "- **%s** | 📍 %s | 💵 %s\n  👉 **[🎟️ Xem sơ đồ & Đặt vé ngay](/events/%s)**",
+                        title, city, price, eventId
+                    );
+                }).collect(Collectors.joining("\n\n---\n\n"));
 
             } catch (Exception ex) {
                 return "{\"error\": \"Cannot reach event search service: "

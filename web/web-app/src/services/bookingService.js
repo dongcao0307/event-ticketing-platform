@@ -407,8 +407,8 @@ export const getDetailedEventById = async (id) => {
 
   try {
     // 1. Gọi API Public để lấy thông tin sự kiện (Đã được Backend JOIN FETCH sẵn)
-    const res = await get(`/events/${id}`);
-    eventData = res?.data ?? null;
+    const res = await get(`/events/cqrs/public/events/${id}`);
+    eventData = res && res.id ? res : (res?.data ?? null);
 
     // 2. 🚀 LẤY LUÔN PERFORMANCES TỪ ĐÂY (NẾU CÓ) - KHÔNG CẦN GỌI API NỮA
     if (eventData && eventData.performances) {
