@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { sendChatMessage, streamChat } from '../services/chatService';
+import { sendChatMessage, streamChat, checkChatStatus } from '../services/chatService';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -89,7 +89,7 @@ function AiMessageContent({ text }) {
         if (part.type === 'url') {
           // Extract eventId from deep link (supports /event/id and /events/id)
           const eventIdMatch = part.value.match(/\/events?\/(\d+)/);
-          
+
           let label = part.label;
           if (!label) {
             label = eventIdMatch
@@ -170,7 +170,7 @@ function MessageBubble({ message }) {
       {/* Bubble */}
       <div
         className={`
-          max-w-[82%] px-3 py-2.5 text-sm leading-relaxed rounded-2xl
+          max-w-[82%] px-3 py-2.5 text-sm leading-relaxed rounded-2xl break-words
           ${isUser
             ? 'bg-gradient-to-br from-[#26bc71] to-emerald-600 text-white rounded-br-sm shadow-lg shadow-green-900/30'
             : 'bg-[#252525] border border-white/10 text-gray-200 rounded-bl-sm'
@@ -197,6 +197,7 @@ export default function ChatbotWidget() {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
+  const [isOnline, setIsOnline] = useState(false);
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -212,6 +213,26 @@ export default function ChatbotWidget() {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 120);
       setHasUnread(false);
+    }
+  }, [isOpen]);
+
+  // Check AI service status immediately on mount and every 10 seconds
+  useEffect(() => {
+    const checkStatus = async () => {
+      const online = await checkChatStatus();
+      setIsOnline(online);
+    };
+
+    checkStatus();
+
+    const interval = setInterval(checkStatus, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Also check status immediately when user opens the chat widget
+  useEffect(() => {
+    if (isOpen) {
+      checkChatStatus().then(setIsOnline);
     }
   }, [isOpen]);
 
@@ -321,13 +342,13 @@ export default function ChatbotWidget() {
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#26bc71] to-emerald-600 flex items-center justify-center shadow-lg shadow-green-900/40">
               <span className="text-base" role="img" aria-label="bot">🤖</span>
             </div>
-            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-[#1a1a1a]" />
+            <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[#1a1a1a] ${isOnline ? 'bg-green-400' : 'bg-red-500'}`} />
           </div>
 
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-white leading-tight">TicketBox AI</p>
-            <p className="text-[11px] text-green-400 leading-tight">
-              {isLoading ? '● Đang xử lý...' : '● Trực tuyến · Ollama (Local Llama 3.2)'}
+            <p className={`text-[11px] leading-tight ${isOnline ? 'text-green-400' : 'text-red-400'}`}>
+              {isLoading ? '● Đang xử lý...' : isOnline ? '● Trực tuyến' : '● Ngoại tuyến'}
             </p>
           </div>
 
@@ -391,8 +412,8 @@ export default function ChatbotWidget() {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Nhập câu hỏi..."
-              disabled={isLoading}
+              placeholder={isOnline ? "Nhập câu hỏi..." : "Trợ lý AI đang ngoại tuyến..."}
+              disabled={isLoading || !isOnline}
               autoComplete="off"
               className="flex-1 bg-transparent text-sm text-white placeholder-gray-500 outline-none disabled:opacity-40 min-w-0"
               aria-label="Nhập tin nhắn"
@@ -401,7 +422,7 @@ export default function ChatbotWidget() {
             {/* Send button */}
             <button
               onClick={() => sendMessage(inputValue)}
-              disabled={isLoading || !inputValue.trim()}
+              disabled={isLoading || !isOnline || !inputValue.trim()}
               className="
                 w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-lg
                 bg-[#26bc71] hover:bg-[#1fa05f]
@@ -428,7 +449,7 @@ export default function ChatbotWidget() {
           </div>
 
           <p className="text-center text-[10px] text-gray-600 mt-1.5 select-none">
-            Powered by <span className="text-gray-500">Ollama (Local Llama 3.2)</span> · TicketBox AI
+            Powered by <span className="text-gray-500">Ollama (Qwen 2.5 7B)</span> · TicketBox AI
           </p>
         </div>
       </div>

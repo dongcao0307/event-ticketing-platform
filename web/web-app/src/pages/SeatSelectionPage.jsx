@@ -5,6 +5,7 @@ import { getDetailedEventById, serviceCreateBookingWithItems } from '../services
 import { buildFreeCheckoutPayload, serviceCreateFreeCheckout } from '../services/paymentService';
 import { serviceGetBookedSeats } from '../services/ticketService';
 import { useEvent } from '../hooks/useEvent';
+import { getUserIdFromToken } from '../utils/tokenUtils';
 
 const EMPTY_ARRAY = [];
 
@@ -150,23 +151,12 @@ const SeatSelectionPage = () => {
 
   const resolveMockUserId = () => {
     try {
-      const userDataRaw = localStorage.getItem('user_data');
-      if (!userDataRaw) return 1;
-
-      const userData = JSON.parse(userDataRaw);
-      if (Number.isFinite(Number(userData?.userId))) {
-        return Number(userData.userId);
+      const userId = getUserIdFromToken();
+      if (Number.isFinite(userId) && userId > 0) {
+        return userId;
       }
-
-      if (userData?.email) {
-        let hash = 0;
-        for (let i = 0; i < userData.email.length; i += 1) {
-          hash = (hash * 31 + userData.email.charCodeAt(i)) % 100000;
-        }
-        return hash + 1;
-      }
-    } catch {
-      return 1;
+    } catch (error) {
+      console.error('Error getting user ID from token:', error);
     }
     return 1;
   };

@@ -5,6 +5,7 @@ import fit.iuh.ai_service.dtos.ChatResponse;
 import fit.iuh.ai_service.services.ChatService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,6 +27,9 @@ public class ChatController {
     private static final Logger log = LoggerFactory.getLogger(ChatController.class);
 
     private final ChatService chatService;
+
+    @Value("${spring.ai.openai.base-url}")
+    private String openAiBaseUrl;
 
     public ChatController(ChatService chatService) {
         this.chatService = chatService;
@@ -70,5 +74,27 @@ public class ChatController {
                         org.springframework.http.codec.ServerSentEvent.builder("⚠️ Xin lỗi, trợ lý AI gặp sự cố khi tải kết quả. Vui lòng thử lại sau ít phút.").build()
                     );
                 });
+    }
+
+    @GetMapping("/status")
+    public ResponseEntity<java.util.Map<String, Object>> getStatus() {
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        try {
+            java.net.URL url = new java.net.URL(openAiBaseUrl);
+            java.net.HttpURLConnection connection = (java.net.HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(2000); // 2 seconds timeout
+            connection.setReadTimeout(2000);
+            int responseCode = connection.getResponseCode();
+            
+            boolean isOnline = (responseCode >= 200 && responseCode < 500);
+            response.put("online", isOnline);
+            response.put("service", url.getHost());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("online", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.ok(response);
+        }
     }
 }

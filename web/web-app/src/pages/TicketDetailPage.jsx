@@ -45,17 +45,6 @@ const convertBookingToTicket = (booking) => {
   console.log("perf:", perf);
   console.log("startTime:", startTime, "endTime:", endTime);
   
-  // Lấy user data từ localStorage
-  let userData = null;
-  try {
-    const userDataStr = localStorage.getItem('user_data');
-    if (userDataStr) {
-      userData = JSON.parse(userDataStr);
-    }
-  } catch (e) {
-    console.error("Error parsing user_data:", e);
-  }
-  
   // Xác định payment status dựa vào totalAmount
   const payment = booking.totalAmount === 0 ? "Miễn phí" : "Thanh toán điện tử";
 
@@ -70,8 +59,8 @@ const convertBookingToTicket = (booking) => {
     payment,
     status: booking.status || "PENDING",
     buyer: {
-      name: userData?.fullName || "Khách hàng",
-      email: userData?.email || "N/A",
+      name: "Khách hàng",
+      email: "N/A",
     },
     tickets: (booking.items || []).map((item, idx) => ({
       id: item.ticketTypeId,

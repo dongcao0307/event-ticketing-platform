@@ -2,21 +2,22 @@ package fit.iuh.event_service.services.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fit.iuh.event_service.dtos.EventResponse;
-import fit.iuh.event_service.dtos.PageResponse;
 import fit.iuh.event_service.models.Event;
 import fit.iuh.event_service.models.EventEmbedding;
 import fit.iuh.event_service.models.enums.EventCategory;
-import fit.iuh.event_service.models.enums.EventStatus;
 import fit.iuh.event_service.repositories.EventEmbeddingRepository;
 import fit.iuh.event_service.repositories.EventRepository;
 import fit.iuh.event_service.services.EmbeddingService;
 import fit.iuh.event_service.services.SemanticSearchService;
 import fit.iuh.event_service.services.NerService;
 import fit.iuh.event_service.dtos.NerResponse;
+import fit.iuh.event_service.specifications.EventSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.Data;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.cache.annotation.Cacheable;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -31,9 +32,9 @@ public class SemanticSearchServiceImpl implements SemanticSearchService {
     private final EventEmbeddingRepository embeddingRepository;
     private final ObjectMapper objectMapper;
     private final NerService nerService;
-    private final NamedParameterJdbcTemplate jdbcTemplate;
 
     @Override
+    @Cacheable(value = "ai_event_searches", key = "{#keyword, #city, #maxPrice, #category}")
     public List<EventResponse> search(
             String keyword,
             String category,
@@ -48,7 +49,7 @@ public class SemanticSearchServiceImpl implements SemanticSearchService {
             int page,
             int size) {
         
-        // 1) use NER to extract filters from keyword if not provided
+        // 1) Use NER to extract filters from keyword if not provided
         String cleanedKeyword = keyword;
         if (keyword != null && !keyword.isBlank()) {
             NerResponse nerResponse = nerService.extractEntities(keyword);
@@ -68,7 +69,7 @@ public class SemanticSearchServiceImpl implements SemanticSearchService {
             }
         }
 
-        // 2) parse filters
+        // 2) Parse filters to enums
         EventCategory cat = null;
         if (category != null && !category.isBlank()) {
             try {
@@ -76,109 +77,46 @@ public class SemanticSearchServiceImpl implements SemanticSearchService {
             } catch (Exception ignored) {
             }
         }
-        EventStatus st = EventStatus.PUBLISHED;
 
         // 3) Check if we need semantic search (keyword is present)
         boolean hasKeyword = (cleanedKeyword != null && !cleanedKeyword.isBlank());
 
-        // 4) Dynamic native SQL to query only matched candidates
-        StringBuilder sql = new StringBuilder();
-        sql.append("SELECT e.id, e.title, e.description, e.category, e.city, e.location, e.start_time, e.end_time, e.min_price, e.max_price, e.image_url, e.organizer_name, e.organizer_logo, e.is_featured, e.status, ee.embedding_json ");
-        sql.append("FROM events e ");
-        if (hasKeyword) {
-            sql.append("JOIN event_embeddings ee ON e.id = ee.event_id ");
-        } else {
-            sql.append("LEFT JOIN event_embeddings ee ON e.id = ee.event_id ");
-        }
-        sql.append("WHERE e.status = :status ");
+        // 4) Build Specification using EventSpecification utility (auto-excludes past events)
+        Specification<Event> spec = EventSpecification.buildSearchSpec(cleanedKeyword, cat, city, maxPrice, isFree);
 
-        Map<String, Object> params = new HashMap<>();
-        params.put("status", st.name());
+        // 5) Handle date range filtering within spec (add date constraints if provided)
+        spec = addDateRangeToSpec(spec, startDate, endDate);
 
-        if (cat != null) {
-            sql.append("AND e.category = :category ");
-            params.put("category", cat.name());
-        }
-        if (city != null && !city.isBlank()) {
-            sql.append("AND LOWER(e.city) LIKE LOWER(:city) ");
-            params.put("city", "%" + city.trim() + "%");
-        }
-        if (isFree != null && isFree) {
-            sql.append("AND (e.min_price IS NULL OR e.min_price = 0) ");
-        } else if (maxPrice != null && maxPrice > 0) {
-            sql.append("AND e.min_price <= :maxPrice ");
-            params.put("maxPrice", maxPrice);
-        }
-        if (startDate != null && !startDate.isBlank()) {
-            try {
-                java.time.LocalDate startD = java.time.LocalDate.parse(startDate);
-                sql.append("AND e.start_time >= :startTimeLimit ");
-                params.put("startTimeLimit", startD.atStartOfDay());
-            } catch (Exception e) {
-                // ignore
-            }
-        }
-        if (endDate != null && !endDate.isBlank()) {
-            try {
-                java.time.LocalDate endD = java.time.LocalDate.parse(endDate);
-                sql.append("AND e.start_time <= :endTimeLimit ");
-                params.put("endTimeLimit", endD.atTime(23, 59, 59));
-            } catch (Exception e) {
-                // ignore
-            }
-        }
-        if (location != null && !location.isBlank()) {
-            sql.append("AND LOWER(e.location) LIKE LOWER(:location) ");
-            params.put("location", "%" + location.trim() + "%");
-        }
-        if (organizer != null && !organizer.isBlank()) {
-            sql.append("AND LOWER(e.organizer_name) LIKE LOWER(:organizer) ");
-            params.put("organizer", "%" + organizer.trim() + "%");
-        }
+        // 6) Add location and organizer filters if provided
+        spec = addLocationAndOrganizerToSpec(spec, location, organizer);
 
-        List<EventCandidate> candidates = jdbcTemplate.query(sql.toString(), params, (rs, rowNum) -> {
-            EventCandidate ec = new EventCandidate();
-            ec.setId(rs.getLong("id"));
-            ec.setTitle(rs.getString("title"));
-            ec.setDescription(rs.getString("description"));
-            ec.setCategory(rs.getString("category"));
-            ec.setCity(rs.getString("city"));
-            ec.setLocation(rs.getString("location"));
-            ec.setStartTime(rs.getTimestamp("start_time") != null ? rs.getTimestamp("start_time").toLocalDateTime() : null);
-            ec.setEndTime(rs.getTimestamp("end_time") != null ? rs.getTimestamp("end_time").toLocalDateTime() : null);
-            ec.setMinPrice(rs.getBigDecimal("min_price"));
-            ec.setMaxPrice(rs.getBigDecimal("max_price"));
-            ec.setImageUrl(rs.getString("image_url"));
-            ec.setOrganizerName(rs.getString("organizer_name"));
-            ec.setOrganizerLogo(rs.getString("organizer_logo"));
-            ec.setIsFeatured(rs.getBoolean("is_featured"));
-            ec.setStatus(rs.getString("status"));
-            ec.setEmbeddingJson(rs.getString("embedding_json"));
-            return ec;
-        });
+        // 7) Fetch events with Specification (eliminates N+1 via @EntityGraph on EventRepository)
+        // Sort by isFeatured DESC, startTime ASC
+        Sort sort = Sort.by(Sort.Order.desc("isFeatured"), Sort.Order.asc("startTime"));
+        List<Event> candidates = eventRepository.findAll(spec, sort);
 
         if (candidates.isEmpty()) {
-            return List.of();
+            return new ArrayList<>();
         }
 
         List<Long> topIds = new ArrayList<>();
 
         if (hasKeyword) {
-            // 3) embed query (using cleaned keyword)
+            // 8) Perform semantic similarity search using embeddings
             double[] queryEmbedding = embeddingService.embed(cleanedKeyword);
 
-            // 5) calculate similarity
             record Scored(long eventId, double score) {
             }
             List<Scored> scored = new ArrayList<>();
-            for (EventCandidate ec : candidates) {
-                String json = ec.getEmbeddingJson();
-                if (json == null || json.isBlank())
+            
+            for (Event event : candidates) {
+                EventEmbedding embedding = embeddingRepository.findByEventId(event.getId()).orElse(null);
+                if (embedding == null || embedding.getEmbeddingJson() == null || embedding.getEmbeddingJson().isBlank())
                     continue;
                 try {
-                    double[] vec = objectMapper.convertValue(objectMapper.readTree(json), double[].class);
+                    double[] vec = objectMapper.convertValue(objectMapper.readTree(embedding.getEmbeddingJson()), double[].class);
                     double score = cosineSimilarity(queryEmbedding, vec);
-                    scored.add(new Scored(ec.getId(), score));
+                    scored.add(new Scored(event.getId(), score));
                 } catch (Exception ex) {
                     // Skip invalid stored embeddings
                 }
@@ -186,36 +124,25 @@ public class SemanticSearchServiceImpl implements SemanticSearchService {
 
             scored.sort((a, b) -> Double.compare(b.score(), a.score()));
             if (scored.isEmpty())
-                return List.of();
+                return new ArrayList<>();
 
             int from = page * size;
             int to = Math.min(scored.size(), from + size);
             if (from >= scored.size())
-                return List.of();
+                return new ArrayList<>();
 
             topIds = scored.subList(from, to).stream().map(Scored::eventId).toList();
         } else {
-            // Sort by isFeatured DESC, startTime ASC by default
-            candidates.sort((a, b) -> {
-                int featCompare = Boolean.compare(b.getIsFeatured(), a.getIsFeatured());
-                if (featCompare != 0) {
-                    return featCompare;
-                }
-                if (a.getStartTime() == null && b.getStartTime() == null) return 0;
-                if (a.getStartTime() == null) return 1;
-                if (b.getStartTime() == null) return -1;
-                return a.getStartTime().compareTo(b.getStartTime());
-            });
-
+            // No keyword: return paginated results sorted by featured DESC, startTime ASC
             int from = page * size;
             int to = Math.min(candidates.size(), from + size);
             if (from >= candidates.size())
-                return List.of();
+                return new ArrayList<>();
 
-            topIds = candidates.subList(from, to).stream().map(EventCandidate::getId).toList();
+            topIds = candidates.subList(from, to).stream().map(Event::getId).toList();
         }
 
-        // 6) load final events by ids preserving order
+        // 9) Map events to EventResponse DTOs (order preserved)
         Map<Long, Event> byId = new HashMap<>();
         eventRepository.findAllById(topIds).forEach(e -> byId.put(e.getId(), e));
 
@@ -226,6 +153,88 @@ public class SemanticSearchServiceImpl implements SemanticSearchService {
                 result.add(EventResponse.fromEntity(ev));
         }
         return result;
+    }
+
+    /**
+     * Adds date range constraints to the Specification.
+     */
+    private Specification<Event> addDateRangeToSpec(Specification<Event> spec, String startDate, String endDate) {
+        java.time.LocalDate startD = null;
+        java.time.LocalDate endD = null;
+        
+        if (startDate != null && !startDate.isBlank()) {
+            try {
+                startD = java.time.LocalDate.parse(startDate);
+            } catch (Exception ignored) {
+            }
+        }
+        
+        if (endDate != null && !endDate.isBlank()) {
+            try {
+                endD = java.time.LocalDate.parse(endDate);
+            } catch (Exception ignored) {
+            }
+        }
+        
+        if (startD != null || endD != null) {
+            // Create effectively final copies for use in lambda
+            final java.time.LocalDate finalStartD = startD;
+            final java.time.LocalDate finalEndD = endD;
+            
+            Specification<Event> dateSpec = (root, query, cb) -> {
+                if (finalStartD != null && finalEndD == null) {
+                    // Only startDate: search for events on that entire day
+                    return cb.between(
+                        root.get("startTime"),
+                        finalStartD.atStartOfDay(),
+                        finalStartD.atTime(java.time.LocalTime.MAX)
+                    );
+                } else if (finalStartD != null && finalEndD != null) {
+                    // Both dates: search between startDate 00:00:00 and endDate 23:59:59
+                    return cb.between(
+                        root.get("startTime"),
+                        finalStartD.atStartOfDay(),
+                        finalEndD.atTime(java.time.LocalTime.MAX)
+                    );
+                } else if (finalStartD == null && finalEndD != null) {
+                    // Only endDate: search for events up to end of that day
+                    return cb.lessThanOrEqualTo(
+                        root.get("startTime"),
+                        finalEndD.atTime(java.time.LocalTime.MAX)
+                    );
+                }
+                return null;
+            };
+            return spec.and(dateSpec);
+        }
+        return spec;
+    }
+
+    /**
+     * Adds location and organizer filters to the Specification.
+     */
+    private Specification<Event> addLocationAndOrganizerToSpec(Specification<Event> spec, String location, String organizer) {
+        Specification<Event> additionalSpec = Specification.where(null);
+        
+        if (location != null && !location.isBlank()) {
+            additionalSpec = additionalSpec.and((root, query, cb) ->
+                cb.like(
+                    cb.lower(root.get("location")),
+                    "%" + location.toLowerCase() + "%"
+                )
+            );
+        }
+        
+        if (organizer != null && !organizer.isBlank()) {
+            additionalSpec = additionalSpec.and((root, query, cb) ->
+                cb.like(
+                    cb.lower(root.get("organizerName")),
+                    "%" + organizer.toLowerCase() + "%"
+                )
+            );
+        }
+        
+        return spec.and(additionalSpec);
     }
 
     private double cosineSimilarity(double[] a, double[] b) {
