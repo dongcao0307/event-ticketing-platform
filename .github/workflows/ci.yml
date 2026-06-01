@@ -82,6 +82,21 @@ jobs:
           echo "GROQ_API_KEY=dummy_groq_key" >> .env
           echo "PAYMENT_MOMO_IPN_HOST=http://localhost:8085/" >> .env
 
+      - name: Create docker-compose override for MongoDB port
+        run: |
+          cat <<EOF > docker-compose.override.yml
+          version: '3.8'
+          services:
+            mongodb:
+              ports:
+                - "27017:27017"
+          EOF
+
+      - name: Stop pre-installed services on runner
+        run: |
+          sudo systemctl stop mysql || true
+          sudo systemctl stop redis-server || true
+
       - name: Start Databases for Testing
         run: |
           docker compose up -d mysql redis mongodb rabbitmq
@@ -128,6 +143,12 @@ jobs:
             cd - > /dev/null
           done
 
+      - name: Print test reports on failure
+        if: failure()
+        run: |
+          echo "=== Printing Surefire Reports ==="
+          find . -name "*.txt" -path "*/target/surefire-reports/*" -exec cat {} +
+
       - name: Tear down databases
         if: always()
         run: |
@@ -171,6 +192,16 @@ jobs:
           echo "GROQ_API_KEY=dummy_groq_key" >> .env
           echo "PAYMENT_MOMO_IPN_HOST=http://localhost:8085/" >> .env
 
+      - name: Create docker-compose override for MongoDB port
+        run: |
+          cat <<EOF > docker-compose.override.yml
+          version: '3.8'
+          services:
+            mongodb:
+              ports:
+                - "27017:27017"
+          EOF
+
       - name: Build Docker images
         run: |
           docker compose build \
@@ -187,6 +218,11 @@ jobs:
             statistical-service \
             gateway \
             web-app
+
+      - name: Stop pre-installed services on runner
+        run: |
+          sudo systemctl stop mysql || true
+          sudo systemctl stop redis-server || true
 
       - name: Start Databases & Message Queue
         run: |
