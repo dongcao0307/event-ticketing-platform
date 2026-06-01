@@ -179,6 +179,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Generate self-signed SSL certificates for Gateway
+        run: |
+          mkdir -p gateway/certs
+          openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+            -keyout gateway/certs/dev.key \
+            -out gateway/certs/dev.crt \
+            -subj "/CN=localhost" \
+            -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
