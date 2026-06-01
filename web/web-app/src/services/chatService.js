@@ -2,9 +2,10 @@
 // Handles communication with the AI Chat backend endpoint via Axios
 
 import axios from 'axios';
+import { getChatBaseUrl } from '../config/runtime';
 
 const chatApi = axios.create({
-  baseURL: '/api/chat',
+  baseURL: getChatBaseUrl(),
   headers: { 'Content-Type': 'application/json' },
   // LLM calls can take several seconds – use a generous timeout
   timeout: 60_000,
@@ -46,7 +47,7 @@ export const checkChatStatus = async () => {
  */
 export const streamChat = async (message, onChunk, onDone, onError) => {
   try {
-    const response = await fetch('/api/chat/stream', {
+    const response = await fetch(`${getChatBaseUrl()}/stream`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
