@@ -10,24 +10,11 @@ import TicketOrderTable from "../components/account/TicketOrderTable";
 import { getTicketById } from "../services/ticketService";
 import { serviceGetBookingById } from "../services/bookingService";
 import { useEvent } from "../hooks/useEvent";
+import { formatDateLabel, formatTimeLabel, formatDateTimeLabel, parseLocalDateTime } from "../utils/dateUtils";
 
-const formatDateParts = (dateStr) => {
-  if (!dateStr) return "";
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
-};
-
-const formatTimeParts = (dateStr) => {
-  if (!dateStr) return "";
-  const d = new Date(dateStr);
-  return d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-};
-
-const formatDateTime = (dateStr) => {
-  if (!dateStr) return "";
-  const d = new Date(dateStr);
-  return d.toLocaleTimeString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric",  hour: "2-digit", minute: "2-digit" });
-};
+const formatDateParts = formatDateLabel;
+const formatTimeParts = formatTimeLabel;
+const formatDateTime = formatDateTimeLabel;
 
 // Chuyển booking data thành ticket object format
 const convertBookingToTicket = (booking) => {
@@ -39,7 +26,7 @@ const convertBookingToTicket = (booking) => {
   const perf = booking.eventPerformance || {};
   const startTime = formatDateTime(perf.startTime);
   const endTime = formatDateTime(perf.endTime);
-  const orderDate = formatDateParts(booking.createdAt);
+  const orderDate = formatDateParts(parseLocalDateTime(booking.createdAt));
   
   console.log("event:", event);
   console.log("perf:", perf);

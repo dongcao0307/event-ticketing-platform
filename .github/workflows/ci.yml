@@ -7,7 +7,49 @@ on:
     branches: [main, develop, development]
 
 jobs:
-  build:
+  lint:
+    name: Code Lint & Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: maven
+
+      - name: Compile and run SpotBugs on Java microservices
+        run: |
+          for pom in $(find ./services -maxdepth 2 -name "pom.xml" -not -path "./pom.xml"); do
+            dir=$(dirname "$pom")
+            echo "=== SpotBugs: $dir ==="
+            cd "$dir"
+            mvn compile spotbugs:check || true
+            cd - > /dev/null
+          done
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "web/web-app/package-lock.json"
+
+      - name: Install Frontend dependencies
+        run: |
+          cd web/web-app
+          npm ci
+
+      - name: Run ESLint on Web App
+        run: |
+          cd web/web-app
+          npm run lint || true
+
+  build-and-test:
+    name: Build & Unit Test
     runs-on: ubuntu-latest
 
     steps:
@@ -22,48 +64,110 @@ jobs:
 
       - name: Build all microservices
         run: |
-          echo "Building all microservices with JDK 21..."
-          for pom in $(find . -maxdepth 2 -name "pom.xml" -not -path "./pom.xml"); do
+          for pom in $(find ./services -maxdepth 2 -name "pom.xml"); do
             dir=$(dirname "$pom")
-            echo "--- Building: $dir ---"
-            cd "$dir" && mvn clean package -DskipTests && cd - || exit 1
-          done
-
-      - name: Run unit tests
-        run: |
-          echo "Running unit tests..."
-          for pom in $(find ./services -maxdepth 1 -name "*/pom.xml"); do
-            dir=$(dirname "$pom")
-            echo "--- Testing: $dir ---"
-            cd "$dir" && mvn test || true
+            echo "=== Building: $dir ==="
+            cd "$dir"
+            mvn clean package -DskipTests
             cd - > /dev/null
           done
 
-      - name: Upload build artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: jar-files
-          path: "services/*/target/*.jar"
-          retention-days: 7
-
-  code-quality:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: "21"
-          distribution: "temurin"
-          cache: maven
-
-      - name: Compile all modules
+      - name: Create dummy .env file for database setup
         run: |
-          echo "Compiling all modules..."
-          for pom in $(find . -maxdepth 2 -name "pom.xml" -not -path "./pom.xml"); do
-            dir=$(dirname "$pom")
-            echo "--- Compiling: $dir ---"
-            cd "$dir" && mvn compile && cd - || exit 1
+          echo "GEMINI_API_KEY=dummy_key" > .env
+          echo "AWS_S3_BUCKET_NAME=dummy_bucket" >> .env
+          echo "AWS_ACCESS_KEY_ID=dummy_aws_key" >> .env
+          echo "AWS_SECRET_ACCESS_KEY=dummy_aws_secret" >> .env
+          echo "AWS_REGION=us-east-1" >> .env
+          echo "GROQ_API_KEY=dummy_groq_key" >> .env
+          echo "PAYMENT_MOMO_IPN_HOST=http://localhost:8085/" >> .env
+
+      - name: Create docker-compose override for MongoDB port
+        run: |
+          cat <<EOF > docker-compose.override.yml
+          version: '3.8'
+          services:
+            mongodb:
+              ports:
+                - "27017:27017"
+          EOF
+
+      - name: Stop pre-installed services on runner
+        run: |
+          sudo systemctl stop mysql || true
+          sudo systemctl stop redis-server || true
+
+      - name: Start Databases for Testing
+        run: |
+          docker compose up -d mysql redis mongodb rabbitmq
+
+      - name: Wait for databases to be healthy
+        run: |
+          echo "Waiting for MySQL, Redis, MongoDB, and RabbitMQ to be healthy..."
+          for i in {1..30}; do
+            mysql_status=$(docker inspect --format='{{json .State.Health.Status}}' ticketbox-mysql 2>/dev/null || echo "unknown")
+            redis_status=$(docker inspect --format='{{json .State.Health.Status}}' ticketbox-redis 2>/dev/null || echo "unknown")
+            mongo_status=$(docker inspect --format='{{json .State.Health.Status}}' ticketbox-mongodb 2>/dev/null || echo "unknown")
+            rabbit_status=$(docker inspect --format='{{json .State.Health.Status}}' ticketbox-rabbitmq 2>/dev/null || echo "unknown")
+            
+            echo "MySQL: $mysql_status, Redis: $redis_status, MongoDB: $mongo_status, RabbitMQ: $rabbit_status"
+            
+            if [ "$mysql_status" = "\"healthy\"" ] && [ "$redis_status" = "\"healthy\"" ] && [ "$mongo_status" = "\"healthy\"" ] && [ "$rabbit_status" = "\"healthy\"" ]; then
+              echo "All databases are healthy!"
+              exit 0
+            fi
+            sleep 5
           done
+          echo "Timeout waiting for databases to be healthy."
+          exit 1
+
+      - name: Run unit tests
+        env:
+          DB_HOST: localhost
+          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/ticketbox?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+          REDIS_HOST: localhost
+          RABBITMQ_HOST: localhost
+          MONGODB_HOST: localhost
+          AWS_S3_BUCKET_NAME: dummy_bucket
+          AWS_ACCESS_KEY_ID: dummy_aws_key
+          AWS_SECRET_ACCESS_KEY: dummy_aws_secret
+          AWS_REGION: us-east-1
+          GEMINI_API_KEY: dummy_key
+          GROQ_API_KEY: dummy_key
+        run: |
+          for pom in $(find ./services -maxdepth 2 -name "pom.xml"); do
+            dir=$(dirname "$pom")
+            echo "=== Testing: $dir ==="
+            cd "$dir"
+            mvn test
+            cd - > /dev/null
+          done
+
+      - name: Print test reports on failure
+        if: failure()
+        run: |
+          echo "=== Printing Surefire Reports ==="
+          find . -name "*.txt" -path "*/target/surefire-reports/*" -exec cat {} +
+
+      - name: Tear down databases
+        if: always()
+        run: |
+          docker compose down
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "web/web-app/package-lock.json"
+
+      - name: Install Frontend dependencies
+        run: |
+          cd web/web-app
+          npm ci
+
+      - name: Build Web App
+        run: |
+          cd web/web-app
+          npm run build
+

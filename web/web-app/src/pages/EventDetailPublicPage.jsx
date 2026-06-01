@@ -5,6 +5,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { getTrendingEvents, getFavoriteStatus, toggleFavoriteEvent } from '../services/eventService';
 import { getDetailedEventById } from '../services/bookingService';
+import { formatDateLabel, formatTimeLabel } from '../utils/dateUtils';
 
 const EventDetailPublicPage = () => {
   const { id } = useParams();
@@ -45,19 +46,8 @@ const EventDetailPublicPage = () => {
 
   const formatPrice = (p) => (Number(p) || 0).toLocaleString('vi-VN') + 'đ';
 
-  const formatTime = (value) => {
-    if (!value) return '';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '';
-    return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-  };
-
-  const formatDate = (value) => {
-    if (!value) return '';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '';
-    return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  };
+  const formatTime = formatTimeLabel;
+  const formatDate = formatDateLabel;
 
   const isSeatEvent = (event?.category || '').toUpperCase() === 'THEATER';
 
@@ -154,7 +144,10 @@ const EventDetailPublicPage = () => {
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-semibold text-[#26bc71]">
                         {event.performances?.length > 0 
-                          ? `${formatTime(event.performances[0].startTime)} - ${formatTime(event.performances[0].endTime)}, ${formatDate(event.performances[0].startTime)}`
+                          ? (event.performances[0].label && event.performances[0].date
+                              ? `${event.performances[0].label}, ${event.performances[0].date}`
+                              : `${formatTime(event.performances[0].startTime)} - ${formatTime(event.performances[0].endTime)}, ${formatDate(event.performances[0].startTime)}`
+                            )
                           : (event.date || 'Đang cập nhật')}
                       </span>
                       {event.performances?.length > 1 && (

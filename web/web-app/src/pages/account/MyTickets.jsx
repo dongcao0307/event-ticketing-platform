@@ -8,23 +8,12 @@ import { getFeaturedEvents } from "../../services/eventService";
 import { useEvent } from "../../hooks/useEvent";
 import { useToast } from "../../context/ToastContext";
 import { getUserIdFromToken } from "../../utils/tokenUtils";
+import { buildTimeRange, formatDateLabel as dateUtilsFormatDateLabel, parseLocalDateTime } from "../../utils/dateUtils";
 
 const PER_PAGE = 4;
 
-const formatTimeRange = (startTime, endTime) => {
-  if (!startTime || !endTime) return "";
-  const start = new Date(startTime);
-  const end = new Date(endTime);
-  const startLabel = start.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-  const endLabel = end.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-  return `${startLabel} - ${endLabel}`;
-};
-
-const formatDateLabel = (dateStr) => {
-  if (!dateStr) return "";
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
-};
+const formatTimeRange = buildTimeRange;
+const formatDateLabel = dateUtilsFormatDateLabel;
 
 const MyTickets = () => {
   const navigate = useNavigate();
@@ -66,14 +55,14 @@ const MyTickets = () => {
 
           let timeStr = "";
           if (start && end) {
-            const dStart = new Date(start);
-            const dEnd = new Date(end);
-            
-            const formatD = (d) => {
-              return `${d.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}, ${d.toLocaleDateString('vi-VN', {day:'2-digit', month:'short', year:'numeric'})}`;
+            const dStart = parseLocalDateTime(start);
+            const dEnd = parseLocalDateTime(end);
+            if (dStart && dEnd) {
+              const formatD = (d) => {
+                return `${d.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}, ${d.toLocaleDateString('vi-VN', {day:'2-digit', month:'short', year:'numeric'})}`;
+              }
+              timeStr = `${formatD(dStart)} - ${formatD(dEnd)}`;
             }
-
-            timeStr = `${formatD(dStart)} - ${formatD(dEnd)}`;
           }
 
           return {
@@ -115,7 +104,9 @@ const MyTickets = () => {
     if (timeFilter === "upcoming") {
       data = data.filter((t) => {
         if (!t.startDate) return false;
-        const diff = new Date(t.startDate) - now;
+        const dStart = parseLocalDateTime(t.startDate);
+        if (!dStart) return false;
+        const diff = dStart - now;
         return diff > 0 && diff <= 7 * 24 * 60 * 60 * 1000;
       });
     }
@@ -123,7 +114,9 @@ const MyTickets = () => {
     if (timeFilter === "past") {
       data = data.filter((t) => {
         if (!t.endDate) return false;
-        return new Date(t.endDate) < now;
+        const dEnd = parseLocalDateTime(t.endDate);
+        if (!dEnd) return false;
+        return dEnd < now;
       });
     }
 

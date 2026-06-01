@@ -38,6 +38,20 @@ import java.util.stream.Collectors;
 @Configuration
 public class AiToolConfig {
 
+    /**
+     * Stores the exact formatted markdown output produced by the last
+     * {@code searchEventTool} invocation on the current thread.
+     *
+     * <p>Spring AI calls the tool function synchronously (blocking) from the
+     * same thread that called {@code ChatClient.call()}, so a simple
+     * {@link ThreadLocal} is sufficient for thread-safety.
+     *
+     * <p>{@code GroqChatService.chat()} reads this value after the blocking
+     * call returns and uses it to override the LLM's reformatted output,
+     * ensuring that event IDs in deep-links are never swapped by the model.
+     */
+    public static final ThreadLocal<String> LAST_SEARCH_OUTPUT = new ThreadLocal<>();
+
     @Value("${services.event.base-url:http://event-service:8082}")
     private String eventServiceBaseUrl;
 
@@ -261,8 +275,9 @@ public class AiToolConfig {
                     eventsList.add(eventMap);
                 }
 
-                // Generate markdown response with deep links to event booking page
-                return eventsList.stream().map(event -> {
+                // Build the formatted markdown, store it in ThreadLocal so
+                // GroqChatService can recover it and override the LLM response.
+                String formatted = eventsList.stream().map(event -> {
                     String title = (String) event.get("title");
                     String city = (String) event.get("city");
                     if (city == null || city.isBlank()) {
@@ -276,10 +291,14 @@ public class AiToolConfig {
 
                     // Constructing the Markdown CTA block with deep link
                     return String.format(
-                        "- **%s** | 📍 %s | 💵 %s\n  👉 **[🎟️ Xem sơ đồ & Đặt vé ngay](/events/%s)**",
+                        "- **%s** | 📍 %s | 💵 %s\n  👉 **[🎟️ Xem sơ đồ & Đặt vé ngay](/event/%s)**",
                         title, city, price, eventId
                     );
                 }).collect(Collectors.joining("\n\n---\n\n"));
+
+                // Save authoritative tool output for post-processing in GroqChatService
+                AiToolConfig.LAST_SEARCH_OUTPUT.set(formatted);
+                return formatted;
 
             } catch (Exception ex) {
                 return "{\"error\": \"Cannot reach event search service: "
