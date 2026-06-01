@@ -72,6 +72,40 @@ jobs:
             cd - > /dev/null
           done
 
+      - name: Create dummy .env file for database setup
+        run: |
+          echo "GEMINI_API_KEY=dummy_key" > .env
+          echo "AWS_S3_BUCKET_NAME=dummy_bucket" >> .env
+          echo "AWS_ACCESS_KEY_ID=dummy_aws_key" >> .env
+          echo "AWS_SECRET_ACCESS_KEY=dummy_aws_secret" >> .env
+          echo "AWS_REGION=us-east-1" >> .env
+          echo "GROQ_API_KEY=dummy_groq_key" >> .env
+          echo "PAYMENT_MOMO_IPN_HOST=http://localhost:8085/" >> .env
+
+      - name: Start Databases for Testing
+        run: |
+          docker compose up -d mysql redis mongodb rabbitmq
+
+      - name: Wait for databases to be healthy
+        run: |
+          echo "Waiting for MySQL, Redis, MongoDB, and RabbitMQ to be healthy..."
+          for i in {1..30}; do
+            mysql_status=$(docker inspect --format='{{json .State.Health.Status}}' ticketbox-mysql 2>/dev/null || echo "unknown")
+            redis_status=$(docker inspect --format='{{json .State.Health.Status}}' ticketbox-redis 2>/dev/null || echo "unknown")
+            mongo_status=$(docker inspect --format='{{json .State.Health.Status}}' ticketbox-mongodb 2>/dev/null || echo "unknown")
+            rabbit_status=$(docker inspect --format='{{json .State.Health.Status}}' ticketbox-rabbitmq 2>/dev/null || echo "unknown")
+            
+            echo "MySQL: $mysql_status, Redis: $redis_status, MongoDB: $mongo_status, RabbitMQ: $rabbit_status"
+            
+            if [ "$mysql_status" = "\"healthy\"" ] && [ "$redis_status" = "\"healthy\"" ] && [ "$mongo_status" = "\"healthy\"" ] && [ "$rabbit_status" = "\"healthy\"" ]; then
+              echo "All databases are healthy!"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Timeout waiting for databases to be healthy."
+          exit 1
+
       - name: Run unit tests
         run: |
           for pom in $(find ./services -maxdepth 2 -name "pom.xml"); do
@@ -81,6 +115,11 @@ jobs:
             mvn test
             cd - > /dev/null
           done
+
+      - name: Tear down databases
+        if: always()
+        run: |
+          docker compose down
 
       - name: Set up Node.js 20
         uses: actions/setup-node@v4
