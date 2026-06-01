@@ -107,6 +107,18 @@ jobs:
           exit 1
 
       - name: Run unit tests
+        env:
+          DB_HOST: localhost
+          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/ticketbox?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+          REDIS_HOST: localhost
+          RABBITMQ_HOST: localhost
+          MONGODB_HOST: localhost
+          AWS_S3_BUCKET_NAME: dummy_bucket
+          AWS_ACCESS_KEY_ID: dummy_aws_key
+          AWS_SECRET_ACCESS_KEY: dummy_aws_secret
+          AWS_REGION: us-east-1
+          GEMINI_API_KEY: dummy_key
+          GROQ_API_KEY: dummy_key
         run: |
           for pom in $(find ./services -maxdepth 2 -name "pom.xml"); do
             dir=$(dirname "$pom")
