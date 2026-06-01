@@ -279,9 +279,17 @@ jobs:
       - name: Verify API Gateway health
         run: |
           echo "Verifying API Gateway is up and responsive..."
-          curl -k -f -v https://localhost:8443/gateway-health
+          curl -k -f -v https://127.0.0.1:8443/gateway-health
 
       - name: Verify Web App is up
         run: |
           echo "Verifying React Web App is serving traffic..."
-          curl -f -v http://localhost:3001/
+          curl -f -v http://127.0.0.1:3001/
+
+      - name: Print container logs on failure
+        if: failure()
+        run: |
+          echo "=== Printing Gateway Logs ==="
+          docker compose logs gateway || true
+          echo "=== Printing Web App Logs ==="
+          docker compose logs web-app || true
