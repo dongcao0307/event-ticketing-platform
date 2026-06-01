@@ -3,6 +3,12 @@ import React, { useEffect, useRef } from 'react';
 const Turnstile = ({ sitekey, onVerify }) => {
   const containerRef = useRef(null);
   const widgetIdRef = useRef(null);
+  const onVerifyRef = useRef(onVerify);
+
+  // Keep ref updated with latest callback
+  useEffect(() => {
+    onVerifyRef.current = onVerify;
+  }, [onVerify]);
 
   useEffect(() => {
     // 1. Định nghĩa hàm render widget
@@ -12,13 +18,13 @@ const Turnstile = ({ sitekey, onVerify }) => {
           widgetIdRef.current = window.turnstile.render(containerRef.current, {
             sitekey: sitekey,
             callback: (token) => {
-              onVerify(token);
+              onVerifyRef.current(token);
             },
             'expired-callback': () => {
-              onVerify(null);
+              onVerifyRef.current(null);
             },
             'error-callback': () => {
-              onVerify(null);
+              onVerifyRef.current(null);
             },
           });
         } catch (err) {
@@ -69,7 +75,7 @@ const Turnstile = ({ sitekey, onVerify }) => {
         }
       };
     }
-  }, [sitekey, onVerify]);
+  }, [sitekey]);
 
   return (
     <div className="w-full flex justify-center my-3 min-h-[65px]">

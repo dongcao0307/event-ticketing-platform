@@ -18,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -34,6 +35,7 @@ public class SemanticSearchServiceImpl implements SemanticSearchService {
     private final NerService nerService;
 
     @Override
+    @Transactional(readOnly = true)
     @Cacheable(value = "ai_event_searches", key = "{#keyword, #city, #maxPrice, #category}")
     public List<EventResponse> search(
             String keyword,
@@ -54,17 +56,25 @@ public class SemanticSearchServiceImpl implements SemanticSearchService {
         if (keyword != null && !keyword.isBlank()) {
             NerResponse nerResponse = nerService.extractEntities(keyword);
             if (nerResponse != null) {
+                boolean hasAnyFilter = nerResponse.getCategory() != null 
+                        || nerResponse.getCity() != null 
+                        || nerResponse.getMaxPrice() != null;
+
                 if ((category == null || category.isBlank()) && nerResponse.getCategory() != null) {
                     category = nerResponse.getCategory();
                 }
                 if ((city == null || city.isBlank()) && nerResponse.getCity() != null) {
                     city = nerResponse.getCity();
                 }
-                if (nerResponse.getCleanedKeyword() != null && !nerResponse.getCleanedKeyword().isBlank()) {
-                    cleanedKeyword = nerResponse.getCleanedKeyword();
-                }
                 if (maxPrice == null && nerResponse.getMaxPrice() != null) {
                     maxPrice = nerResponse.getMaxPrice().doubleValue();
+                }
+
+                // If NER successfully extracted filters, use its cleanedKeyword (even if empty)
+                if (hasAnyFilter) {
+                    cleanedKeyword = nerResponse.getCleanedKeyword();
+                } else if (nerResponse.getCleanedKeyword() != null && !nerResponse.getCleanedKeyword().isBlank()) {
+                    cleanedKeyword = nerResponse.getCleanedKeyword();
                 }
             }
         }
@@ -82,7 +92,14 @@ public class SemanticSearchServiceImpl implements SemanticSearchService {
         boolean hasKeyword = (cleanedKeyword != null && !cleanedKeyword.isBlank());
 
         // 4) Build Specification using EventSpecification utility (auto-excludes past events)
-        Specification<Event> spec = EventSpecification.buildSearchSpec(cleanedKeyword, cat, city, maxPrice, isFree);
+        // If performing semantic search, do not apply strict SQL LIKE title check on candidates.
+        Specification<Event> spec = EventSpecification.buildSearchSpec(
+                hasKeyword ? null : cleanedKeyword, 
+                cat, 
+                city, 
+                maxPrice, 
+                isFree
+        );
 
         // 5) Handle date range filtering within spec (add date constraints if provided)
         spec = addDateRangeToSpec(spec, startDate, endDate);

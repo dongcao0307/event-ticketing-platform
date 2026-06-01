@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { get, request, getAccessToken } from './apiClient';
+import { formatDateLabel, formatTimeLabel, buildTimeRange } from '../utils/dateUtils';
 
 export const detailedEvents = [
   {
@@ -195,27 +196,7 @@ const toNumber = (value) => {
   return Number.isFinite(num) ? num : 0;
 };
 
-const formatDateLabel = (value) => {
-  if (!value) return '';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-  return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-};
-
-const formatTimeLabel = (value) => {
-  if (!value) return '';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-  return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-};
-
-const buildTimeRange = (startTime, endTime) => {
-  const startLabel = formatTimeLabel(startTime);
-  const endLabel = formatTimeLabel(endTime);
-  if (!startLabel && !endLabel) return '';
-  if (!endLabel) return startLabel;
-  return `${startLabel} - ${endLabel}`;
-};
+// Date formatting helpers now imported from utils/dateUtils
 
 const normalizeTicketType = (ticket) => ({
   id: String(ticket.id),

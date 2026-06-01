@@ -1,6 +1,6 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, MapPin, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Clock, AlertCircle, Ticket, Armchair } from 'lucide-react';
 import { getDetailedEventById, serviceCreateBookingWithItems } from '../services/bookingService';
 import { buildFreeCheckoutPayload, serviceCreateFreeCheckout } from '../services/paymentService';
 import { serviceGetBookedSeats } from '../services/ticketService';
@@ -252,15 +252,30 @@ const SeatSelectionPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#111] flex items-center justify-center text-white">
-        Đang tải sơ đồ chỗ ngồi...
+      <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-900 via-black to-black flex flex-col items-center justify-center text-white">
+        <div className="flex flex-col items-center gap-4 animate-fadeInUp">
+          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-zinc-400 font-medium tracking-wide animate-pulse">Đang tải sơ đồ chỗ ngồi...</p>
+        </div>
       </div>
     );
   }
   if (!event) {
     return (
-      <div className="min-h-screen bg-[#111] flex items-center justify-center text-white">
-        Không tìm thấy sự kiện.
+      <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-900 via-black to-black flex flex-col items-center justify-center text-white p-4">
+        <div className="bg-zinc-950/60 border border-zinc-800/80 backdrop-blur-xl rounded-2xl p-6 max-w-sm text-center shadow-2xl animate-fadeInUp">
+          <div className="w-12 h-12 bg-red-500/10 border border-red-500/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle size={24} />
+          </div>
+          <h3 className="text-lg font-semibold text-white mb-2">Không tìm thấy sự kiện</h3>
+          <p className="text-sm text-zinc-400 mb-6">Sự kiện bạn yêu cầu không tồn tại hoặc đã bị gỡ bỏ.</p>
+          <button
+            onClick={() => navigate('/')}
+            className="px-6 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white font-medium rounded-xl transition text-sm w-full"
+          >
+            Quay lại trang chủ
+          </button>
+        </div>
       </div>
     );
   }
@@ -268,143 +283,219 @@ const SeatSelectionPage = () => {
   const hasZones = zonesGrouped.length > 0;
 
   return (
-    <div className="min-h-screen bg-[#111] flex flex-col">
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-950 via-black to-black flex flex-col text-white">
       {/* Top bar */}
-      <div className="bg-[#1a1a1a] border-b border-gray-800 px-4 py-3 flex items-center justify-between">
+      <div className="sticky top-0 z-30 backdrop-blur-md bg-zinc-950/80 border-b border-zinc-900/60 px-6 py-4 flex items-center justify-between">
         <button
           onClick={() => navigate(`/event/${id}`)}
-          className="flex items-center gap-2 text-white hover:text-[#26bc71] transition text-sm"
+          className="flex items-center gap-2 text-zinc-400 hover:text-white transition-all text-sm font-medium bg-zinc-900/40 hover:bg-zinc-900/80 border border-zinc-800/40 px-3.5 py-1.5 rounded-xl"
         >
-          <ChevronLeft size={18} />
+          <ChevronLeft size={16} />
           <span>Trở về</span>
         </button>
-        <h1 className="text-[#26bc71] font-semibold text-base">Chọn vé</h1>
-        <div className="w-20" />
+        <div className="text-center">
+          <h1 className="text-white font-bold text-lg tracking-wide">Chọn Vé & Ghế</h1>
+          <p className="text-[10px] text-emerald-500 font-bold tracking-widest uppercase mt-0.5">Sơ đồ chỗ ngồi 2D</p>
+        </div>
+        <div className="w-24 opacity-0 pointer-events-none" />
       </div>
 
       {/* Legend */}
-      <div className="bg-[#1a1a1a] px-4 py-2 flex items-center gap-6 justify-center">
-        {LEGEND.map((l) => (
-          <div key={l.label} className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: l.color }} />
-            <span className="text-xs text-gray-400">{l.label}</span>
+      <div className="py-4 px-4 flex items-center justify-center relative z-10">
+        <div className="bg-zinc-900/60 backdrop-blur-md border border-zinc-800/80 rounded-full px-6 py-2.5 flex items-center gap-6 md:gap-8 shadow-lg">
+          <div className="flex items-center gap-2">
+            <span className="w-3.5 h-3.5 rounded border border-emerald-500 bg-emerald-500/10 shadow-[0_0_8px_rgba(16,185,129,0.2)]" />
+            <span className="text-xs text-zinc-300 font-medium">Đang trống</span>
           </div>
-        ))}
+          <div className="flex items-center gap-2">
+            <span className="w-3.5 h-3.5 rounded border border-orange-500 bg-orange-500/85 animate-pulse shadow-[0_0_8px_rgba(249,115,22,0.6)]" />
+            <span className="text-xs text-zinc-300 font-medium">Đang chọn</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3.5 h-3.5 rounded bg-zinc-900/80 border border-zinc-800/80 flex items-center justify-center text-zinc-700 text-[8px] font-bold">×</div>
+            <span className="text-xs text-zinc-400 font-medium">Đã bán</span>
+          </div>
+        </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative z-10">
         {/* Seat map */}
-        <div className="flex-1 overflow-auto p-4 lg:p-8">
+        <div className="flex-1 overflow-auto p-6 lg:p-10">
           {/* Stage */}
-          <div className="mx-auto max-w-2xl mb-8">
-            <div className="bg-gray-600 text-white text-center py-4 rounded-lg text-xl font-bold tracking-widest shadow-lg">
-              STAGE
+          <div className="mx-auto max-w-2xl mb-12 text-center relative">
+            {/* Perspective glow arc */}
+            <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-3/4 h-24 bg-gradient-to-b from-emerald-500/10 to-transparent blur-xl pointer-events-none rounded-t-full" />
+            
+            {/* The Stage bar */}
+            <div className="relative z-10 mx-auto w-4/5">
+              <div className="h-[6px] bg-gradient-to-r from-transparent via-emerald-500 to-transparent rounded-full shadow-[0_0_12px_#10b981]" />
+              <div className="mt-3 text-zinc-400 text-[10px] font-bold tracking-[0.3em] uppercase">SÂN KHẤU / STAGE</div>
             </div>
           </div>
 
           {/* Seat zones */}
-          <div className="mx-auto max-w-2xl space-y-6">
+          <div className="mx-auto max-w-2xl space-y-8 pb-10">
             {zonesGrouped.map((zone) => (
-              <div key={zone.id}>
+              <div key={zone.id} className="bg-zinc-950/40 border border-zinc-900/60 rounded-2xl p-6 backdrop-blur-sm shadow-xl">
                 {/* Zone label shown above every zone */}
-                <div
-                  className="text-center py-2 mb-3 rounded text-white font-bold text-sm tracking-widest"
-                  style={{ backgroundColor: zone.color + '33', border: `1px solid ${zone.color}44` }}
-                >
-                  {zone.label.toUpperCase()}
+                <div className="flex items-center justify-between mb-6 pb-3 border-b border-zinc-900/80">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ backgroundColor: zone.color, boxShadow: `0 0 8px ${zone.color}` }} />
+                    <span className="text-zinc-200 font-bold text-sm tracking-wider uppercase">Phân khu: {zone.label}</span>
+                  </div>
+                  <span className="text-xs font-semibold text-zinc-400 bg-zinc-900/60 border border-zinc-800/40 px-3 py-1 rounded-full">
+                    {formatPrice(zone.price)}
+                  </span>
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-3">
                   {zone.rows.map((row) => (
-                    <div key={row} className="flex items-center gap-2">
-                      <span className="text-gray-400 text-xs w-4 text-center font-mono">{row}</span>
-                      <div className="flex gap-1 flex-wrap justify-center flex-1">
+                    <div key={row} className="flex items-center gap-3">
+                      <span className="text-zinc-500 text-xs w-5 text-center font-bold font-mono">{row}</span>
+                      <div className="flex gap-1.5 flex-wrap justify-center flex-1">
                         {Array.from({ length: zone.seatsPerRow || 22 }, (_, i) => {
                           const seatNum = i + 1;
                           const seatKey = `${row}-${seatNum}`;
-                          const overrideColor = getSeatColor(seatKey);
-                          const zoneColor = zone.color;
+                          const isSelected = selectedSeats.includes(seatKey);
                           const isOccupied = occupiedSet.has(seatKey);
+                          
+                          // Style objects
+                          let seatStyle = {};
+                          let seatClass = "";
+
+                          if (isOccupied) {
+                            seatClass = "w-6 h-6 md:w-7 md:h-7 rounded-md text-[9px] font-semibold flex items-center justify-center bg-zinc-950/60 border border-zinc-900 text-zinc-700 cursor-not-allowed";
+                          } else if (isSelected) {
+                            seatClass = "w-6 h-6 md:w-7 md:h-7 rounded-md text-[9px] font-bold flex items-center justify-center text-white transition-all duration-300 scale-105 active:scale-95";
+                            seatStyle = {
+                              backgroundColor: zone.color,
+                              boxShadow: `0 0 10px ${zone.color}`,
+                              borderColor: zone.color,
+                            };
+                          } else {
+                            // Available seat
+                            seatClass = "w-6 h-6 md:w-7 md:h-7 rounded-md text-[9px] font-medium flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 border";
+                            seatStyle = {
+                              borderColor: `${zone.color}aa`,
+                              color: zone.color,
+                              backgroundColor: `${zone.color}0a`,
+                            };
+                          }
+
                           return (
                             <button
                               key={seatNum}
                               onClick={() => toggleSeat(seatKey)}
                               disabled={isOccupied}
                               title={`Ghế ${row}${seatNum}`}
-                              className="w-5 h-5 rounded-sm text-[8px] font-bold flex items-center justify-center transition-transform hover:scale-110 disabled:cursor-not-allowed"
-                              style={{
-                                backgroundColor: overrideColor || zoneColor,
-                                opacity: isOccupied ? 0.9 : 1,
-                                color: 'white',
+                              className={seatClass}
+                              style={seatStyle}
+                              onMouseEnter={(e) => {
+                                if (!isOccupied && !isSelected) {
+                                  e.currentTarget.style.backgroundColor = `${zone.color}22`;
+                                  e.currentTarget.style.color = '#fff';
+                                  e.currentTarget.style.borderColor = zone.color;
+                                  e.currentTarget.style.boxShadow = `0 0 6px ${zone.color}88`;
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!isOccupied && !isSelected) {
+                                  e.currentTarget.style.backgroundColor = `${zone.color}0a`;
+                                  e.currentTarget.style.color = zone.color;
+                                  e.currentTarget.style.borderColor = `${zone.color}aa`;
+                                  e.currentTarget.style.boxShadow = 'none';
+                                }
                               }}
                             >
-                              {seatNum}
+                              {isOccupied ? '×' : seatNum}
                             </button>
                           );
                         })}
                       </div>
-                      <span className="text-gray-400 text-xs w-4 text-center font-mono">{row}</span>
+                      <span className="text-zinc-500 text-xs w-5 text-center font-bold font-mono">{row}</span>
                     </div>
                   ))}
                 </div>
               </div>
             ))}
-
           </div>
         </div>
 
         {/* Right info panel */}
-        <div className="w-72 bg-[#1a1a1a] border-l border-gray-800 flex flex-col">
-          <div className="p-4 border-b border-gray-800">
-            <h2 className="text-white font-semibold text-sm leading-snug">{event.title}</h2>
-            {activeShowtime && (
-              <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-400">
-                <Clock size={12} />
-                <span>{activeShowtime.label}, {activeShowtime.date}</span>
+        <div className="w-80 bg-zinc-950/70 border-l border-zinc-900 backdrop-blur-xl flex flex-col shadow-2xl relative z-20">
+          {/* Header context */}
+          <div className="p-5 border-b border-zinc-900">
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 tracking-wider uppercase inline-block mb-3">
+              Thông tin sự kiện
+            </span>
+            <h2 className="text-white font-bold text-base leading-snug tracking-tight mb-3">
+              {event.title}
+            </h2>
+            
+            <div className="space-y-2 mt-2">
+              {activeShowtime && (
+                <div className="flex items-center gap-2 text-xs text-zinc-400">
+                  <Clock size={14} className="text-emerald-500" />
+                  <span className="font-medium">{activeShowtime.label}, {activeShowtime.date}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2 text-xs text-zinc-400">
+                <MapPin size={14} className="text-emerald-500" />
+                <span className="font-medium line-clamp-2">{event.location}</span>
               </div>
-            )}
-            <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-400">
-              <MapPin size={12} />
-              <span>{event.location}</span>
             </div>
           </div>
 
           {/* Ticket zone pricing */}
-          <div className="p-4 border-b border-gray-800">
-            <div className="text-xs text-gray-400 font-semibold mb-3 uppercase tracking-wide">Giá vé</div>
+          <div className="p-5 border-b border-zinc-900 bg-zinc-950/40">
+            <div className="text-xs text-zinc-400 font-semibold mb-3 uppercase tracking-wider flex items-center gap-2">
+              <Ticket size={14} className="text-emerald-500" />
+              <span>Bảng Giá Theo Phân Khu</span>
+            </div>
             {!hasZones && (
-              <div className="text-xs text-gray-500">Chưa có cấu hình chỗ ngồi.</div>
+              <div className="text-xs text-zinc-500 italic">Chưa có cấu hình chỗ ngồi.</div>
             )}
-            {zonesGrouped.map((zone) => (
-              <div key={zone.id} className="flex items-center justify-between py-2 border-b border-gray-800 last:border-0">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: zone.color }} />
-                  <span className="text-xs text-gray-300">{zone.label}</span>
+            <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+              {zonesGrouped.map((zone) => (
+                <div key={zone.id} className="flex items-center justify-between py-2 border-b border-zinc-900/50 last:border-0">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: zone.color, boxShadow: `0 0 6px ${zone.color}` }} />
+                    <span className="text-xs text-zinc-300 font-medium">{zone.label}</span>
+                  </div>
+                  <span className="text-xs font-semibold text-white">{formatPrice(zone.price)}</span>
                 </div>
-                <span className="text-xs font-semibold text-white">{formatPrice(zone.price)}</span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
           {/* Selected seats */}
-          <div className="p-4 flex-1 overflow-auto">
-            <div className="text-xs text-gray-400 font-semibold mb-3 uppercase tracking-wide">
-              Ghế đã chọn ({selectedSeats.length})
+          <div className="p-5 flex-1 overflow-auto bg-zinc-950/20">
+            <div className="text-xs text-zinc-400 font-semibold mb-4 uppercase tracking-wider flex items-center gap-2">
+              <Armchair size={14} className="text-emerald-500" />
+              <span>Ghế Đang Chọn ({selectedSeats.length})</span>
             </div>
             {selectedSeats.length === 0 ? (
-              <p className="text-xs text-gray-600 italic">Chưa chọn ghế nào</p>
+              <div className="flex flex-col items-center justify-center py-8 text-center bg-zinc-900/30 border border-zinc-900/80 border-dashed rounded-xl">
+                <Armchair size={24} className="text-zinc-700 mb-2" />
+                <p className="text-xs text-zinc-600 font-medium">Vui lòng chọn ghế trên sơ đồ</p>
+              </div>
             ) : (
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-2">
                 {selectedSeats.map((s) => {
                   const row = s.split('-')[0];
                   const zone = getZoneForRow(row);
                   return (
                     <span
                       key={s}
-                      className="text-xs px-2 py-0.5 rounded-full text-white font-medium"
-                      style={{ backgroundColor: zone?.color || '#26bc71' }}
+                      className="text-xs px-2.5 py-1 rounded-lg text-white font-semibold flex items-center gap-1 border transition-all hover:scale-105"
+                      style={{
+                        backgroundColor: zone?.color ? `${zone.color}20` : '#26bc7120',
+                        borderColor: zone?.color || '#26bc71',
+                        color: zone?.color || '#26bc71',
+                        boxShadow: `0 2px 8px ${zone?.color ? zone.color : '#26bc71'}15`,
+                      }}
                     >
-                      {s}
+                      <span>Ghế {s}</span>
                     </span>
                   );
                 })}
@@ -413,26 +504,41 @@ const SeatSelectionPage = () => {
           </div>
 
           {/* Bottom total + continue */}
-          <div className="p-4 border-t border-gray-800">
+          <div className="p-5 border-t border-zinc-900 bg-zinc-950/60 backdrop-blur-md">
             {submitError && (
-              <div className="mb-3 text-xs text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
-                {submitError}
+              <div className="mb-4 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-3.5 py-2.5 flex items-start gap-2 animate-fadeInUp">
+                <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
+                <span>{submitError}</span>
               </div>
             )}
+            
             {selectedSeats.length > 0 && (
-              <div className="flex items-center justify-between mb-3 text-sm">
-                <span className="text-gray-400">Tổng cộng</span>
-                <span className="text-white font-bold text-base">{formatPrice(totalPrice)}</span>
+              <div className="flex items-center justify-between mb-4 bg-zinc-900/40 border border-zinc-900 px-3.5 py-2.5 rounded-xl">
+                <span className="text-xs text-zinc-400 font-medium">Tổng tiền thanh toán</span>
+                <span className="text-white font-extrabold text-base tracking-tight">{formatPrice(totalPrice)}</span>
               </div>
             )}
+            
             <button
               onClick={handleContinue}
               disabled={selectedSeats.length === 0 || submitting}
-              className="w-full py-3 bg-[#26bc71] text-white font-bold rounded-xl hover:bg-[#1fa86a] transition text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold rounded-xl transition duration-300 text-sm disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(16,185,129,0.2)] hover:shadow-[0_4px_25px_rgba(16,185,129,0.4)] active:scale-[0.98]"
             >
-              {submitting ? 'Dang tao don hang...' : 'Tiep tuc thanh toan'}
-              <ChevronRight size={16} />
+              {submitting ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Đang xử lý đặt vé...</span>
+                </div>
+              ) : (
+                <>
+                  <span>Tiếp tục thanh toán</span>
+                  <ChevronRight size={16} />
+                </>
+              )}
             </button>
+            <p className="text-[10px] text-zinc-500 text-center mt-3 font-medium">
+              Bằng cách tiếp tục, bạn đồng ý với các Điều khoản mua vé.
+            </p>
           </div>
         </div>
       </div>

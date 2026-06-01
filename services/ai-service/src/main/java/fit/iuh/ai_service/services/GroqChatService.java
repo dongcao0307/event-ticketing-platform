@@ -67,6 +67,26 @@ public class GroqChatService implements ChatService {
                 """.formatted(formattedDateTime);
     }
 
+    // ── Keyword lists ────────────────────────────────────────────────────────────
+
+    /** Event categories / music genres that always imply a search query. */
+    private static final java.util.Set<String> EVENT_CATEGORY_KEYWORDS = java.util.Set.of(
+        "âm nhạc", "am nhac", "lễ hội", "le hoi", "festival", "concert", "show",
+        "nhạc", "nhac", "kịch", "kich", "nghệ thuật", "nghe thuat", "thể thao",
+        "the thao", "phim", "hài", "hai", "rock", "pop", "rap", "edm", "jazz",
+        "opera", "ballet", "múa", "mua", "triển lãm", "trien lam", "hội chợ",
+        "hoi cho", "hot", "trending", "nổi bật", "noi bat", "hay", "đặc sắc", "dac sac"
+    );
+
+    /** Vietnamese city names — always a functional (search) indicator. */
+    private static final java.util.Set<String> CITY_KEYWORDS = java.util.Set.of(
+        "hà nội", "ha noi", "hồ chí minh", "ho chi minh", "hcm", "tp.hcm", "sài gòn", "sai gon",
+        "đà nẵng", "da nang", "hải phòng", "hai phong", "cần thơ", "can tho",
+        "nha trang", "huế", "hue", "đà lạt", "da lat", "vũng tàu", "vung tau",
+        "bình dương", "binh duong", "đồng nai", "dong nai", "an giang", "quảng ninh",
+        "quang ninh", "thanh hóa", "thanh hoa"
+    );
+
     private boolean isGeneralQuery(String message) {
         if (message == null || message.isBlank()) {
             return true;
@@ -94,8 +114,6 @@ public class GroqChatService implements ChatService {
             trimmed.contains("may gio") || 
             trimmed.contains("bạn là ai") || 
             trimmed.contains("ban la ai") || 
-            trimmed.contains("ai đó") || 
-            trimmed.contains("ai do") || 
             trimmed.contains("tên gì") || 
             trimmed.contains("ten gi") || 
             trimmed.contains("làm được gì") || 
@@ -104,11 +122,20 @@ public class GroqChatService implements ChatService {
             trimmed.contains("hôm nay thế nào")) {
             return true;
         }
+
+        // 3. Event category keywords always indicate a search query (not general)
+        for (String kw : EVENT_CATEGORY_KEYWORDS) {
+            if (trimmed.contains(kw)) return false;
+        }
+
+        // 4. City name keywords always indicate a search query
+        for (String city : CITY_KEYWORDS) {
+            if (trimmed.contains(city)) return false;
+        }
         
-        // 3. Catch very short inputs (e.g. less than 5 words)
+        // 5. Catch very short inputs (e.g. less than 5 words) without functional keywords
         String[] words = trimmed.split("\\s+");
         if (words.length < 5) {
-            // Functional keywords: "tìm", "sự kiện", "vé", "mua", "hủy", "hoàn", "đổi", "trả", "show", "concert", "lịch"
             boolean hasFunctionalKeyword = trimmed.contains("tìm") || 
                                            trimmed.contains("tim") ||
                                            trimmed.contains("sự kiện") || 
@@ -124,16 +151,57 @@ public class GroqChatService implements ChatService {
                                            trimmed.contains("doi") ||
                                            trimmed.contains("trả") || 
                                            trimmed.contains("tra") ||
-                                           trimmed.contains("show") || 
-                                           trimmed.contains("concert") || 
                                            trimmed.contains("lịch") || 
-                                           trimmed.contains("lich");
+                                           trimmed.contains("lich") ||
+                                           trimmed.contains("có không") ||
+                                           trimmed.contains("nào");
             if (!hasFunctionalKeyword) {
                 return true;
             }
         }
         
         return false;
+    }
+
+    /**
+     * Strip leaked raw tool-call JSON fragments that some local models (Ollama)
+     * accidentally include in text content instead of the proper function-call channel.
+     *
+     * <p>Examples of strings we want to remove:
+     * <pre>
+     *   {"name": "searchEventTool", "arguments": {...}}
+     *   ronics\n{"name": ...}
+     *   </tool_call>
+     * </pre>
+     */
+    private String sanitizeResponse(String response) {
+        if (response == null || response.isBlank()) {
+            return "Xin lỗi, tôi chưa tìm được thông tin phù hợp. Bạn có thể thử lại với từ khóa khác không?";
+        }
+
+        // Detect and remove raw tool-call JSON blocks like {"name": "...", "arguments": ...}
+        boolean hasToolCallLeak = response.contains("\"name\":") &&
+                (response.contains("searchEventTool") || response.contains("getTicketPolicyTool") ||
+                 response.contains("\"arguments\":"));
+        boolean hasToolCallTag = response.contains("</tool_call>") || response.contains("<tool_call>");
+        boolean hasRawJson = response.trim().startsWith("{") && response.contains("\"name\":");
+
+        if (hasToolCallLeak || hasToolCallTag || hasRawJson) {
+            // Attempt to strip the JSON block — remove everything from the first '{' that looks like a tool call
+            String cleaned = response
+                .replaceAll("(?s)\\{[^{}]*\"name\"\\s*:\\s*\"(?:searchEventTool|getTicketPolicyTool)[^{}]*(?:\\{[^{}]*\\}[^{}]*)*\\}", "")
+                .replaceAll("(?s)<tool_call>[^<]*</tool_call>", "")
+                .replaceAll("ronics", "")
+                .trim();
+
+            if (cleaned.isBlank() || cleaned.length() < 10) {
+                // The entire response was a tool call leak — return a friendly placeholder
+                return "Xin lỗi, có lỗi xảy ra khi xử lý yêu cầu. Vui lòng thử lại nhé!";
+            }
+            return cleaned;
+        }
+
+        return response;
     }
 
     @Override
@@ -144,19 +212,26 @@ public class GroqChatService implements ChatService {
         if (!isGeneralQuery(userMessage)) {
             spec = spec.functions("searchEventTool", "getTicketPolicyTool");
         }
-        return spec.call().content();
+        String raw = spec.call().content();
+        return sanitizeResponse(raw);
     }
 
     @Override
     public reactor.core.publisher.Flux<String> streamChat(String userMessage) {
         try {
-            var spec = chatClient.prompt()
-                    .system(getSystemPrompt())
-                    .user(userMessage);
             if (!isGeneralQuery(userMessage)) {
-                spec = spec.functions("searchEventTool", "getTicketPolicyTool");
+                // If it is a functional query that requires tools, Ollama/Spring AI streaming with functions is buggy.
+                // We fallback to synchronous call and emit the complete result as a single Flux chunk.
+                String fullResponse = chat(userMessage);
+                return reactor.core.publisher.Flux.just(fullResponse);
             }
-            return spec.stream().content();
+
+            // For general queries (greetings, simple talks), we can stream safely.
+            return chatClient.prompt()
+                    .system(getSystemPrompt())
+                    .user(userMessage)
+                    .stream()
+                    .content();
         } catch (Exception e) {
             return reactor.core.publisher.Flux.error(e);
         }

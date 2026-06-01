@@ -65,7 +65,7 @@ function parseMessageParts(text) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AiMessageContent — renders text + deep-link CTA buttons
+// AiMessageContent — renders text + deep-link CTA buttons & rich event cards
 // ─────────────────────────────────────────────────────────────────────────────
 
 function renderFormattedText(text) {
@@ -80,45 +80,193 @@ function renderFormattedText(text) {
   });
 }
 
-function AiMessageContent({ text }) {
-  const parts = parseMessageParts(text);
+function EventCardBlock({ title, location, price, linkLabel, linkUrl }) {
+  const eventIdMatch = linkUrl.match(/\/events?\/(\d+)/);
+  let hrefValue = linkUrl;
+  if (eventIdMatch) {
+    hrefValue = hrefValue.replace(/\/events\/(\d+)/, '/event/$1');
+  }
+
+  const cleanLabel = linkLabel.replace(/^[🎟️👉🎫\s]+/, '');
 
   return (
-    <span className="block">
-      {parts.map((part, i) => {
-        if (part.type === 'url') {
-          // Extract eventId from deep link (supports /event/id and /events/id)
-          const eventIdMatch = part.value.match(/\/events?\/(\d+)/);
+    <div className="my-2.5 overflow-hidden rounded-xl bg-zinc-950/40 border border-zinc-800/80 hover:border-emerald-500/30 hover:bg-zinc-900/60 transition-all duration-300 shadow-md group">
+      <div className="h-1 w-full bg-gradient-to-r from-emerald-500 to-teal-500 opacity-80" />
+      <div className="p-3">
+        <h4 className="text-xs font-bold text-white leading-snug mb-2 group-hover:text-emerald-400 transition-colors line-clamp-2">
+          {title}
+        </h4>
+        <div className="space-y-1 mb-3">
+          <div className="flex items-center gap-1.5 text-[11px] text-zinc-400">
+            <span className="text-emerald-400">📍</span>
+            <span className="truncate">{location}</span>
+          </div>
+          {price && (
+            <div className="flex items-center gap-1.5 text-[11px] text-zinc-400">
+              <span className="text-emerald-400">💵</span>
+              <span className="font-semibold text-emerald-400/90">{price}</span>
+            </div>
+          )}
+        </div>
+        <a
+          href={hrefValue}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="
+            w-full py-1.5 px-3 rounded-lg text-center text-xs font-bold
+            bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500
+            text-white transition-all duration-300
+            shadow-md hover:shadow-emerald-950/20 active:scale-[0.97]
+            flex items-center justify-center gap-1.5
+          "
+        >
+          <span>{cleanLabel || 'Xem chi tiết & Đặt vé'}</span>
+          <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+        </a>
+      </div>
+    </div>
+  );
+}
 
-          let hrefValue = part.value;
-          if (eventIdMatch) {
-            hrefValue = hrefValue.replace(/\/events\/(\d+)/, '/event/$1');
-          }
+function parseAiMessage(text) {
+  const lines = text.split('\n');
+  const blocks = [];
+  let i = 0;
 
-          let label = part.label;
-          if (!label) {
-            label = eventIdMatch
-              ? `🎫 Xem chi tiết & Đặt vé – Sự kiện #${eventIdMatch[1]}`
-              : '🎫 Xem chi tiết & Đặt vé';
-          }
+  while (i < lines.length) {
+    const line = lines[i];
+    const eventMatch = line.match(/-\s+\*\*([^*]+)\*\*\s*\|\s*📍\s*([^|\n]+)(?:\|\s*💵\s*([^|\n]+))?/);
 
+    if (eventMatch) {
+      const title = eventMatch[1].trim();
+      const location = eventMatch[2].trim();
+      const price = eventMatch[3] ? eventMatch[3].trim() : '';
+
+      let linkLabel = 'Xem chi tiết';
+      let linkUrl = '#';
+      if (i + 1 < lines.length) {
+        const nextLine = lines[i + 1];
+        const linkMatch = nextLine.match(/(?:👉|🎟️)?\s*(?:\*\*)?\[([^\]]+)\]\(([^)]+)\)(?:\*\*)?/);
+        if (linkMatch) {
+          linkLabel = linkMatch[1].trim();
+          linkUrl = linkMatch[2].trim();
+          i++;
+        }
+      }
+
+      blocks.push({
+        type: 'event_card',
+        title,
+        location,
+        price,
+        linkLabel,
+        linkUrl
+      });
+    } else {
+      blocks.push({
+        type: 'text',
+        value: line
+      });
+    }
+    i++;
+  }
+
+  const groupedBlocks = [];
+  let currentTextBlock = null;
+
+  for (let idx = 0; idx < blocks.length; idx++) {
+    const block = blocks[idx];
+    if (block.type === 'text') {
+      const val = block.value.trim();
+      if (val === '---' || val === '') {
+        const prevIsCard = idx > 0 && blocks[idx - 1].type === 'event_card';
+        const nextIsCard = idx < blocks.length - 1 && blocks[idx + 1].type === 'event_card';
+        if (prevIsCard || nextIsCard) {
+          continue;
+        }
+      }
+      
+      if (currentTextBlock === null) {
+        currentTextBlock = { type: 'text', value: block.value };
+        groupedBlocks.push(currentTextBlock);
+      } else {
+        currentTextBlock.value += '\n' + block.value;
+      }
+    } else {
+      currentTextBlock = null;
+      groupedBlocks.push(block);
+    }
+  }
+
+  return groupedBlocks;
+}
+
+function renderTextWithInlineLinks(text) {
+  const parts = parseMessageParts(text);
+  return parts.map((part, i) => {
+    if (part.type === 'url') {
+      const eventIdMatch = part.value.match(/\/events?\/(\d+)/);
+
+      let hrefValue = part.value;
+      if (eventIdMatch) {
+        hrefValue = hrefValue.replace(/\/events\/(\d+)/, '/event/$1');
+      }
+
+      let label = part.label;
+      if (!label) {
+        label = eventIdMatch
+          ? `Xem chi tiết #${eventIdMatch[1]}`
+          : 'Xem chi tiết';
+      }
+
+      return (
+        <a
+          key={i}
+          href={hrefValue}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-0.5 text-emerald-400 hover:text-emerald-300 font-bold underline transition-colors mx-1"
+        >
+          <span>{label}</span>
+          <svg className="w-3.5 h-3.5 inline shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        </a>
+      );
+    }
+
+    return (
+      <span key={i}>
+        {renderFormattedText(part.value)}
+      </span>
+    );
+  });
+}
+
+function AiMessageContent({ text }) {
+  const blocks = parseAiMessage(text);
+
+  return (
+    <span className="block space-y-1">
+      {blocks.map((block, index) => {
+        if (block.type === 'event_card') {
           return (
-            <a
-              key={i}
-              href={hrefValue}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block mt-2 px-4 py-2 bg-[#26bc71] hover:bg-[#1fa05f] active:scale-95 text-white rounded-md font-bold text-center w-full text-xs leading-snug transition-all duration-200 shadow-md shadow-green-900/30"
-            >
-              {label}
-            </a>
+            <EventCardBlock
+              key={index}
+              title={block.title}
+              location={block.location}
+              price={block.price}
+              linkLabel={block.linkLabel}
+              linkUrl={block.linkUrl}
+            />
           );
         }
 
-        // Render plain text, preserving newlines and formatting bold text
         return (
-          <span key={i} className="whitespace-pre-wrap">
-            {renderFormattedText(part.value)}
+          <span key={index} className="block whitespace-pre-wrap">
+            {renderTextWithInlineLinks(block.value)}
           </span>
         );
       })}
@@ -134,17 +282,17 @@ function TypingIndicator() {
   return (
     <div className="flex items-end gap-2 mb-3" aria-label="Đang gõ..." aria-live="polite">
       {/* Bot avatar */}
-      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#26bc71] to-emerald-600 flex items-center justify-center flex-shrink-0 shadow-md">
+      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0 shadow-md">
         <span className="text-xs" role="img" aria-label="bot">🤖</span>
       </div>
 
       {/* Bubble */}
-      <div className="bg-[#252525] border border-white/10 rounded-2xl rounded-bl-sm px-4 py-3">
+      <div className="bg-zinc-900/50 border border-zinc-800/80 rounded-2xl rounded-bl-none px-4 py-3">
         <div className="flex gap-1.5 items-center h-4">
           {[0, 150, 300].map((delay) => (
             <span
               key={delay}
-              className="w-2 h-2 bg-[#26bc71] rounded-full animate-bounce"
+              className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce"
               style={{ animationDelay: `${delay}ms`, animationDuration: '0.9s' }}
             />
           ))}
@@ -167,7 +315,7 @@ function MessageBubble({ message }) {
     >
       {/* Bot avatar — only for AI messages */}
       {!isUser && (
-        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#26bc71] to-emerald-600 flex items-center justify-center flex-shrink-0 shadow-md self-end">
+        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0 shadow-md self-end">
           <span className="text-xs" role="img" aria-label="bot">🤖</span>
         </div>
       )}
@@ -175,10 +323,10 @@ function MessageBubble({ message }) {
       {/* Bubble */}
       <div
         className={`
-          max-w-[82%] px-3 py-2.5 text-sm leading-relaxed rounded-2xl break-words
+          max-w-[80%] px-3.5 py-2.5 text-sm leading-relaxed rounded-2xl break-words shadow-sm transition-all duration-200
           ${isUser
-            ? 'bg-gradient-to-br from-[#26bc71] to-emerald-600 text-white rounded-br-sm shadow-lg shadow-green-900/30'
-            : 'bg-[#252525] border border-white/10 text-gray-200 rounded-bl-sm'
+            ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-br-none shadow-md shadow-emerald-950/15'
+            : 'bg-zinc-900/50 border border-zinc-800/80 text-zinc-100 rounded-bl-none shadow-sm'
           }
         `}
       >
@@ -191,6 +339,7 @@ function MessageBubble({ message }) {
     </div>
   );
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ChatbotWidget — main component
@@ -330,36 +479,36 @@ export default function ChatbotWidget() {
         aria-label="TicketBox AI Chatbot"
         className={`
           fixed bottom-24 right-6 z-50
-          w-80 flex flex-col
-          bg-[#1a1a1a] border border-white/10 rounded-2xl shadow-2xl
+          w-[340px] sm:w-[380px] flex flex-col
+          bg-zinc-950/90 border border-zinc-800/80 rounded-2xl shadow-[0_12px_45px_rgba(0,0,0,0.7)] backdrop-blur-xl
           transition-all duration-300 ease-out origin-bottom-right
           ${isOpen
             ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 scale-95 translate-y-3 pointer-events-none'
           }
         `}
-        style={{ height: '26rem' }}
+        style={{ height: '520px' }}
       >
         {/* ── Header ──────────────────────────────────────────────────── */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10 bg-gradient-to-r from-[#1a1a1a] to-[#1a2a1e] rounded-t-2xl flex-shrink-0">
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-zinc-850/60 bg-gradient-to-r from-zinc-950 to-zinc-900/60 rounded-t-2xl flex-shrink-0">
           {/* Bot avatar with pulse */}
           <div className="relative flex-shrink-0">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#26bc71] to-emerald-600 flex items-center justify-center shadow-lg shadow-green-900/40">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
               <span className="text-base" role="img" aria-label="bot">🤖</span>
             </div>
-            <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[#1a1a1a] ${isOnline ? 'bg-green-400' : 'bg-red-500'}`} />
+            <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-zinc-950 ${isOnline ? 'bg-emerald-400' : 'bg-red-500'}`} />
           </div>
 
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-white leading-tight">TicketBox AI</p>
-            <p className={`text-[11px] leading-tight ${isOnline ? 'text-green-400' : 'text-red-400'}`}>
+            <p className={`text-[10px] font-medium leading-tight ${isOnline ? 'text-emerald-400' : 'text-red-400'}`}>
               {isLoading ? '● Đang xử lý...' : isOnline ? '● Trực tuyến' : '● Ngoại tuyến'}
             </p>
           </div>
 
           <button
             onClick={() => setIsOpen(false)}
-            className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+            className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-900/60 rounded-lg transition-colors border border-zinc-850/40"
             aria-label="Đóng chatbot"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -370,8 +519,8 @@ export default function ChatbotWidget() {
 
         {/* ── Messages ────────────────────────────────────────────────── */}
         <div
-          className="flex-1 overflow-y-auto px-3 py-3"
-          style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}
+          className="flex-1 overflow-y-auto px-4 py-4 space-y-3.5"
+          style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.08) transparent' }}
         >
           {messages.map((msg) => (
             <MessageBubble key={msg.id} message={msg} />
@@ -382,19 +531,21 @@ export default function ChatbotWidget() {
 
           {/* Quick-start questions — only shown on fresh conversation */}
           {showQuickQuestions && (
-            <div className="mt-1 space-y-1.5">
-              <p className="text-[11px] text-gray-500 px-1 font-medium">💡 Gợi ý câu hỏi</p>
+            <div className="mt-4 space-y-2 px-1 animate-fadeInUp">
+              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                💡 Gợi ý câu hỏi
+              </p>
               {QUICK_QUESTIONS.map((q) => (
                 <button
                   key={q}
                   onClick={() => handleQuickQuestion(q)}
                   className="
-                    w-full text-left text-xs text-green-300
-                    border border-green-500/25 bg-green-500/8
-                    hover:bg-green-500/20 hover:border-green-500/50
-                    px-3 py-2 rounded-xl
+                    w-full text-left text-xs text-zinc-300 hover:text-emerald-400
+                    border border-zinc-800 bg-zinc-900/40 hover:bg-zinc-900/80 hover:border-emerald-500/30
+                    px-4 py-3 rounded-xl
                     transition-all duration-200
-                    leading-snug
+                    leading-snug shadow-sm hover:shadow-[0_2px_12px_rgba(16,185,129,0.05)]
                   "
                 >
                   {q}
@@ -408,8 +559,8 @@ export default function ChatbotWidget() {
         </div>
 
         {/* ── Input area ──────────────────────────────────────────────── */}
-        <div className="flex-shrink-0 px-3 pb-3 pt-2 border-t border-white/10">
-          <div className="flex items-center gap-2 bg-[#252525] border border-white/10 rounded-xl px-3 py-2 focus-within:border-[#26bc71]/50 transition-colors duration-200">
+        <div className="flex-shrink-0 px-4 pb-4 pt-2 border-t border-zinc-900 bg-zinc-950/40">
+          <div className="flex items-center gap-2 bg-zinc-900/50 border border-zinc-800/80 rounded-xl px-3.5 py-2 focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20 transition-all duration-200">
             <input
               ref={inputRef}
               id="chatbot-input"
@@ -420,7 +571,7 @@ export default function ChatbotWidget() {
               placeholder={isOnline ? "Nhập câu hỏi..." : "Trợ lý AI đang ngoại tuyến..."}
               disabled={isLoading || !isOnline}
               autoComplete="off"
-              className="flex-1 bg-transparent text-sm text-white placeholder-gray-500 outline-none disabled:opacity-40 min-w-0"
+              className="flex-1 bg-transparent text-sm text-zinc-100 placeholder-zinc-500 outline-none disabled:opacity-40 min-w-0"
               aria-label="Nhập tin nhắn"
             />
 
@@ -430,31 +581,31 @@ export default function ChatbotWidget() {
               disabled={isLoading || !isOnline || !inputValue.trim()}
               className="
                 w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-lg
-                bg-[#26bc71] hover:bg-[#1fa05f]
-                disabled:opacity-35 disabled:cursor-not-allowed
+                bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500
+                disabled:opacity-20 disabled:cursor-not-allowed
                 active:scale-95 transition-all duration-200
-                shadow-sm shadow-green-900/40
+                shadow-sm shadow-emerald-950/40 text-white
               "
               aria-label="Gửi tin nhắn"
             >
               {isLoading ? (
                 /* Spinner */
-                <svg className="w-3.5 h-3.5 text-white animate-spin" fill="none" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-white animate-spin" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                 </svg>
               ) : (
                 /* Paper-plane icon */
-                <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2}
                     d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                 </svg>
               )}
             </button>
           </div>
 
-          <p className="text-center text-[10px] text-gray-600 mt-1.5 select-none">
-            Powered by <span className="text-gray-500">Ollama (Qwen 2.5 7B)</span> · TicketBox AI
+          <p className="text-center text-[9px] text-zinc-600 mt-2 select-none font-medium">
+            Powered by <span className="text-zinc-500">Ollama (Qwen 2.5 7B)</span> · TicketBox AI
           </p>
         </div>
       </div>
@@ -472,8 +623,8 @@ export default function ChatbotWidget() {
           shadow-2xl transition-all duration-300 ease-out
           focus:outline-none focus:ring-2 focus:ring-[#26bc71] focus:ring-offset-2 focus:ring-offset-transparent
           ${isOpen
-            ? 'bg-[#252525] border border-white/20 shadow-black/30'
-            : 'bg-gradient-to-br from-[#26bc71] to-emerald-600 hover:scale-110 hover:shadow-green-500/50 shadow-green-900/50'
+            ? 'bg-zinc-900 border border-zinc-800 shadow-lg'
+            : 'bg-gradient-to-br from-emerald-500 to-teal-600 hover:scale-110 hover:shadow-emerald-500/30 shadow-[0_4px_20px_rgba(16,185,129,0.3)]'
           }
         `}
         aria-label={isOpen ? 'Đóng chatbot' : 'Mở chatbot TicketBox AI'}
