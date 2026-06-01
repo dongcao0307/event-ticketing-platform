@@ -4,6 +4,8 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.stereotype.Service;
+import fit.iuh.ai_service.config.AiToolConfig;
+
 
 /**
  * GroqChatService — Spring AI ChatClient backed by the Groq OpenAI-compatible
@@ -204,8 +206,57 @@ public class GroqChatService implements ChatService {
         return response;
     }
 
+    /**
+     * After the LLM generates its response, replace any event-card section it
+     * wrote with the exact markdown captured in {@link AiToolConfig#LAST_SEARCH_OUTPUT}.
+     *
+     * <p>Local Ollama models often reorder or reformat the tool result and
+     * accidentally swap event IDs in deep-links. By overriding the event
+     * section with our own formatted output we guarantee correct links.
+     *
+     * <p>Strategy:
+     * <ol>
+     *   <li>If no tool was called (ThreadLocal is empty), return {@code response} as-is.</li>
+     *   <li>Extract the LLM's intro text (everything before the first event bullet).</li>
+     *   <li>Append the authoritative tool output after the intro.</li>
+     * </ol>
+     */
+    private String restoreSearchOutput(String response) {
+        String toolOutput = AiToolConfig.LAST_SEARCH_OUTPUT.get();
+        AiToolConfig.LAST_SEARCH_OUTPUT.remove(); // always clean up to avoid leaks
+
+        if (toolOutput == null || toolOutput.isBlank()) {
+            return response; // no tool was called — nothing to restore
+        }
+
+        // Find where the LLM started writing event bullets so we can keep
+        // only the intro sentence(s) and discard the potentially-wrong events.
+        int bulletIdx = response.indexOf("- **");
+        if (bulletIdx > 0) {
+            String intro = response.substring(0, bulletIdx).trim();
+            return intro + "\n\n" + toolOutput;
+        }
+
+        // Fallback: LLM did not use the bullet format (e.g. numbered list).
+        // Try to find the first numbered-list entry like "1. **" or "1."
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("(?m)^\\d+[.)][\\s*]")
+                .matcher(response);
+        if (m.find() && m.start() > 0) {
+            String intro = response.substring(0, m.start()).trim();
+            return intro + "\n\n" + toolOutput;
+        }
+
+        // If no recognisable list structure, just append the authoritative
+        // output so at least the user can see the correct links.
+        return response.trim() + "\n\n" + toolOutput;
+    }
+
     @Override
     public String chat(String userMessage) {
+        // Clear any stale ThreadLocal from a previous call on this thread
+        AiToolConfig.LAST_SEARCH_OUTPUT.remove();
+
         var spec = chatClient.prompt()
                 .system(getSystemPrompt())
                 .user(userMessage);
@@ -213,20 +264,40 @@ public class GroqChatService implements ChatService {
             spec = spec.functions("searchEventTool", "getTicketPolicyTool");
         }
         String raw = spec.call().content();
-        return sanitizeResponse(raw);
+        String sanitized = sanitizeResponse(raw);
+        return restoreSearchOutput(sanitized);
+    }
+
+
+    /**
+     * Splits a string into small tokens suitable for simulated streaming.
+     * We split on whitespace boundaries, keeping the whitespace attached to the
+     * preceding word so the reconstructed text is identical to the original.
+     */
+    private static String[] tokenise(String text) {
+        // Split after every space/newline so each token carries its trailing whitespace
+        return text.split("(?<=[ \t\n])|(?=\n)");
     }
 
     @Override
     public reactor.core.publisher.Flux<String> streamChat(String userMessage) {
         try {
             if (!isGeneralQuery(userMessage)) {
-                // If it is a functional query that requires tools, Ollama/Spring AI streaming with functions is buggy.
-                // We fallback to synchronous call and emit the complete result as a single Flux chunk.
+                // Function-calling + streaming is unreliable on Ollama, so we do a
+                // synchronous round-trip for the tool result, then re-emit the
+                // complete text token-by-token to keep the SSE "typewriter" effect.
                 String fullResponse = chat(userMessage);
-                return reactor.core.publisher.Flux.just(fullResponse);
+                String[] tokens = tokenise(fullResponse);
+
+                // Emit one token every 25 ms — fast enough to feel live, slow enough
+                // for the frontend to render word-by-word.
+                return reactor.core.publisher.Flux
+                        .interval(java.time.Duration.ofMillis(25))
+                        .take(tokens.length)
+                        .map(idx -> tokens[(int)(long) idx]);
             }
 
-            // For general queries (greetings, simple talks), we can stream safely.
+            // For general queries (greetings, simple talks), use real streaming.
             return chatClient.prompt()
                     .system(getSystemPrompt())
                     .user(userMessage)
