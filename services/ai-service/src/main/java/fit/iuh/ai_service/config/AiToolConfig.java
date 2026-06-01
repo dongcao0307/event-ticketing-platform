@@ -276,7 +276,7 @@ public class AiToolConfig {
 
                     // Constructing the Markdown CTA block with deep link
                     return String.format(
-                        "- **%s** | 📍 %s | 💵 %s\n  👉 **[🎟️ Xem sơ đồ & Đặt vé ngay](/events/%s)**",
+                        "- **%s** | 📍 %s | 💵 %s\n  👉 **[🎟️ Xem sơ đồ & Đặt vé ngay](/event/%s)**",
                         title, city, price, eventId
                     );
                 }).collect(Collectors.joining("\n\n---\n\n"));

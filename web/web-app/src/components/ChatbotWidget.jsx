@@ -90,6 +90,11 @@ function AiMessageContent({ text }) {
           // Extract eventId from deep link (supports /event/id and /events/id)
           const eventIdMatch = part.value.match(/\/events?\/(\d+)/);
 
+          let hrefValue = part.value;
+          if (eventIdMatch) {
+            hrefValue = hrefValue.replace(/\/events\/(\d+)/, '/event/$1');
+          }
+
           let label = part.label;
           if (!label) {
             label = eventIdMatch
@@ -100,7 +105,7 @@ function AiMessageContent({ text }) {
           return (
             <a
               key={i}
-              href={part.value}
+              href={hrefValue}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block mt-2 px-4 py-2 bg-[#26bc71] hover:bg-[#1fa05f] active:scale-95 text-white rounded-md font-bold text-center w-full text-xs leading-snug transition-all duration-200 shadow-md shadow-green-900/30"
